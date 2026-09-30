@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cufhom"
+version = "0.1.0"
+description = "CUDA-first periodic FFT homogenization for short-fibre composites"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3", "scipy>=1.11", "numba>=0.60", "pandas>=2",
+                "openpyxl>=3.1", "tqdm>=4.66", "threadpoolctl>=3"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "matplotlib>=3.8"]
+plots = ["matplotlib>=3.8"]
+
+[project.scripts]
+cufhom-generate = "cufhom.cli.geometry:main"
+cufhom-sobol = "cufhom.cli.sobol:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cufhom_core = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

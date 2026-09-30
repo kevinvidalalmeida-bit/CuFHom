@@ -1,0 +1,264 @@
+{
+  "parameters": {
+    "fiber_model": "straight",
+    "output": "benchmarks/reference_solvers/sfrp_vf15_ar10_random_g48",
+    "vf": 0.15,
+    "ar": 10.0,
+    "box": 12.0,
+    "diameter": 1.0,
+    "grid": 48,
+    "a2": null,
+    "orientation_json": null,
+    "seed": 20260929,
+    "threads": 8,
+    "target_count": null,
+    "initial_count": 40,
+    "bootstrap_max_count": 48,
+    "batch_size": 6,
+    "candidates": 12,
+    "attempts": 3,
+    "max_stages": 16,
+    "relax_iterations": 3000,
+    "orientation_weight": 1.0,
+    "solver": "paper-a4",
+    "rotation_update": "retraction",
+    "neighbor_mode": "multilevel",
+    "min_gap": 0.02,
+    "a4_tolerance": 0.0001,
+    "voxel_a4_tolerance": 0.06,
+    "a2_tolerance": 0.035,
+    "overlap_tolerance": 1e-06,
+    "geometry_only": false,
+    "segments": 4,
+    "bending_weight": 0.01,
+    "max_turn_degrees": 30.0,
+    "reference_performance": false
+  },
+  "settings": {
+    "box": 12.0,
+    "length": 10.0,
+    "diameter": 1.0,
+    "target_count": 31,
+    "initial_count": 40,
+    "batch_size": 6,
+    "candidates": 12,
+    "attempts": 3,
+    "max_stages": 16,
+    "relax_iterations": 3000,
+    "orientation_weight": 1.0,
+    "overlap_tolerance": 1e-06,
+    "a2_tolerance": 0.035,
+    "seed": 20260929,
+    "solver": "paper-a4",
+    "a4_tolerance": 0.0001,
+    "rotation_update": "retraction",
+    "min_gap": 0.02,
+    "neighbor_mode": "multilevel",
+    "bootstrap_max_count": 48
+  },
+  "orientation_target": {
+    "source": "A2_to_A4_angular_central_Gaussian",
+    "A2": [
+      [
+        0.3333333333333333,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.3333333333333333,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.3333333333333333
+      ]
+    ],
+    "A4": [
+      [
+        [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ]
+      ]
+    ],
+    "contraction_error": 5.551115123125783e-17,
+    "norm": "full_tensor_frobenius",
+    "warning": "A2 does not uniquely determine A4; closure is a distributional assumption"
+  },
+  "A2": [
+    [
+      0.3333333333333333,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.3333333333333333,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.3333333333333333
+    ]
+  ],
+  "schema": "sam_staged_v1",
+  "fiber_model": "straight",
+  "experimental": true,
+  "note": "Flexible AR uses contour length/diameter, not end-to-end length. Count estimate is not a volume guarantee for bent/overlapping capsules. Do not reuse straight-fiber K/B labels."
+}

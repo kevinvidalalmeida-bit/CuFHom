@@ -1,0 +1,51 @@
+"""Conservative skin cache versus full periodic force graph."""
+import sys
+from pathlib import Path
+import unittest
+import numpy as np
+from cufhom.pipeline.sam_neighbor_cache import build_aabb_pairs, endpoint_motion_bound
+from cufhom.pipeline import sam_generator as sam
+from cufhom.pipeline import sam_periodic_kernels as periodic
+
+
+class NeighborTests(unittest.TestCase):
+    def test_cached_forces_equal_all_pairs_after_translation_and_rotation(self):
+        rng=np.random.default_rng(31); box=np.full(3,16.)
+        from numba import set_num_threads
+        set_num_threads(2)
+        for length in [3.,8.,16.,25.]:
+            c=rng.uniform(0,16,(90,3)); u=rng.normal(size=c.shape);u/=np.linalg.norm(u,axis=1)[:,None]
+            skin=1.
+            pairs=build_aabb_pairs(c,u,box,length,1.,skin)
+            nc=(c+rng.uniform(-.03,.03,c.shape))%16
+            nu=u+rng.uniform(-.001,.001,u.shape);nu/=np.linalg.norm(nu,axis=1)[:,None]
+            self.assertLess(endpoint_motion_bound(nc,nu,c,u,box,length),skin/2)
+            ii,jj=np.triu_indices(len(c),1); complete=np.c_[ii,jj].astype(np.int32)
+            outputs=[]
+            for graph in [pairs,complete]:
+                offsets,neighbors=sam._pairs_to_csr_numba(graph,len(c))
+                f=np.zeros_like(c);t=np.zeros_like(c);m=np.zeros(len(c))
+                periodic._apply_forces_per_fiber_numba(nc,nu,offsets,neighbors,f,t,m,
+                    16.,16.,16.,length,1.,(length+1.25)**2,.3,.001,.03,1.)
+                outputs.append((f,t,m))
+            for a,b in zip(*outputs): np.testing.assert_allclose(a,b,atol=1e-12,rtol=1e-12)
+
+    def test_rotation_alone_requires_rebuild(self):
+        c=np.zeros((2,3));u=np.array([[1.,0,0],[0,1.,0]])
+        angle=.15; v=np.array([[np.cos(angle),np.sin(angle),0],[0,1.,0]])
+        self.assertGreater(endpoint_motion_bound(c,v,c,u,np.full(3,16.),16.),.5)
+
+    def test_periodic_wrap_does_not_overestimate_translation(self):
+        c=np.array([[15.99,0,0]]);u=np.array([[1.,0,0]])
+        new=np.array([[.01,0,0]])
+        self.assertAlmostEqual(endpoint_motion_bound(new,u,c,u,np.full(3,16.),8.),.02)
+
+    def test_no_duplicates_and_sorted_pairs(self):
+        rng=np.random.default_rng(19);c=rng.uniform(0,16,(35,3));u=np.tile([1.,0,0],(35,1))
+        pairs=build_aabb_pairs(c,u,np.full(3,16.),8.,1.,.5)
+        self.assertEqual(len(np.unique(pairs,axis=0)),len(pairs))
+        self.assertTrue(np.all(pairs[:,0]<pairs[:,1]))
+        self.assertEqual(pairs.tolist(),sorted(pairs.tolist()))
+
+
+if __name__=='__main__': unittest.main()

@@ -1,0 +1,114 @@
+"""Symmetric reference coordinates and FP64-reduced CG for linear solves.
+
+No nonlinear defaults are changed. The physical-equation audit remains in
+linear_coordinates; a small recursive residual alone never accepts a solution.
+"""
+import numpy as np
+from .nonlinear_coordinates import DisplacementCoordinates, _CODE
+from .nonlinear_solver import _cg_updates, NonlinearConvergenceError, cp
+
+_KERNELS = {}
+
+
+class SymmetricCoordinates(DisplacementCoordinates):
+    """QR and RQ*, R=M^-1/2, fused into the compatible-coordinate kernel."""
+    def __init__(self, projector, bulk, shear):
+        super().__init__(projector)
+        if self.P.free or not np.isfinite([bulk, shear]).all() or min(bulk, shear) <= 0:
+            raise ValueError('Symmetric linear coordinates require fixed means and positive moduli')
+        self.transverse = np.sqrt(1/(2*shear))
+        self.longitudinal = np.sqrt(1/(bulk+4*shear/3))
+
+    def root(self, value):
+        k, _, _ = self._cpu_geometry()
+        v = value.reshape((3,)+self.hshape)
+        return (self.transverse*v+(self.longitudinal-self.transverse)*k*np.sum(k*v, axis=0)).ravel()
+
+    def _map(self, x, adjoint):
+        if self.xp is np:
+            return self.root(super()._map(x, True)) if adjoint else super()._map(self.root(x), False)
+        out = cp.empty(self.size if adjoint else (6,)+self.hshape, dtype=x.dtype)
+        key = ('root', x.dtype.str)
+        if key not in _KERNELS:
+            code = _CODE.replace('int adjoint)', 'int adjoint, REAL transverse, REAL longitudinal)')
+            old = 'v[c]=r2*v[c]+(1-r2)*k[c]*dot;'
+            if code.count(old) != 1:
+                raise RuntimeError('Coordinate kernel changed: review symmetric transformation')
+            code = code.replace(old, 'v[c]=r2*transverse*v[c]+(longitudinal-r2*transverse)*k[c]*dot;')
+            name = 'float' if x.dtype == cp.complex64 else 'double'
+            code = code.replace('COMPLEX', name+'2').replace('REAL', name).replace('MAKE', 'make_'+name+'2')
+            _KERNELS[key] = cp.RawKernel(code, 'coordinates')
+        d = x.real.dtype.type
+        _KERNELS[key](((self.count+255)//256,), (256,),
+            (x, out, *(np.int64(n) for n in self.shape), np.int64(self.hshape[-1]),
+             *(d(1/L) for L in self.P.lengths), d(self.norm), np.int32(0), np.int32(adjoint),
+             d(self.transverse), d(self.longitudinal)))
+        return out
+
+
+_UPDATE = r'''
+extern "C" __global__ void update_rr(const float* p, const float* ap,
+ float alpha, float* x, float* r, double* partial, long long count) {
+ double sum=0;
+ for(long long i=(long long)blockIdx.x*blockDim.x+threadIdx.x;
+     i<count;i+=(long long)gridDim.x*blockDim.x) {
+   x[i]+=alpha*p[i];
+   float ri=r[i]-alpha*ap[i]; r[i]=ri;
+   sum+=(double)ri*(double)ri;
+ }
+ for(int offset=16;offset;offset>>=1)sum+=__shfl_down_sync(0xffffffff,sum,offset);
+ __shared__ double sums[8];
+ int lane=threadIdx.x&31,warp=threadIdx.x>>5;
+ if(lane==0)sums[warp]=sum;
+ __syncthreads();
+ if(warp==0) {
+   sum=lane<8?sums[lane]:0;
+   for(int offset=16;offset;offset>>=1)sum+=__shfl_down_sync(0xffffffff,sum,offset);
+   if(lane==0)partial[blockIdx.x]=sum;
+ }
+}
+'''
+
+
+def fused_update(p, ap, alpha, x, r, partial):
+    if 'update' not in _KERNELS:
+        _KERNELS['update'] = cp.RawKernel(_UPDATE, 'update_rr')
+    _KERNELS['update']((partial.size,), (256,),
+        (p, ap, np.float32(alpha), x, r, partial, np.int64(r.nbytes//4)))
+    return float(cp.sum(partial, dtype=cp.float64))
+
+
+def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False,
+             precondition=None, initial=None):
+    """Classical CG/PCG with fused x/r update, true residual and reliable restart."""
+    if xp is not cp or rhs.dtype not in (cp.complex64, cp.float32) or project is not None or initial is not None:
+        raise ValueError('Fused linear CG requires zero-start complex64/float32 GPU vectors')
+    x = cp.zeros_like(rhs); r = rhs.copy()
+    rr = dot(r, r); limit = tolerance*tolerance*rr
+    if rr == 0:
+        return x, 0
+    partial = cp.empty(min(16384, (rhs.nbytes//4+255)//256), dtype=cp.float64)
+    z = precondition(r) if precondition else r
+    rz = dot(r, z) if precondition else rr
+    p = z.copy()
+    for i in range(maxiter):
+        ap = action(p); pap = dot(p, ap)
+        if not np.isfinite([pap, rz]).all() or min(pap, rz) <= 0:
+            raise NonlinearConvergenceError('Fused linear CG lost positivity')
+        new = fused_update(p, ap, rz/pap, x, r, partial)
+        if not np.isfinite(new):
+            raise NonlinearConvergenceError('Nonfinite fused linear residual')
+        if new <= limit:
+            r = rhs-action(x)
+            new = dot(r, r)
+            if new <= limit:
+                return x, i+1
+            z = precondition(r) if precondition else r
+            next_rz = dot(r, z) if precondition else new
+            p = z.copy()
+        else:
+            z = precondition(r) if precondition else r
+            next_rz = dot(r, z) if precondition else new
+            _cg_updates()[1](z, np.float64(next_rz/rz), p)
+        rz = next_rz
+    raise NonlinearConvergenceError('Fused linear CG failed true residual')
