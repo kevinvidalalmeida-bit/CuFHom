@@ -1,4 +1,4 @@
-"""Experimental CG reductions: warp shuffles, FP64 sums, device scalars.
+"""CG reductions: warp shuffles, FP64 sums, device scalars.
 
 Same interface as CupyCGReduction. No mesh/operator/tolerance changes. The
 grid-stride kernels bound the partial buffer and avoid global atomic sums.

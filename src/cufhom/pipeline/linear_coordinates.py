@@ -42,6 +42,15 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
         def action(z):
             return Q.adjoint(A(B.copy(val=Q.strain(z))).val)
 
+        def action_and_dot(z, *, direction=None):
+            strain = (Q.strain(z) if direction is None
+                      else Q.strain_updated_direction(z, *direction))
+            return Q.adjoint_and_dot(A(B.copy(val=strain)).val, z)
+
+        fused_options = {}
+        if mode == 'symmetric_fused' and pb.solver.get('linear_kernel_fusion', True):
+            fused_options['action_and_dot'] = action_and_dot
+
         # The existing direct-projection raw-C2R operator multiplies both
         # sides by volume. Remove that common factor in physical coordinates.
         rhs_norm = np.sqrt(dot(B.val, B.val)/volume)
@@ -87,7 +96,7 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
             else:
                 rhs = Q.adjoint(B.val)/dtype.type(volume)
             z, iterations = inner_cg(action, rhs, dot, relative, par['maxiter'], cp,
-                                     fused=True, precondition=precondition)
+                                     fused=True, precondition=precondition, **fused_options)
             result = B.copy(val=Q.strain(z))
             if initial is not None:
                 result.val += initial.val

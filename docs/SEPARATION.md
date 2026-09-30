@@ -1,5 +1,10 @@
 # Separación verificada del proyecto principal
 
+Este documento conserva el registro de la separación inicial. Actualización
+del 30 de septiembre de 2026: el entorno GPU está operativo y existe el
+repositorio privado CuFHom con el PR #1. La validación y los tiempos vigentes
+están en [G09 lineal](../benchmarks/g09_linear_20260929/RESULTS.md).
+
 ## Qué se conservó
 
 - Todos los módulos Python del núcleo `FFT/pipeline`, con namespace
@@ -23,7 +28,7 @@ No se movió, borró ni editó el código del proyecto de origen.
 - Las dependencias se instalan mediante `pyproject.toml` en `.venv` propio.
 - Se eliminaron imports `geometry_runtime` y la lectura obligatoria de las
   configuraciones CNN; I/O y progreso usan `cufhom.runtime`.
-- Los comandos SAM y Sobol se instalan como `sam-generate` y `sam-sobol`.
+- Los comandos de geometría y Sobol se instalan como `cufhom-generate` y `cufhom-sobol`.
 - Los resultados Sobol se crean bajo el directorio de trabajo, no en el código
   instalado; el flujo Sobol mantiene su generador SAMLite histórico.
 - El benchmark G09 requiere ahora rutas de datos explícitas. Los casos
@@ -31,14 +36,15 @@ No se movió, borró ni editó el código del proyecto de origen.
 - Se quitó del test activo un caso de top-up AR16/Vf40 que dependía del driver
   CNN y sus configuraciones. No se ejecutó ni se presenta como prueba aprobada.
 - Los experimentos que aún dependen de datos/rutas históricos se preservan en
-  `archive/`, fuera de instalación y pruebas activas; no se afirman portados.
+  `descartados/historico_20260924/`, fuera de instalación y pruebas activas;
+  no se afirman portados. El traslado desde `archive/` conserva sus hashes.
 
 No se copiaron los ~1.4 GB de resultados FFT ni los runs/checkpoints CNN,
 entornos anteriores, cachés Numba o carpetas de Git anidadas. La nueva copia
 de código/documentación ronda 2.5 MB, sin contar entorno, cachés y resultados
 de verificación. Los datos originales siguen donde estaban.
 
-## Verificación ejecutada
+## Verificación de la separación inicial
 
 Entorno nuevo CPU, Linux x86_64, Python 3.12.3. Versiones concretas en
 `requirements-cpu.lock`. No utiliza system-site-packages ni el entorno anterior.
@@ -66,7 +72,10 @@ no se instaló ROS ni PyYAML para ocultar esa contaminación ambiental.
 Evidencia local (ignorada por Git): `results/standalone-tests.xml`,
 `results/nonlinear_standalone01/` y `dist/cufhom-0.1.0-py3-none-any.whl`.
 
-## Pendiente, sin bloquear el trabajo independiente CPU
+## Pendientes registrados en la separación inicial
+
+Los tres primeros puntos se resolvieron posteriormente; se conservan aquí
+para interpretar el alcance de aquella verificación CPU.
 
 - Crear/configurar entorno GPU y ejecutar las pruebas CuPy en él. Conservar el
   código GPU no significa que su instalación en este entorno esté validada.

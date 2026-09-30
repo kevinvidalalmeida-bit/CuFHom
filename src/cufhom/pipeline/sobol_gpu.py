@@ -288,19 +288,18 @@ PROJECTION_STORAGE = (os.environ.get("PROJECTION_STORAGE", "direct").strip().low
 PROJECTION_BACKEND = (os.environ.get("PROJECTION_BACKEND", "numpy").strip().lower() or "numpy")
 KEEP_SOLUTIONS_ON_DEVICE = env_bool("KEEP_SOLUTIONS_ON_DEVICE", True)
 CUPY_FUSED_MATVEC = env_bool("CUPY_FUSED_MATVEC", True)
-CUPY_UNSCALED_FFT_PAIR = env_bool("CUPY_UNSCALED_FFT_PAIR", False)
-CUPY_MATRIX_REFERENCE = env_bool("CUPY_MATRIX_REFERENCE", False)
-CUPY_LAZY_SCALARS = env_bool("CUPY_LAZY_SCALARS", False)
+CUPY_UNSCALED_FFT_PAIR = env_bool("CUPY_UNSCALED_FFT_PAIR", True)
+CUPY_LAZY_SCALARS = env_bool("CUPY_LAZY_SCALARS", True)
 CUPY_FUSED_CG_UPDATES = env_bool("CUPY_FUSED_CG_UPDATES", True)
 CUPY_FUSED_XR_RR = env_bool("CUPY_FUSED_XR_RR", True)
 CUPY_FUSED_DOT = env_bool("CUPY_FUSED_DOT", True)
 CUPY_RESIDUAL_CHECK_EVERY = env_int("CUPY_RESIDUAL_CHECK_EVERY", 1)
-FAST_MACRO_ADD = env_bool("FAST_MACRO_ADD", False)
-CHECK_MACRO_MEAN = env_bool("CHECK_MACRO_MEAN", True)
+FAST_MACRO_ADD = env_bool("FAST_MACRO_ADD", True)
+CHECK_MACRO_MEAN = env_bool("CHECK_MACRO_MEAN", False)
 STORE_SOLUTION_FIELDS = env_bool("STORE_SOLUTION_FIELDS", False)
 SOLVER_LOAD_BATCH_SIZE = env_int("SOLVER_LOAD_BATCH_SIZE", 1)
 POSTPROCESS_BATCH_SIZE = env_int("POSTPROCESS_BATCH_SIZE", 1)
-POSTPROCESS_ASSEMBLY = (os.environ.get("POSTPROCESS_ASSEMBLY", "scalar").strip().lower() or "scalar")
+POSTPROCESS_ASSEMBLY = (os.environ.get("POSTPROCESS_ASSEMBLY", "fused").strip().lower() or "fused")
 
 PRELOAD_GEOMETRIES_TO_RAM = env_bool("PRELOAD_GEOMETRIES_TO_RAM", True)
 
@@ -745,9 +744,6 @@ def make_run_config() -> Dict[str, Any]:
         "keep_solutions_on_device": bool(KEEP_SOLUTIONS_ON_DEVICE),
         "cupy_fused_matvec": bool(CUPY_FUSED_MATVEC),
         "cupy_unscaled_fft_pair": bool(CUPY_UNSCALED_FFT_PAIR),
-        # Opt-in only: it changes the CG inner product/reference energy.  It
-        # is promising for this material class but must be validated per study.
-        "cupy_matrix_reference": bool(CUPY_MATRIX_REFERENCE),
         "cupy_lazy_scalars": bool(CUPY_LAZY_SCALARS),
         "cupy_fused_cg_updates": bool(CUPY_FUSED_CG_UPDATES),
         "cupy_fused_xr_rr": bool(CUPY_FUSED_XR_RR),
@@ -950,7 +946,6 @@ def build_solver_params(
         "keep_solution_on_device": bool(config["keep_solutions_on_device"]),
         "cupy_fused_matvec": bool(config["cupy_fused_matvec"]),
         "cupy_unscaled_fft_pair": bool(config["cupy_unscaled_fft_pair"]),
-        "cupy_matrix_reference": bool(config["cupy_matrix_reference"]),
         "cupy_lazy_scalars": bool(config["cupy_lazy_scalars"]),
         "cupy_fused_cg_updates": bool(config["cupy_fused_cg_updates"]),
         "cupy_fused_xr_rr": bool(config["cupy_fused_xr_rr"]),
@@ -3376,7 +3371,6 @@ def run_single_design_two_phase_online_stop(
     final_row["keep_solutions_on_device"] = bool(config["keep_solutions_on_device"])
     final_row["cupy_fused_matvec"] = bool(config["cupy_fused_matvec"])
     final_row["cupy_unscaled_fft_pair"] = bool(config["cupy_unscaled_fft_pair"])
-    final_row["cupy_matrix_reference"] = bool(config["cupy_matrix_reference"])
     final_row["cupy_lazy_scalars"] = bool(config["cupy_lazy_scalars"])
     final_row["cupy_fused_cg_updates"] = bool(config["cupy_fused_cg_updates"])
     final_row["solver_load_batch_size"] = int(config["solver_load_batch_size"])

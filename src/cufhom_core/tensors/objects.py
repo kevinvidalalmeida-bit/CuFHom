@@ -913,10 +913,8 @@ def indexed_sym21_product(x, y):
     return y.copy(name='{0}({1})'.format(x.name, y.name), val=out, order=order)
 
 
-def _get_cupy_elastic_direct_kernel(kind, projection, reference_eta=1.0):
-    if reference_eta != 1.0 and (projection != 'g1' or not np.isfinite(reference_eta) or reference_eta <= 2./3.):
-        raise ValueError('An isotropic reference metric requires eta > 2/3 and G1.')
-    key = (kind, projection, reference_eta != 1.0)
+def _get_cupy_elastic_direct_kernel(kind, projection):
+    key = (kind, projection)
     kernel = _CUPY_ELASTIC_DIRECT_KERNELS.get(key)
     if kernel is not None:
         return kernel
@@ -1100,11 +1098,6 @@ def _get_cupy_elastic_direct_kernel(kind, projection, reference_eta=1.0):
             .replace("WRITE_Y", write_y)
             .replace("G2_EXPR", g2_expr)
     )
-    if reference_eta != 1.0:
-        code = code.replace('const long total) {', 'const long total, const float reference_factor) {')
-        code = code.replace('const float invn4 = invn2 * invn2;',
-                            'const float invn4 = reference_factor * invn2 * invn2;')
-
     if kind.startswith('f64_'):
         # Share the formula, but not rounded float literals, with the FP32 path.
         code = code.replace('float', 'double')
@@ -1170,8 +1163,7 @@ def elasticity_direct_array(x, yval):
     if not yval.flags.c_contiguous:
         yval = cp.ascontiguousarray(yval)
 
-    reference_eta = float(getattr(x, 'reference_eta', 1.0))
-    kernel = _get_cupy_elastic_direct_kernel(kind, projection, reference_eta)
+    kernel = _get_cupy_elastic_direct_kernel(kind, projection)
     if kernel is None:
         return None
 
@@ -1201,7 +1193,7 @@ def elasticity_direct_array(x, yval):
                 scalar_dtype(inv_y[1]),
                 scalar_dtype(inv_y[2]),
                 np.int64(total),
-            ) + ((scalar_dtype(2.-1./reference_eta),) if reference_eta != 1.0 else ()),
+            ),
         )
     except Exception:
         return None

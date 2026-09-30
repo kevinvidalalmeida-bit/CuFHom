@@ -1,6 +1,7 @@
 import numpy as np
 from cufhom_core.general.base import Timer
 from cufhom_core.tensors.fft import get_array_module, to_backend_array, to_host_array
+from cufhom_core.general.cupy_warp_reduction import CupyWarpCGReduction
 import itertools
 
 
@@ -75,7 +76,7 @@ def assembly_matrix(Afun, solutions, batch_size=1, method='scalar'):
         sol = solutions
 
     method = str(method).strip().lower()
-    if method not in {'scalar', 'einsum', 'gemm'}:
+    if method not in {'scalar', 'einsum', 'gemm', 'fused'}:
         method = 'scalar'
 
     batch_size = max(1, min(int(batch_size), dim))
@@ -85,6 +86,27 @@ def assembly_matrix(Afun, solutions, batch_size=1, method='scalar'):
         return assembly_matrix_batched(Afun, sol, batch_size=batch_size)
 
     A_sol = [Afun(sol[ii]) for ii in range(dim)]
+
+    if method == 'fused' and all(
+        CupyWarpCGReduction.supports(field, {})
+        and field.val.dtype == sol[0].val.dtype
+        and field.val.shape == sol[0].val.shape
+        and field.fft_form == sol[0].fft_form
+        and np.array_equal(field.N, sol[0].N)
+        for field in A_sol + list(sol)
+    ):
+        # Reuse the validated real-space reduction. Every entry is evaluated;
+        # no assumption about material/geometry or matrix symmetry is needed.
+        # The output remains FP64, with only one small transfer to the host.
+        xp = get_array_module(sol[0].val)
+        reduction = CupyWarpCGReduction(sol[0], max_blocks=16384)
+        entries = []
+        for stress in A_sol:
+            for field in sol:
+                reduction.dot_kernel((reduction.blocks,), (reduction.threads,),
+                    (stress.val, field.val, reduction.partial, np.int64(reduction.total)))
+                entries.append(xp.sum(reduction.partial, dtype=xp.float64))
+        return to_host_array(xp.stack(entries)).reshape(dim, dim)/float(np.prod(sol[0].N))
 
     AH = np.zeros([dim, dim])
     for ii, jj in itertools.product(list(range(dim)), repeat=2):

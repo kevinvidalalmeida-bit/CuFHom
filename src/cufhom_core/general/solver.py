@@ -620,15 +620,7 @@ def CG(Afun, B, x0=None, par=None, callback=None):
     cupy_fused_xr_rr = bool(par.get('cupy_fused_xr_rr', False))
     cupy_fused_dot = bool(par.get('cupy_fused_dot', False))
     reduction = None
-    if 'cupy_reference_eta' in par:
-        from cufhom_core.general.cupy_reference_metric import ReferenceMetricReduction
-        if 'scal' in par:
-            raise ValueError('Reference energy metric cannot replace a custom scalar product.')
-        reduction = ReferenceMetricReduction(B, float(par['cupy_reference_eta']))
-        scal = reduction.dot
-        cupy_fused_dot = False
-        cupy_fused_xr_rr = False
-    elif bool(par.get('cupy_stable_reductions', False)):
+    if bool(par.get('cupy_stable_reductions', False)):
         from cufhom_core.general.cupy_cg_reduction import CupyCGReduction
         if CupyCGReduction.supports(B, par):
             reduction = CupyCGReduction(B)

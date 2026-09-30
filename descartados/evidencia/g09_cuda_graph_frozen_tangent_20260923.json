@@ -1,0 +1,229 @@
+{
+  "scope": "Diagnostic frozen Q* C Q, actual G09 240^3 phase/orientation table, SYNTHETIC strain, NOT a CG solve or full-curve speedup. No defaults changed. Rotated timings, warmed plans, copied-input variant includes the device copy. Graph output is borrowed; original output has independent ownership.",
+  "shape": [
+    240,
+    240,
+    240
+  ],
+  "repeats": 9,
+  "inner": 10,
+  "seed": 701,
+  "matrix": {
+    "E": 4.338421,
+    "nu": 0.354302,
+    "yield_stress": 0.015,
+    "hardening": 0.03
+  },
+  "fiber": {
+    "E_L": 347.979995,
+    "E_T": 11.339842,
+    "G_LT": 13.60578,
+    "nu_LT": 0.242344,
+    "nu_TT": 0.393962
+  },
+  "geometry": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/trend_studies_20260914/rasterized_g09/N240",
+  "material_file": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/runs/adaptive_pair_20260914_200529_direct_g09_rep3/monitor_truth/material_0000/material.json",
+  "device": "NVIDIA GeForce RTX 5070 Ti",
+  "cupy": "13.6.0",
+  "cuda_runtime": 13000,
+  "hashes": {
+    "FFT/benchmarks/benchmark_cuda_graph_operator.py": "d7410b3db9fdff04227dcbafc75b3e33c12c85cbfa47cf0b281100a7661fa9e5",
+    "FFT/ffthompy_core/ffthompy/ffthompy/tensors/fft.py": "7f45d8e3f1cee7b550f7852aa28dbe3b48f69f459e0de2ebc2be0ad3c65880e0",
+    "FFT/pipeline/nonlinear_coordinates.py": "48aa856e7399a40d36986d87077b0a20977bd2af8c50294637a28e9c84244fa6",
+    "FFT/pipeline/nonlinear_material.py": "00c6ce635a09b1dfba9825723580228703b86d4a14a1afeb4459f1863c2cae5b"
+  },
+  "capture_and_first_launch_s": 0.015502292022574693,
+  "persistent_scratch_bytes": 1667174480,
+  "memory_note": "Scratch excludes response, input z, cuFFT plan workspaces and memory-pool reserve.",
+  "checks": {
+    "original": {
+      "relative_l2_error": 0.0,
+      "bitwise_equal": true
+    },
+    "persistent": {
+      "relative_l2_error": 0.0,
+      "bitwise_equal": true
+    },
+    "graph_fixed_input": {
+      "relative_l2_error": 0.0,
+      "bitwise_equal": true
+    },
+    "graph_with_input_copy": {
+      "relative_l2_error": 0.0,
+      "bitwise_equal": true
+    },
+    "changed_input": {
+      "relative_l2_error": 0.0
+    }
+  },
+  "timings": {
+    "original": {
+      "median_event_ms": 8.06082534790039,
+      "median_wall_ms": 8.067794400267303,
+      "samples": [
+        {
+          "event_ms": 8.089020538330079,
+          "wall_ms": 8.090758498292416
+        },
+        {
+          "event_ms": 8.098486328125,
+          "wall_ms": 8.100432698847726
+        },
+        {
+          "event_ms": 8.032809448242187,
+          "wall_ms": 8.043894602451473
+        },
+        {
+          "event_ms": 8.10187225341797,
+          "wall_ms": 8.108511799946427
+        },
+        {
+          "event_ms": 8.06082534790039,
+          "wall_ms": 8.067794400267303
+        },
+        {
+          "event_ms": 8.079830169677734,
+          "wall_ms": 8.086794102564454
+        },
+        {
+          "event_ms": 8.010841369628906,
+          "wall_ms": 8.041546097956598
+        },
+        {
+          "event_ms": 8.050457763671876,
+          "wall_ms": 8.052501699421555
+        },
+        {
+          "event_ms": 8.037926483154298,
+          "wall_ms": 8.050445799017325
+        }
+      ]
+    },
+    "persistent": {
+      "median_event_ms": 8.020941162109375,
+      "median_wall_ms": 8.023220696486533,
+      "samples": [
+        {
+          "event_ms": 8.04513931274414,
+          "wall_ms": 8.047411101870239
+        },
+        {
+          "event_ms": 8.020941162109375,
+          "wall_ms": 8.023220696486533
+        },
+        {
+          "event_ms": 8.06439666748047,
+          "wall_ms": 8.084451605100185
+        },
+        {
+          "event_ms": 7.968077087402344,
+          "wall_ms": 7.9735614999663085
+        },
+        {
+          "event_ms": 7.957279968261719,
+          "wall_ms": 7.962882495485246
+        },
+        {
+          "event_ms": 7.955865478515625,
+          "wall_ms": 7.961683196481317
+        },
+        {
+          "event_ms": 8.056204986572265,
+          "wall_ms": 8.061439503217116
+        },
+        {
+          "event_ms": 8.033055877685547,
+          "wall_ms": 8.04381639463827
+        },
+        {
+          "event_ms": 7.950892639160156,
+          "wall_ms": 7.9620548989623785
+        }
+      ]
+    },
+    "graph_fixed_input": {
+      "median_event_ms": 8.036131286621094,
+      "median_wall_ms": 8.04289870429784,
+      "samples": [
+        {
+          "event_ms": 7.977455902099609,
+          "wall_ms": 7.980389299336821
+        },
+        {
+          "event_ms": 8.004402923583985,
+          "wall_ms": 8.042692299932241
+        },
+        {
+          "event_ms": 8.069391632080078,
+          "wall_ms": 8.071170799667016
+        },
+        {
+          "event_ms": 8.037411499023438,
+          "wall_ms": 8.043802302563563
+        },
+        {
+          "event_ms": 8.036131286621094,
+          "wall_ms": 8.04289870429784
+        },
+        {
+          "event_ms": 8.030140686035157,
+          "wall_ms": 8.037382300244644
+        },
+        {
+          "event_ms": 8.041471862792969,
+          "wall_ms": 8.047166699543595
+        },
+        {
+          "event_ms": 8.062774658203125,
+          "wall_ms": 8.075099100824445
+        },
+        {
+          "event_ms": 7.989695739746094,
+          "wall_ms": 8.002532902173698
+        }
+      ]
+    },
+    "graph_with_input_copy": {
+      "median_event_ms": 8.520243072509766,
+      "median_wall_ms": 8.528446196578443,
+      "samples": [
+        {
+          "event_ms": 8.480137634277344,
+          "wall_ms": 8.528446196578443
+        },
+        {
+          "event_ms": 8.483907318115234,
+          "wall_ms": 8.485569700133055
+        },
+        {
+          "event_ms": 8.520243072509766,
+          "wall_ms": 8.522164396708831
+        },
+        {
+          "event_ms": 8.508665466308594,
+          "wall_ms": 8.520072500687093
+        },
+        {
+          "event_ms": 8.54813461303711,
+          "wall_ms": 8.555320597952232
+        },
+        {
+          "event_ms": 8.505506896972657,
+          "wall_ms": 8.512900996720418
+        },
+        {
+          "event_ms": 8.533090972900391,
+          "wall_ms": 8.540273399557918
+        },
+        {
+          "event_ms": 8.579996490478516,
+          "wall_ms": 8.585711696650833
+        },
+        {
+          "event_ms": 8.522624206542968,
+          "wall_ms": 8.555005100788549
+        }
+      ]
+    }
+  }
+}

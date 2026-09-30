@@ -121,7 +121,6 @@ VARIANTS = {
         "cupy_plan_mode": "none",
         "cupy_preserve_plans": False,
     },
-    "optimized_reference_metric": {"cupy_matrix_reference": True},
 }
 
 

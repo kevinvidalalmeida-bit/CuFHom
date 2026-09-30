@@ -1,0 +1,44 @@
+{
+  "geometry": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/trend_studies_20260914/rasterized_g09/N240",
+  "grid_shape": [
+    240,
+    240,
+    240
+  ],
+  "fibre_volume_fraction": 0.24980555555555556,
+  "material": {
+    "Em": 4.338421,
+    "nu_m": 0.354302,
+    "Ef_L": 347.979995,
+    "Ef_T": 11.339842,
+    "G_LT": 13.60578,
+    "nu_LT": 0.242344,
+    "nu_TT": 0.393962
+  },
+  "repeats": 3,
+  "variants": {
+    "optimized": {
+      "wall_s": [
+        4.824341778999951,
+        4.825329575003707,
+        4.8274826889974065
+      ],
+      "wall_s_median": 4.825329575003707,
+      "wall_s_min": 4.824341778999951,
+      "cupy_matrix_reference": false,
+      "relative_Ceff_difference_to_optimized": 0.0
+    },
+    "reference_metric": {
+      "wall_s": [
+        5.188103726999543,
+        5.186914631005493,
+        5.18818929400004
+      ],
+      "wall_s_median": 5.188103726999543,
+      "wall_s_min": 5.186914631005493,
+      "cupy_matrix_reference": true,
+      "relative_Ceff_difference_to_optimized": 9.578430308022021e-08
+    }
+  },
+  "reference_metric_speedup": 0.9300757712094471
+}

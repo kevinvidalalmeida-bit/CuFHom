@@ -470,15 +470,10 @@ def solve_load_scalar(iL, dim, Nbar, Afun, pb, GN, A, add_macro2minimizer, linea
 
 
 def solve_load_elasticity(iL, D, Nbar, Afun, pb, GN, A, add_macro2minimizer, linear_solver, CallBack, CallBack_GA, fft_form='c'):
-    original_Afun = Afun
     solver_parameters = pb.solver
     factory = pb.solver.get('elasticity_krylov_factory')
     if factory is not None:
         linear_solver = factory(A=A, GN=GN, pb=pb, fallback=linear_solver)
-    if 'cupy_reference_eta' in pb.solver:
-        from cufhom_core.general.reference_elasticity import reference_operator, reference_parameters
-        Afun = reference_operator(GN, A, float(pb.solver['cupy_reference_eta']))
-        solver_parameters = reference_parameters(pb.solver)
     real_dtype = _solver_real_dtype(pb)
     E = np.zeros(D, dtype=real_dtype)
     E[iL] = 1
@@ -523,10 +518,6 @@ def solve_load_elasticity(iL, D, Nbar, Afun, pb, GN, A, add_macro2minimizer, lin
     )
     load_t0 = time.perf_counter()
     X, info = linear_solver(solver=pb.solver['kind'], Afun=Afun_local, B=B, x0=x0, par=solver_parameters, callback=cb)
-    if 'cupy_reference_eta' in pb.solver:
-        from cufhom_core.general.reference_elasticity import audit_reference_solution
-        audit_Afun = _instrument_afun_for_profile(original_Afun, GN, A, timing_stats) if profile_enabled else original_Afun
-        X, info = audit_reference_solution(X, info, EN, audit_Afun, pb.solver, linear_solver)
     load_wall_s = time.perf_counter() - load_t0
     result = {'cb': cb, 'info': info}
     if profile_enabled:

@@ -1168,7 +1168,14 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         )
     profile = SOLVER_PROFILES.get(profile_name, {})
 
+    from .linear_defaults import linear_defaults
+    from collections import ChainMap
     fft_backend = p.get('fft_backend', 'scipy')
+    # Read missing options from the profile, while documented in-memory field
+    # outputs still write into the caller's dictionary. Do not inject defaults
+    # into that dictionary: it may be reused with a different backend/profile.
+    p = ChainMap(p, linear_defaults(p, use_gpu=(fft_backend == 'cupy') and _CUPY_AVAILABLE,
+                                    profile=profile))
     solver_fft_form_raw = p.get('solver_fft_form', 0)
     solver_fft_form = 0 if str(solver_fft_form_raw).strip() in {'0', 'standard'} else solver_fft_form_raw
     if solver_fft_form not in {0, 'c', 'r'}:
@@ -1234,14 +1241,9 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
     cupy_fused_matvec = bool(p.get('cupy_fused_matvec', True))
     cupy_unscaled_fft_pair = bool(p.get('cupy_unscaled_fft_pair', True))
     cupy_reuse_inverse_input = bool(p.get('cupy_reuse_inverse_input', False))
-    cupy_matrix_reference = bool(p.get('cupy_matrix_reference', False))
-    cupy_reference_eta = float(p.get('cupy_reference_eta', 1.0))
-    if cupy_matrix_reference:
-        matrix_poisson = float(p['nu_m'])
-        cupy_reference_eta = (1.-matrix_poisson)/(1.-2.*matrix_poisson)
-    if cupy_reference_eta != 1.0 and (not use_gpu or solver_real_dtype != 'float32'
-            or not np.isfinite(cupy_reference_eta) or cupy_reference_eta <= 2./3.):
-        raise ValueError('Reference-energy CG requires float32 CUDA and eta > 2/3.')
+    if p.get('cupy_matrix_reference', False) or float(p.get('cupy_reference_eta', 1.0)) != 1.0:
+        raise ValueError('Reference-energy CG was retired to descartados/metrica_referencia; '
+                         'use linear_formulation=auto with symmetric_fused preconditioning.')
     cupy_lazy_scalars = bool(p.get('cupy_lazy_scalars', True))
     cupy_fused_cg_updates = bool(p.get('cupy_fused_cg_updates', True))
     cupy_fused_xr_rr = bool(p.get('cupy_fused_xr_rr', False))
@@ -1270,13 +1272,11 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         or stress_volume_requested
     )
     load_batch_size = max(1, int(p.get('load_batch_size', 1)))
-    if cupy_reference_eta != 1.0 and load_batch_size != 1:
-        raise ValueError('Reference-energy CG requires load_batch_size=1.')
     if p.get('project_initial_solution_fields', False) and load_batch_size != 1:
         raise ValueError('Projected initial fields require load_batch_size=1.')
     postprocess_batch_size = max(1, int(p.get('postprocess_batch_size', 6)))
     postprocess_assembly = str(p.get('postprocess_assembly', 'gemm')).strip().lower()
-    if postprocess_assembly not in {'scalar', 'einsum', 'gemm'}:
+    if postprocess_assembly not in {'scalar', 'einsum', 'gemm', 'fused'}:
         print(
             f"  [SOLVER][WARN] postprocess_assembly={postprocess_assembly!r} invalido; usando 'gemm'.",
             flush=True,
@@ -1331,8 +1331,8 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         phase = np.asarray(p["phase_array"], dtype=np.uint8)
         ori   = np.asarray(p["ori_array"], dtype=DTYPE)
     else:
-        phase = np.load(PHASE_PATH).astype(np.uint8)
-        ori   = np.load(ORI_PATH).astype(DTYPE)
+        phase = np.load(PHASE_PATH).astype(np.uint8, copy=False)
+        ori   = np.load(ORI_PATH).astype(DTYPE, copy=False)
     input_loading_s = time.perf_counter() - io_t0
     record_gpu_memory("after_input")
 
@@ -1677,7 +1677,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
     displacement_compatible = (
         use_gpu and real_dtype == np.dtype('float32') and solver_fft_form == 'r'
         and projection_storage == 'direct' and cfield_indexed
-        and cupy_unscaled_fft_pair and cupy_reference_eta == 1.0
+        and cupy_unscaled_fft_pair
         and load_batch_size == 1 and not p.get('internal_load_parallel', False)
         and p.get('solver_callback', 'none') == 'none'
         and not solution_sensitivity_requested
@@ -1752,6 +1752,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         'solver':      {
             'elasticity_krylov_factory': krylov_factory,
             'linear_preconditioning': linear_preconditioning,
+            'linear_kernel_fusion': bool(p.get('linear_kernel_fusion', True)),
             'kind': 'CG',
             'tol': solver_rtol,
             'rtol': solver_rtol,
@@ -1774,8 +1775,6 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         },
     }
 
-    if cupy_reference_eta != 1.0:
-        problem_conf['solver']['cupy_reference_eta'] = cupy_reference_eta
     prob = Problem(problem_conf)
 
     if solver_verbose:
@@ -2014,12 +2013,12 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             "linear_formulation": linear_formulation,
             "linear_formulation_requested": requested_formulation,
             "linear_preconditioning": linear_preconditioning if linear_formulation == 'displacement' else None,
+            "linear_kernel_fusion": bool(linear_formulation == 'displacement'
+                and linear_preconditioning == 'symmetric_fused' and p.get('linear_kernel_fusion', True)),
             "use_cfield_material_fast_path": bool(use_cfield_material_fast_path),
             "cupy_fused_matvec": bool(cupy_fused_matvec),
             "cupy_unscaled_fft_pair": bool(cupy_unscaled_fft_pair),
             "cupy_reuse_inverse_input": bool(cupy_reuse_inverse_input),
-            "cupy_matrix_reference": cupy_matrix_reference,
-            "cupy_reference_eta": cupy_reference_eta,
             "cupy_lazy_scalars": bool(cupy_lazy_scalars),
             "cupy_fused_cg_updates": bool(cupy_fused_cg_updates),
             "cupy_fused_xr_rr": bool(cupy_fused_xr_rr),

@@ -1,0 +1,84 @@
+         106283 function calls (103807 primitive calls) in 3.038 seconds
+
+   Ordered by: cumulative time
+   List reduced from 473 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    3.038    3.038 profile_linear_pipeline.py:63(execute)
+        1    0.001    0.001    3.037    3.037 fft_solver.py:1158(solve_homogenization)
+        1    0.000    0.000    3.025    3.025 problem.py:75(calculate)
+        1    0.000    0.000    3.025    3.025 {built-in method builtins.eval}
+        1    0.000    0.000    3.025    3.025 <string>:1(<module>)
+        1    0.000    0.000    3.025    3.025 applications.py:1067(elasticity)
+        6    0.000    0.000    2.985    0.497 applications.py:472(solve_load_elasticity)
+        6    0.001    0.000    2.913    0.486 linear_coordinates.py:20(solve)
+        6    0.021    0.003    2.831    0.472 profile_linear_pipeline.py:68(timed_cg)
+        6    0.002    0.000    2.810    0.468 linear_krylov.py:125(fused_cg)
+      288    0.001    0.000    2.355    0.008 linear_coordinates.py:45(action_and_dot)
+      288    2.286    0.008    2.309    0.008 linear_krylov.py:79(adjoint_and_dot)
+      288    0.391    0.001    0.394    0.001 linear_krylov.py:117(fused_update)
+       24    0.135    0.006    0.135    0.006 linear_coordinates.py:37(dot)
+       16    0.056    0.004    0.056    0.004 fft.py:174(cupy_synchronize)
+        1    0.000    0.000    0.038    0.038 postprocess.py:8(postprocess)
+        1    0.000    0.000    0.038    0.038 postprocess.py:64(assembly_matrix)
+        1    0.000    0.000    0.036    0.036 fft.py:224(to_host_array)
+        1    0.000    0.000    0.036    0.036 __init__.py:782(asnumpy)
+        1    0.036    0.036    0.036    0.036 {method 'get' of 'cupy._core.core._ndarray_base' objects}
+      624    0.012    0.000    0.034    0.000 fft.py:84(_component_fft)
+      282    0.003    0.000    0.025    0.000 linear_krylov.py:65(strain_updated_direction)
+      312    0.000    0.000    0.020    0.000 fft.py:402(irfftn_unscaled_cached)
+      312    0.000    0.000    0.018    0.000 fft.py:382(rfftn_cached)
+     3744    0.016    0.000    0.016    0.000 {method 'fft' of 'cupy.cuda.cufft.PlanNd' objects}
+      300    0.000    0.000    0.014    0.000 objects.py:344(__call__)
+      300    0.000    0.000    0.014    0.000 objects.py:347(__mul__)
+      300    0.001    0.000    0.013    0.000 objects.py:901(indexed_sym21_product)
+      619    0.000    0.000    0.012    0.000 objects.py:82(copy)
+      619    0.002    0.000    0.011    0.000 objects.py:75(_copy)
+        6    0.000    0.000    0.011    0.002 objects.py:427(set_mean)
+        6    0.000    0.000    0.010    0.002 objects.py:395(mean)
+       36    0.000    0.000    0.009    0.000 objects.py:21(_scalar_to_float)
+       36    0.009    0.000    0.009    0.000 {method 'item' of 'cupy._core.core._ndarray_base' objects}
+      628    0.001    0.000    0.008    0.000 objects.py:133(__init__)
+      312    0.005    0.000    0.007    0.000 objects.py:842(indexed_sym21_array)
+      636    0.000    0.000    0.007    0.000 sumprod.py:11(sum)
+      636    0.006    0.000    0.006    0.000 {method 'sum' of 'cupy._core.core._ndarray_base' objects}
+      630    0.001    0.000    0.006    0.000 objects.py:85(_set_fft)
+        1    0.001    0.001    0.006    0.006 fft_solver.py:960(_build_cfield_gpu)
+
+
+         106283 function calls (103807 primitive calls) in 3.038 seconds
+
+   Ordered by: internal time
+   List reduced from 473 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      288    2.286    0.008    2.309    0.008 linear_krylov.py:79(adjoint_and_dot)
+      288    0.391    0.001    0.394    0.001 linear_krylov.py:117(fused_update)
+       24    0.135    0.006    0.135    0.006 linear_coordinates.py:37(dot)
+       16    0.056    0.004    0.056    0.004 fft.py:174(cupy_synchronize)
+        1    0.036    0.036    0.036    0.036 {method 'get' of 'cupy._core.core._ndarray_base' objects}
+        6    0.021    0.003    2.831    0.472 profile_linear_pipeline.py:68(timed_cg)
+     3744    0.016    0.000    0.016    0.000 {method 'fft' of 'cupy.cuda.cufft.PlanNd' objects}
+      624    0.012    0.000    0.034    0.000 fft.py:84(_component_fft)
+       36    0.009    0.000    0.009    0.000 {method 'item' of 'cupy._core.core._ndarray_base' objects}
+      636    0.006    0.000    0.006    0.000 {method 'sum' of 'cupy._core.core._ndarray_base' objects}
+       16    0.006    0.000    0.006    0.000 {built-in method cupy._core.core.array}
+      312    0.005    0.000    0.007    0.000 objects.py:842(indexed_sym21_array)
+     1605    0.004    0.000    0.004    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+     1861    0.003    0.000    0.003    0.000 basic.py:13(empty)
+      282    0.003    0.000    0.025    0.000 linear_krylov.py:65(strain_updated_direction)
+      600    0.003    0.000    0.004    0.000 linear_krylov.py:53(_args)
+      624    0.002    0.000    0.002    0.000 fft.py:61(_use_component_fft)
+        6    0.002    0.000    2.810    0.468 linear_krylov.py:125(fused_cg)
+      619    0.002    0.000    0.011    0.000 objects.py:75(_copy)
+     4354    0.001    0.000    0.002    0.000 copy.py:61(copy)
+      624    0.001    0.000    0.004    0.000 fft.py:238(_cupy_fft_plan_key)
+      630    0.001    0.000    0.004    0.000 objects.py:117(get_N_real)
+        1    0.001    0.001    3.037    3.037 fft_solver.py:1158(solve_homogenization)
+      288    0.001    0.000    2.355    0.008 linear_coordinates.py:45(action_and_dot)
+       22    0.001    0.000    0.001    0.000 {built-in method numpy.zeros}
+      630    0.001    0.000    0.001    0.000 {built-in method _warnings.warn}
+      992    0.001    0.000    0.002    0.000 fromnumeric.py:66(_wrapreduction)
+       12    0.001    0.000    0.001    0.000 objects.py:415(add_mean)
+      628    0.001    0.000    0.008    0.000 objects.py:133(__init__)
+      300    0.001    0.000    0.013    0.000 objects.py:901(indexed_sym21_product)
