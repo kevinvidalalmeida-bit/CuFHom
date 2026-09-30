@@ -3,6 +3,10 @@
 Campaña del 29–30 de septiembre de 2026. GPU RTX 5070 Ti de 16 GB,
 Python 3.12, CuPy 13.6.0, CUDA runtime 12.9.
 
+**Informe histórico de las fusiones y el posprocesado.** La revisión posterior
+añade suavizado tardío, reduce 288 a 276 CG y documenta sus propios tiempos:
+[resultado vigente](../g09_smoothing_20260930/RESULTS.md).
+
 ## Resultado del solver completo con geometría preparada
 
 G09 original **240³**, seis cargas Mandel unitarias, float32 y aceptación
@@ -12,11 +16,11 @@ un caso distinto del benchmark pequeño Vf 15 %, AR 10.
 | Configuración | Mediana, 5 repeticiones | CG totales |
 | --- | ---: | ---: |
 | Base optimizada previa: fusiones nuevas desactivadas, ensamblaje escalar | 3,16535 s | 288 |
-| Predeterminados actuales: fusiones de coordenadas y ensamblaje GPU | **3,03720 s** | **288** |
+| Tras las fusiones de coordenadas y el ensamblaje GPU | **3,03720 s** | **288** |
 
 Reducción de tiempo **4,05 %**; 48 iteraciones por carga en ambos casos.
 La mejora reduce trabajo y tráfico de memoria por iteración y en posprocesado.
-**No se ha demostrado una reducción nueva de iteraciones.**
+Esta etapa no redujo iteraciones; el informe posterior sí documenta una reducción.
 
 Los tiempos incluyen preparación del material a partir de la geometría ya
 compilada, resolución, auditorías, Ceff y escritura del JSON de tiempos. Excluyen
@@ -154,7 +158,7 @@ scripts usan argumentos explícitos y se pueden ejecutar con otros datos.
 
 ## Artículos y siguientes oportunidades
 
-La [revisión de ocho trabajos](../../docs/PAPERS_LINEAR_ACCELERATION_20260929.md)
+La [revisión de artículos](../../docs/PAPERS_LINEAR_ACCELERATION_20260929.md)
 prioriza estudiar una corrección global basada en el operador y particiones
 periódicas de la malla. Debe validarse en varios tipos de microestructura.
 La construcción de bases, su memoria y la aplicación del precondicionador

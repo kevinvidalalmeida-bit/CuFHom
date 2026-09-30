@@ -48,6 +48,8 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
             return Q.adjoint_and_dot(A(B.copy(val=strain)).val, z)
 
         fused_options = {}
+        if mode == 'symmetric_fused':
+            fused_options['residual_smoothing'] = pb.solver.get('linear_residual_smoothing', True)
         if mode == 'symmetric_fused' and pb.solver.get('linear_kernel_fusion', True):
             fused_options['action_and_dot'] = action_and_dot
 
@@ -118,6 +120,7 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
         info = dict(kit=iterations+correction_iterations, norm_res=norm,
                     norm_res_log=[norm], coordinate_iterations=iterations,
                     correction_iterations=correction_iterations, linear_preconditioning=mode,
+                    linear_residual_smoothing=bool(fused_options.get('residual_smoothing', False)),
                     warm_start_requested=x0 is not None,
                     warm_start_accepted=initial is not None,
                     warm_start_projected=x0 is not None,

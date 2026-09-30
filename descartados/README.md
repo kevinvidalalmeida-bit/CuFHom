@@ -30,7 +30,7 @@ Las pruebas normales se limitan a `tests/`.
 ## Decisiones anteriores que se mantienen
 
 Los tiempos siguientes pertenecen a sus campañas históricas; cada comparación
-usa la referencia de esa campaña, no la medición actual de 3,069 s.
+usa la referencia de esa campaña, no los tiempos de la implementación actual.
 
 | Ensayo | Evidencia | Decisión |
 | --- | --- | --- |
@@ -55,6 +55,27 @@ La reducción genérica CuPy con productos float64 elevó el total **3,071 a
 5,635 s** y se retiró. La reducción CUDA por warps ya disponible en el núcleo
 sí mejoró el tiempo y se integró; su prototipo temporal también se archivó.
 [Ensayos y evidencia](posprocesado_20260930/README.md).
+
+## Formulación e iteraciones, 30 de septiembre
+
+Ensayos sobre el mismo G09 240³ y seis cargas, siempre con residuo físico 1e-5.
+Los cribados tienen una medición tras calentamiento; la variante aceptada se
+confirmó con cinco repeticiones alternadas y pruebas adicionales.
+
+| Ensayo | Resultado frente a su base | Estado |
+| --- | --- | --- |
+| [Galerkin con 18 modos Fourier](dos_niveles_20260930/README.md) | Bloque: 4,557 s / 387 CG; balanceado: 6,410 s / 294; base 3,037 s / 288 | Descartados; no equivale a GenEO |
+| [CG por bloques](cg_bloques_20260930/README.md) | 10,343 frente a 3,046 s; 288 aplicaciones en ambos | Descartado |
+| [Residuo conjugado](residuo_conjugado_20260930/README.md) | 276 iteraciones, pero 3,169 frente a 3,034 s | Descartado |
+| [Suavizado continuo](suavizado_continuo_20260930/README.md) | 3,088 frente a 3,032 s | Descartado |
+| [Suavizado fusionado continuo](suavizado_fusionado_20260930/README.md) | 3,047 frente a 3,034 s; cribado sin ganancia clara | Sustituido por activación tardía |
+| [Suavizado tardío](suavizado_integrado_20260930/README.md) | Prototipo: 3,036 → 2,948 s; 288 → 276 CG | Método integrado; solo se archiva el prototipo duplicado |
+| [Reajuste isotrópico](referencia_isotropica_20260930/README.md) | K/G actual ya minimiza aproximadamente la cota material examinada | Sin cambio de referencia |
+
+[Validación y tiempos del código integrado](../benchmarks/g09_smoothing_20260930/RESULTS.md).
+El [manifiesto de esta campaña](manifest_formulaciones_20260930.json) registra
+los prototipos, scripts e informes conservados. Los benchmarks archivados
+fijan el suavizado nuevo a `False` para conservar su referencia histórica.
 
 ## Rutas que siguen activas
 

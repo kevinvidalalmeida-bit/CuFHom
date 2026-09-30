@@ -1,0 +1,491 @@
+{
+  "scope": "Six loads, full Ceff. GPU stage boundaries synchronized. No field export. Disk mode loads existing arrays and rebuilds geometry groups on every call. Compiled mode reuses explicit immutable geometry preparation. First call in this process retains existing filesystem and JIT caches. Load solves include RHS, coordinate setup, CG, physical audits and macro addition.",
+  "import_s": 0.2222369700903073,
+  "gpu_context_init_s": 0.22465071198530495,
+  "inner_cg_instrumented": true,
+  "material_json_read_s": 5.400099325925112e-05,
+  "input_hashing_s": 0.07086142792832106,
+  "geometry_preload_s": 0.01466826198156923,
+  "geometry_compile_s": 0.3440421660197899,
+  "first_call": {
+    "mode": "disk",
+    "repetition": "first_call",
+    "wall_s": 3.2402415809920058,
+    "stages_s": {
+      "input_loading": 0.014989426010288298,
+      "material_build_and_upload": 0.42401994194369763,
+      "projection": 0.00070467300247401,
+      "material_operator": 3.043701872229576e-05,
+      "effective_tensor_assembly": 0.03473990201018751,
+      "output_postprocessing": 0.00019753107335418463,
+      "other_including_timing_json": 0.006868467899039388,
+      "inner_cg": 2.5764588591409847,
+      "rhs_coordinates_audits_macro": 0.18223234289325774
+    },
+    "cg": 276,
+    "Ceff_relative_difference": 0.0,
+    "max_physical_residual": 9.614281679182474e-06
+  },
+  "warmups": [
+    {
+      "mode": "disk",
+      "repetition": "warmup",
+      "wall_s": 3.1395091720623896,
+      "stages_s": {
+        "input_loading": 0.014944672002457082,
+        "material_build_and_upload": 0.3449237518943846,
+        "projection": 0.001159706967882812,
+        "material_operator": 3.151898272335529e-05,
+        "effective_tensor_assembly": 0.03450426005292684,
+        "output_postprocessing": 0.00018732203170657158,
+        "other_including_timing_json": 0.006676536169834435,
+        "inner_cg": 2.5735168448882177,
+        "rhs_coordinates_audits_macro": 0.1635645590722561
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": "warmup",
+      "wall_s": 3.123966485960409,
+      "stages_s": {
+        "input_loading": 2.153916284441948e-06,
+        "material_build_and_upload": 0.34292848396580666,
+        "projection": 0.0011817789636552334,
+        "material_operator": 3.956397995352745e-05,
+        "effective_tensor_assembly": 0.034463342977687716,
+        "output_postprocessing": 0.00019107898697257042,
+        "other_including_timing_json": 0.006094184122048318,
+        "inner_cg": 2.575440917047672,
+        "rhs_coordinates_audits_macro": 0.1636249820003286
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": "warmup",
+      "wall_s": 2.77732545894105,
+      "stages_s": {
+        "input_loading": 2.0030420273542404e-06,
+        "material_build_and_upload": 0.007904180907644331,
+        "projection": 0.0011627130443230271,
+        "material_operator": 2.7231057174503803e-05,
+        "effective_tensor_assembly": 0.034466869896277785,
+        "output_postprocessing": 0.00018698093481361866,
+        "other_including_timing_json": 0.005390593083575368,
+        "inner_cg": 2.565368673764169,
+        "rhs_coordinates_audits_macro": 0.16281621321104467
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    }
+  ],
+  "runs": [
+    {
+      "mode": "disk",
+      "repetition": 0,
+      "wall_s": 3.1328621179563925,
+      "stages_s": {
+        "input_loading": 0.014581239898689091,
+        "material_build_and_upload": 0.3464073369977996,
+        "projection": 0.0011602280428633094,
+        "material_operator": 3.075797576457262e-05,
+        "effective_tensor_assembly": 0.03449019300751388,
+        "output_postprocessing": 0.00018804299179464579,
+        "other_including_timing_json": 0.006501507945358753,
+        "inner_cg": 2.566483245114796,
+        "rhs_coordinates_audits_macro": 0.16301956598181278
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": 0,
+      "wall_s": 3.1241679820232093,
+      "stages_s": {
+        "input_loading": 1.2920936569571495e-06,
+        "material_build_and_upload": 0.3488997070817277,
+        "projection": 0.0011810680152848363,
+        "material_operator": 2.9135029762983322e-05,
+        "effective_tensor_assembly": 0.03455075703095645,
+        "output_postprocessing": 0.00019855296704918146,
+        "other_including_timing_json": 0.006115271826274693,
+        "inner_cg": 2.5683961148606613,
+        "rhs_coordinates_audits_macro": 0.16479608311783522
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": 0,
+      "wall_s": 2.7820885409601033,
+      "stages_s": {
+        "input_loading": 1.4120014384388924e-06,
+        "material_build_and_upload": 0.0051271169213578105,
+        "projection": 0.0011602590093389153,
+        "material_operator": 2.6950961910188198e-05,
+        "effective_tensor_assembly": 0.03452936699613929,
+        "output_postprocessing": 0.00019620894454419613,
+        "other_including_timing_json": 0.005449451156891882,
+        "inner_cg": 2.5723183687077835,
+        "rhs_coordinates_audits_macro": 0.16327940626069903
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": 1,
+      "wall_s": 3.12429973797407,
+      "stages_s": {
+        "input_loading": 2.2440217435359955e-06,
+        "material_build_and_upload": 0.34610644285567105,
+        "projection": 0.0013659140095114708,
+        "material_operator": 3.551691770553589e-05,
+        "effective_tensor_assembly": 0.03459558100439608,
+        "output_postprocessing": 0.00018888502381742,
+        "other_including_timing_json": 0.006183370132930577,
+        "inner_cg": 2.5719784430693835,
+        "rhs_coordinates_audits_macro": 0.16384334093891084
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": 1,
+      "wall_s": 2.7804498529294506,
+      "stages_s": {
+        "input_loading": 1.3420358300209045e-06,
+        "material_build_and_upload": 0.005023261997848749,
+        "projection": 0.0011617520358413458,
+        "material_operator": 2.665992360562086e-05,
+        "effective_tensor_assembly": 0.034541008062660694,
+        "output_postprocessing": 0.00019201007671654224,
+        "other_including_timing_json": 0.005464271758683026,
+        "inner_cg": 2.57079430797603,
+        "rhs_coordinates_audits_macro": 0.16324523906223476
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "disk",
+      "repetition": 1,
+      "wall_s": 3.14100144803524,
+      "stages_s": {
+        "input_loading": 0.01467537705320865,
+        "material_build_and_upload": 0.3471291420282796,
+        "projection": 0.0012554669519886374,
+        "material_operator": 3.289210144430399e-05,
+        "effective_tensor_assembly": 0.03454061795491725,
+        "output_postprocessing": 0.00018856499809771776,
+        "other_including_timing_json": 0.006589932017959654,
+        "inner_cg": 2.573066904791631,
+        "rhs_coordinates_audits_macro": 0.16352255013771355
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": 2,
+      "wall_s": 2.78389738406986,
+      "stages_s": {
+        "input_loading": 1.6030389815568924e-06,
+        "material_build_and_upload": 0.005282839061692357,
+        "projection": 0.0012579619651660323,
+        "material_operator": 2.7330941520631313e-05,
+        "effective_tensor_assembly": 0.034571665921248496,
+        "output_postprocessing": 0.00019198993686586618,
+        "other_including_timing_json": 0.005527570145204663,
+        "inner_cg": 2.573259045020677,
+        "rhs_coordinates_audits_macro": 0.16377737803850323
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "disk",
+      "repetition": 2,
+      "wall_s": 3.1338276049355045,
+      "stages_s": {
+        "input_loading": 0.014635832980275154,
+        "material_build_and_upload": 0.34607696696184576,
+        "projection": 0.001162884058430791,
+        "material_operator": 3.202003426849842e-05,
+        "effective_tensor_assembly": 0.03449545300099999,
+        "output_postprocessing": 0.0001896560424938798,
+        "other_including_timing_json": 0.006479673902504146,
+        "inner_cg": 2.567522935103625,
+        "rhs_coordinates_audits_macro": 0.16323218285106122
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": 2,
+      "wall_s": 3.1135332379490137,
+      "stages_s": {
+        "input_loading": 1.5129335224628448e-06,
+        "material_build_and_upload": 0.34251048986334354,
+        "projection": 0.0011479759123176336,
+        "material_operator": 3.0086957849562168e-05,
+        "effective_tensor_assembly": 0.03449952998198569,
+        "output_postprocessing": 0.00018754205666482449,
+        "other_including_timing_json": 0.006084615248255432,
+        "inner_cg": 2.565832838881761,
+        "rhs_coordinates_audits_macro": 0.16323864611331373
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "disk",
+      "repetition": 3,
+      "wall_s": 3.1307782790390775,
+      "stages_s": {
+        "input_loading": 0.014665907947346568,
+        "material_build_and_upload": 0.346821442944929,
+        "projection": 0.0011481459951028228,
+        "material_operator": 2.8843991458415985e-05,
+        "effective_tensor_assembly": 0.034514519036747515,
+        "output_postprocessing": 0.00018165097571909428,
+        "other_including_timing_json": 0.006527458201162517,
+        "inner_cg": 2.562987315119244,
+        "rhs_coordinates_audits_macro": 0.16390299482736737
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": 3,
+      "wall_s": 3.112834694911726,
+      "stages_s": {
+        "input_loading": 1.8940772861242294e-06,
+        "material_build_and_upload": 0.342570069944486,
+        "projection": 0.0011627740459516644,
+        "material_operator": 3.624800592660904e-05,
+        "effective_tensor_assembly": 0.034474272979423404,
+        "output_postprocessing": 0.00018723204266279936,
+        "other_including_timing_json": 0.006101827835664153,
+        "inner_cg": 2.5651824839878827,
+        "rhs_coordinates_audits_macro": 0.1631178919924423
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": 3,
+      "wall_s": 2.771832076017745,
+      "stages_s": {
+        "input_loading": 1.401989720761776e-06,
+        "material_build_and_upload": 0.0049694409826770425,
+        "projection": 0.0011762790381908417,
+        "material_operator": 2.8353999368846416e-05,
+        "effective_tensor_assembly": 0.03451849601697177,
+        "output_postprocessing": 0.00018865393940359354,
+        "other_including_timing_json": 0.005414176033809781,
+        "inner_cg": 2.562738598207943,
+        "rhs_coordinates_audits_macro": 0.16279667580965906
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "preloaded",
+      "repetition": 4,
+      "wall_s": 3.115193551988341,
+      "stages_s": {
+        "input_loading": 1.5129335224628448e-06,
+        "material_build_and_upload": 0.34184657293371856,
+        "projection": 0.0011394900502637029,
+        "material_operator": 2.9796035960316658e-05,
+        "effective_tensor_assembly": 0.034495091997087,
+        "output_postprocessing": 0.00018527801148593426,
+        "other_including_timing_json": 0.006116714095696807,
+        "inner_cg": 2.567622286849655,
+        "rhs_coordinates_audits_macro": 0.16375680908095092
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "compiled",
+      "repetition": 4,
+      "wall_s": 2.7731347599765286,
+      "stages_s": {
+        "input_loading": 2.1139858290553093e-06,
+        "material_build_and_upload": 0.00503814104013145,
+        "projection": 0.0011958249378949404,
+        "material_operator": 2.7280999347567558e-05,
+        "effective_tensor_assembly": 0.03451196395326406,
+        "output_postprocessing": 0.00018432701472193003,
+        "other_including_timing_json": 0.0054021719843149185,
+        "inner_cg": 2.5639388408744708,
+        "rhs_coordinates_audits_macro": 0.1628340951865539
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    },
+    {
+      "mode": "disk",
+      "repetition": 4,
+      "wall_s": 3.131793521111831,
+      "stages_s": {
+        "input_loading": 0.01440837502013892,
+        "material_build_and_upload": 0.34480525692924857,
+        "projection": 0.0012658779742196202,
+        "material_operator": 3.117893356829882e-05,
+        "effective_tensor_assembly": 0.03448507294524461,
+        "output_postprocessing": 0.00018162094056606293,
+        "other_including_timing_json": 0.00658784038387239,
+        "inner_cg": 2.566364653990604,
+        "rhs_coordinates_audits_macro": 0.1636636439943686
+      },
+      "cg": 276,
+      "Ceff_relative_difference": 0.0,
+      "max_physical_residual": 9.614281679182474e-06
+    }
+  ],
+  "host_profiles": {},
+  "median_s": {
+    "disk": 3.1328621179563925,
+    "preloaded": 3.115193551988341,
+    "compiled": 2.7804498529294506
+  },
+  "median_stages_s": {
+    "disk": {
+      "input_loading": 0.014635832980275154,
+      "material_build_and_upload": 0.3464073369977996,
+      "projection": 0.001162884058430791,
+      "material_operator": 3.117893356829882e-05,
+      "effective_tensor_assembly": 0.03449545300099999,
+      "output_postprocessing": 0.00018804299179464579,
+      "other_including_timing_json": 0.006527458201162517,
+      "inner_cg": 2.566483245114796,
+      "rhs_coordinates_audits_macro": 0.16352255013771355
+    },
+    "preloaded": {
+      "input_loading": 1.5129335224628448e-06,
+      "material_build_and_upload": 0.342570069944486,
+      "projection": 0.0011627740459516644,
+      "material_operator": 3.0086957849562168e-05,
+      "effective_tensor_assembly": 0.03449952998198569,
+      "output_postprocessing": 0.00018754205666482449,
+      "other_including_timing_json": 0.006115271826274693,
+      "inner_cg": 2.567622286849655,
+      "rhs_coordinates_audits_macro": 0.16375680908095092
+    },
+    "compiled": {
+      "input_loading": 1.4120014384388924e-06,
+      "material_build_and_upload": 0.00503814104013145,
+      "projection": 0.0011762790381908417,
+      "material_operator": 2.7280999347567558e-05,
+      "effective_tensor_assembly": 0.03452936699613929,
+      "output_postprocessing": 0.00019198993686586618,
+      "other_including_timing_json": 0.005449451156891882,
+      "inner_cg": 2.57079430797603,
+      "rhs_coordinates_audits_macro": 0.16324523906223476
+    }
+  },
+  "shape": [
+    240,
+    240,
+    240
+  ],
+  "gpu": "NVIDIA GeForce RTX 5070 Ti",
+  "cupy": "13.6.0",
+  "input_sha256": {
+    "phase": "bbf5007d40d11873e3e9d38ab184e1d41acf8b4bed221b9d6cf05413cc4bbc66",
+    "orientation": "6f8a4e64e6147889a6a1efd4457267aa572012cd92533baeb752f797fd4d793c",
+    "material": "c82530f1907250fcad584339aa08d8a810e96ab2b29bf06a2f2de4682cae0de6"
+  },
+  "inputs_unchanged": true,
+  "source_sha256": {
+    "src/cufhom/__init__.py": "599e2959f85510bb9a5f81f2bfd7934bf409acba17e224ac5aba75c2f0061288",
+    "src/cufhom/runtime.py": "e95672bbd0e8c5655de80bdfea9eba33ed23c088aa20188a25740ba4250d3c3a",
+    "src/cufhom/engineering.py": "48d1dbd0d874dddcb6e1cb128d4cad0945e5db107ceeb66b663ee0a6bcea4767",
+    "src/cufhom_core/problem.py": "c856da497aaf7620462849b13251e42831711a0fe8dcbfb23b12d4d95eb1dbab",
+    "src/cufhom_core/__init__.py": "4e0dcb8cdcea79147b5f2c51517899b8d460ae3af7a5aed3bafa5d939adcff5a",
+    "src/cufhom_core/projections.py": "d29ec5101622203916e334744918894ccbf85d238120202a24846e28b5db05ef",
+    "src/cufhom_core/materials.py": "e87aac137c4a6d252dcd60dc67c5b19245aa4e25084db18bfa9e9118401fb71f",
+    "src/cufhom_core/postprocess.py": "dc91bae267b884dc007f74283246024cd1596d8ef0ed6021f36847c15f1930d1",
+    "src/cufhom_core/trigpol.py": "48ee0c9c420f611162a0c7781f45d17e76edc9fefb1fbfed88921d11c27f5504",
+    "src/cufhom_core/applications.py": "4865e5f250f6fb8ee4b7ebe951cc0fb5d849573601faacf7d6c3669c55fdb008",
+    "src/cufhom/pipeline/sam_generator.py": "e227d00f66ef5614dead86b686b19a40596323b02265a7fe7b632e1487e4c464",
+    "src/cufhom/pipeline/sam_neighbor_cache.py": "ad3e5fa1692e4838e22b9a19f488f14d00a3c5e1095b6643e1ab3fdef7f11deb",
+    "src/cufhom/pipeline/nonlinear_material.py": "00c6ce635a09b1dfba9825723580228703b86d4a14a1afeb4459f1863c2cae5b",
+    "src/cufhom/pipeline/nonlinear_projection.py": "82260d6b54150e4c4b4a737fec48eb954f6166833f092cedd97c119013029c63",
+    "src/cufhom/pipeline/sam_periodic_kernels.py": "5183a874a4cdf963786141aee1f168145daf4afb05079d805019bc0bd8bd6db8",
+    "src/cufhom/pipeline/nonlinear_coordinates.py": "c04d698cc2326987ef9a6b3dcdb6fbf44a841718242cd08cd8235390de2625ad",
+    "src/cufhom/pipeline/nonlinear_krylov.py": "c087974afc2febccc73ec94db15851ff0dd1e4c1c1b67a9fa23a3730e0dcc199",
+    "src/cufhom/pipeline/nonlinear_reference.py": "d4944ee67ed137dfd8570b097d407aa8f058301d6f58b876d878dbb4ef3c59f6",
+    "src/cufhom/pipeline/generate_sobol_designs.py": "0a1f0541deee99bd1fd06b3951912a25c75b8ef85997652b0e691b680bbcb602",
+    "src/cufhom/pipeline/nonlinear_solver.py": "6c1971490aa00ab11bbc8ffbf5e91cca4ad974dced82cd41bd3d4b6941e4384a",
+    "src/cufhom/pipeline/fft_solver.py": "1b6ec5eb1c15f4f57389f5d9931647601f0a15aee4a828e1b765fd4edae195cd",
+    "src/cufhom/pipeline/linear_fusions.py": "9f335ed9cf2a3bb599ef7dbb039c628117fd2fe61c31e71b3da86b14e7cf3054",
+    "src/cufhom/pipeline/__init__.py": "f602067cc5648ccee49c6534b77ccbabce23d644c148a1bb9505de5179b71069",
+    "src/cufhom/pipeline/workflow.py": "628b711edeedfb70ff6c634fd1dea7944edfa70f2a69ed470689f1defead9c23",
+    "src/cufhom/pipeline/sam_flexible.py": "9cffd8fbb8a1cf23a7110192c29f8c402d81fd1e7d1f4b553e6fc31120b02072",
+    "src/cufhom/pipeline/sobol_gpu.py": "660f8cb852322e7700ee342951cc7c8de87b8ee40f3db01d653815906716c245",
+    "src/cufhom/pipeline/sam_periodic_audit.py": "c0d5722cee8047d3b5a717d99d9ccfd6be1f93ee80651a56c438266ef42fabbc",
+    "src/cufhom/pipeline/rve_generator.py": "085b0c3b963c9ddc7a7f1c8f33e42aa6fd073eabdd06ba6a66a12a73c392977b",
+    "src/cufhom/pipeline/sam_orientation.py": "e4f90a80ffc756b70e94b20ca97137b86178f191ab450389772547b9ed515f0e",
+    "src/cufhom/pipeline/composite_voxels.py": "621e28adf3feb820b57016de58564444f989bb22207a0c17f61172fa1b7e1299",
+    "src/cufhom/pipeline/nonlinear_curves.py": "2b0a1d987dbc394890f77eede2f8ae62b39a7b3560aa06885483d996cb77b681",
+    "src/cufhom/pipeline/linear_defaults.py": "34aac5ef6c0e53e0541417e42fe1638bb18d902c2014b50af4121a8564968f18",
+    "src/cufhom/pipeline/sam_contact_energy.py": "703e9314934a12cf74d179b55f7c20dbd430ff787ebe47a81590a843006f7ce8",
+    "src/cufhom/pipeline/sam_acceleration_kernels.py": "6e5a9abf0076f5738a901e989fcda63f496bca5718e2a52666f7b12ea7efb5bf",
+    "src/cufhom/pipeline/sam_voxel_moments.py": "1a1fd9e5e114f2c0740193c2ccfa9f497d0c6c41a8ce661cd37c7ecb8f88ba0c",
+    "src/cufhom/pipeline/sam_paper_reference.py": "dda85948c93fb8e0a0733f12b685c089c6eded4e81342bcc2e5d7d83efdbed22",
+    "src/cufhom/pipeline/sam_staged_insertion.py": "0d804553c8ae7182e808b272deb696ba26f87582602159d37d9e0fba31c3a856",
+    "src/cufhom/pipeline/linear_krylov.py": "5cc023a9c5cfc02d24ae24cc9b74937f70dc393f62f73b1cc22d574f88639c2b",
+    "src/cufhom/pipeline/sam_acceleration.py": "e956631eeef4968a33a8c87420c982769480a7d3de72a799a134d8c943ecd796",
+    "src/cufhom/pipeline/linear_coordinates.py": "e696c94d50a4a3e6033588d59977d2e26ccfbaf4476ddee1be82fb998185ca1d",
+    "src/cufhom/cli/__init__.py": "97ef40d8aca8698a66ca2c9e57a4acaa3be19c7eeb6bf98f951fe521e3cfa525",
+    "src/cufhom/cli/sobol.py": "a495f6cf2c2a8b78fc7961a3cf923b6d31746a60f13cdccaf02d9448886e6823",
+    "src/cufhom/cli/contacts.py": "f57ef7f99b97b6d7aed78beb9ae37b1eb574ac93deed9e82d2f81ba6af6fe074",
+    "src/cufhom/cli/geometry.py": "a1745ceae2b658622eb3c39f7072429bc456e9f011dad6c50900a1265b22f441",
+    "src/cufhom_core/mechanics/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/cufhom_core/mechanics/matcoef.py": "90eac7832e42ad8f23ff3a3cea877a4ad7ee1f150020a5b5434073c0f4976a0f",
+    "src/cufhom_core/general/cupy_cg_reduction.py": "2ebac517d4e734561696dcf5406949e08babd56f30e67e6c666e10862a505c24",
+    "src/cufhom_core/general/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/cufhom_core/general/solver.py": "65a1357cee0dd04561f5a52cc4cda8496556768acb44ffe53a1075e7383f0bd5",
+    "src/cufhom_core/general/cupy_warp_reduction.py": "c59603b42cb394af529ef85ffba013fcf8cc1b9a3f433cf91de6e4a6a447ec2d",
+    "src/cufhom_core/general/base.py": "d52498bc0af26b57beab8ceec8d7818b3f65bb3d66d6c82c1daa286e4739b76e",
+    "src/cufhom_core/general/solver_pp.py": "b37440627979e7d832d2f76c1e85f3704e1de896acab6dd1569d8e5198f677da",
+    "src/cufhom_core/tensors/fft.py": "7f45d8e3f1cee7b550f7852aa28dbe3b48f69f459e0de2ebc2be0ad3c65880e0",
+    "src/cufhom_core/tensors/projection.py": "03e48eb2ab740c3c52d35a0346f8775e4154851fbfdb48e1b86a696afdb313ea",
+    "src/cufhom_core/tensors/__init__.py": "9ee349f780b792b5d049af85ef4a8ee49a867a6f8e0fd5b4ebcb87f246a5d298",
+    "src/cufhom_core/tensors/objects.py": "27f006c4a7ec425b4e3996b857b081679c99e8847743e7cbd7ba5596a056af10",
+    "src/cufhom_core/tensors/operators.py": "52ec64b6106049413a29fe34a0c7ca9ba99ba4236d786eff8519e95279bd5ba8",
+    "src/cufhom_core/matvecs/__init__.py": "ec45026482d88e3fe50fefd303be423cedde3fe13cf4e990619feec961ebd572",
+    "src/cufhom_core/matvecs/objects.py": "6ee131cae0b26dde38b0958769e14f297423f97ededb91d1b053e89e70f56730"
+  },
+  "benchmark_sha256": "47167b33878480a5618495a2bf16ac5108655d876114411e2cae42dfd69af28f"
+}

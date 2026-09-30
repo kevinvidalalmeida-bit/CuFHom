@@ -1753,6 +1753,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             'elasticity_krylov_factory': krylov_factory,
             'linear_preconditioning': linear_preconditioning,
             'linear_kernel_fusion': bool(p.get('linear_kernel_fusion', True)),
+            'linear_residual_smoothing': bool(p.get('linear_residual_smoothing', True)),
             'kind': 'CG',
             'tol': solver_rtol,
             'rtol': solver_rtol,
@@ -2015,6 +2016,8 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             "linear_preconditioning": linear_preconditioning if linear_formulation == 'displacement' else None,
             "linear_kernel_fusion": bool(linear_formulation == 'displacement'
                 and linear_preconditioning == 'symmetric_fused' and p.get('linear_kernel_fusion', True)),
+            "linear_residual_smoothing": bool(linear_formulation == 'displacement'
+                and linear_preconditioning == 'symmetric_fused' and p.get('linear_residual_smoothing', True)),
             "use_cfield_material_fast_path": bool(use_cfield_material_fast_path),
             "cupy_fused_matvec": bool(cupy_fused_matvec),
             "cupy_unscaled_fft_pair": bool(cupy_unscaled_fft_pair),

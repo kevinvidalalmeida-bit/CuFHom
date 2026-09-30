@@ -114,19 +114,44 @@ extern "C" __global__ void update_rr(const float* p, const float* ap,
 '''
 
 
-def fused_update(p, ap, alpha, x, r, partial):
-    if 'update' not in _KERNELS:
-        _KERNELS['update'] = cp.RawKernel(_UPDATE, 'update_rr')
-    _KERNELS['update']((partial.size,), (256,),
-        (p, ap, np.float32(alpha), x, r, partial, np.int64(r.nbytes//4)))
+def fused_update(p, ap, alpha, x, r, partial, smoothing=None):
+    key = 'update' if smoothing is None else 'update_smooth'
+    if key not in _KERNELS:
+        code = _UPDATE
+        if smoothing is not None:
+            code = replace_once(code, 'double* partial, long long count)',
+                'double* partial, long long count, float* y, float weight)')
+            # Complete the PREVIOUS smoothing step before changing x. Its
+            # weight was only known after the preceding residual reduction.
+            code = replace_once(code, 'x[i]+=alpha*p[i];',
+                'float xi=x[i]; y[i]+=weight*(xi-y[i]); x[i]=xi+alpha*p[i];')
+        _KERNELS[key] = cp.RawKernel(code, 'update_rr')
+    args = (p, ap, np.float32(alpha), x, r, partial, np.int64(r.nbytes//4))
+    if smoothing is not None:
+        args += (smoothing[0], np.float32(smoothing[1]))
+    _KERNELS[key]((partial.size,), (256,), args)
     return float(cp.sum(partial, dtype=cp.float64))
 
 
+def _finish_smoothing(x, y, weight):
+    if 'smooth' not in _KERNELS:
+        _KERNELS['smooth'] = cp.ElementwiseKernel('T x, float32 weight', 'T y',
+            'y = y + weight * (x-y);', 'linear_cg_finish_smoothing')
+    _KERNELS['smooth'](x, np.float32(weight), y)
+
+
 def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False,
-             precondition=None, initial=None, action_and_dot=None):
-    """Classical CG/PCG with fused x/r update, true residual and reliable restart."""
+             precondition=None, initial=None, action_and_dot=None, residual_smoothing=False):
+    """CG/PCG with true-residual restart and optional late residual smoothing.
+
+    Smoothing uses Euclidean orthogonality of ordinary CG residuals, so it
+    requires coordinates that already contain the symmetric preconditioner.
+    Its harmonic residual estimate is NEVER an acceptance test in float32.
+    """
     if xp is not cp or rhs.dtype not in (cp.complex64, cp.float32) or project is not None or initial is not None:
         raise ValueError('Fused linear CG requires zero-start complex64/float32 GPU vectors')
+    if residual_smoothing and precondition is not None:
+        raise ValueError('Residual smoothing requires symmetrically preconditioned coordinates')
     x = cp.zeros_like(rhs); r = rhs.copy()
     rr = dot(r, r); limit = tolerance*tolerance*rr
     if rr == 0:
@@ -136,6 +161,7 @@ def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False
     rz = dot(r, z) if precondition else rr
     p = z.copy()
     direction = None
+    y, estimate, weight = None, rr, 0.
     for i in range(maxiter):
         if action_and_dot is None:
             ap = action(p); pap = dot(p, ap)
@@ -146,14 +172,32 @@ def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False
             direction = None
         if not np.isfinite([pap, rz]).all() or min(pap, rz) <= 0:
             raise NonlinearConvergenceError('Fused linear CG lost positivity')
-        new = fused_update(p, ap, rz/pap, x, r, partial)
-        if not np.isfinite(new):
+        update_args = () if y is None else ((y, weight),)
+        new = fused_update(p, ap, rz/pap, x, r, partial, *update_args)
+        if not np.isfinite(new) or new < 0:
             raise NonlinearConvergenceError('Nonfinite fused linear residual')
-        if new <= limit:
+        estimate = new if y is None else estimate
+        if residual_smoothing:
+            if y is None:
+                # Spend an extra vector pass only in the final decade of
+                # residual norms. The factor is independent of the material,
+                # mesh, geometry and requested tolerance.
+                if limit < new <= 100*limit:
+                    y, weight = x.copy(), 0.
+            else:
+                weight = estimate/(estimate+new)
+                estimate = weight*new
+        if estimate <= limit:
+            if y is not None:
+                _finish_smoothing(x, y, weight)
+                x = y
             r = rhs-action(x)
             new = dot(r, r)
             if new <= limit:
                 return x, i+1
+            # Reset both sequences after replacing the recursive residual.
+            # x owns the old y buffer; a later smoothing start makes a copy.
+            y, estimate, weight = None, new, 0.
             z = precondition(r) if precondition else r
             next_rz = dot(r, z) if precondition else new
             p = z.copy()

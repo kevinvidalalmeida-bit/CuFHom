@@ -1,0 +1,49 @@
+{
+  "scope": "Upper bound from pointwise constitutive ratios; not a certified condition number of the actual FFT matrix. Isotropic reference is rotation invariant, so the two local phase tensors suffice for this material.",
+  "current_ratio": 3.0984227648972538,
+  "current_bound": 80.32008500364036,
+  "minimizer_ratio": 3.0984103010201927,
+  "optimized_bound": 80.3201153439949,
+  "search_log_ratio_bounds": [
+    -2,
+    4
+  ],
+  "scan": [
+    {
+      "ratio": 0.4,
+      "bound": 135.5141128322562
+    },
+    {
+      "ratio": 0.7,
+      "bound": 107.52797272847073
+    },
+    {
+      "ratio": 1.0,
+      "bound": 96.70817082555938
+    },
+    {
+      "ratio": 1.5,
+      "bound": 88.51321136911997
+    },
+    {
+      "ratio": 2.0,
+      "bound": 84.50545642847669
+    },
+    {
+      "ratio": 3.0,
+      "bound": 80.56769080915805
+    },
+    {
+      "ratio": 4.0,
+      "bound": 101.50683149249065
+    },
+    {
+      "ratio": 6.0,
+      "bound": 148.54408064883782
+    },
+    {
+      "ratio": 10.0,
+      "bound": 242.6698137596239
+    }
+  ]
+}

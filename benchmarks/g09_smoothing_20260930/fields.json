@@ -1,0 +1,42 @@
+{
+  "scope": "Complete fluctuation strain fields; separate from performance measurements.",
+  "fields": [
+    {
+      "load_id": 0,
+      "relative_l2": 1.863144740936908e-05,
+      "max_difference_over_reference_max": 1.1869240510901367e-05
+    },
+    {
+      "load_id": 1,
+      "relative_l2": 1.8550049306756164e-05,
+      "max_difference_over_reference_max": 9.83401830606859e-06
+    },
+    {
+      "load_id": 2,
+      "relative_l2": 1.8583971257309057e-05,
+      "max_difference_over_reference_max": 1.7338706544411457e-05
+    },
+    {
+      "load_id": 3,
+      "relative_l2": 1.779485675963755e-05,
+      "max_difference_over_reference_max": 1.770779575032996e-05
+    },
+    {
+      "load_id": 4,
+      "relative_l2": 1.829777063379694e-05,
+      "max_difference_over_reference_max": 1.676699105558617e-05
+    },
+    {
+      "load_id": 5,
+      "relative_l2": 1.8314611025033346e-05,
+      "max_difference_over_reference_max": 1.2039256732771914e-05
+    }
+  ],
+  "Ceff_relative_difference": 5.510912010276789e-08,
+  "input_sha256": [
+    "bbf5007d40d11873e3e9d38ab184e1d41acf8b4bed221b9d6cf05413cc4bbc66",
+    "6f8a4e64e6147889a6a1efd4457267aa572012cd92533baeb752f797fd4d793c",
+    "c82530f1907250fcad584339aa08d8a810e96ab2b29bf06a2f2de4682cae0de6"
+  ],
+  "inputs_unchanged": true
+}

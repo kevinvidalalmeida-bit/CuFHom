@@ -64,7 +64,8 @@ def test_fused_maps_cpu_adjoint_and_owned_outputs(shape, dtype):
     np.testing.assert_array_equal(cp.asnumpy(strain), saved_strain)
 
 
-def test_cg_reliable_restart_with_deferred_direction(monkeypatch):
+@pytest.mark.parametrize('smoothing', [False, True])
+def test_cg_reliable_restart_with_deferred_direction(monkeypatch, smoothing):
     diagonal = cp.linspace(1., 10., 129, dtype=cp.float32)
     rhs = cp.ones(129, cp.complex64)
     def dot(a, b):
@@ -87,13 +88,62 @@ def test_cg_reliable_restart_with_deferred_direction(monkeypatch):
         true_value = original_update(*a)
         return 0. if count == 1 else true_value
     monkeypatch.setattr(krylov, 'fused_update', false_recursive_once)
-    x, iterations = fused_cg(action, rhs, dot, 1e-5, 100, cp, action_and_dot=action_and_dot)
+    x, iterations = fused_cg(action, rhs, dot, 1e-5, 100, cp,
+        action_and_dot=action_and_dot, residual_smoothing=smoothing)
     assert iterations > 2
     assert updates[:2] == [False, False]  # first action and reliable restart
     assert any(updates[2:])
     assert np.sqrt(dot(rhs-action(x), rhs-action(x))/dot(rhs, rhs)) <= 1e-5
     np.testing.assert_allclose(cp.asnumpy(x), 1/cp.asnumpy(diagonal), rtol=5e-5)
     np.testing.assert_array_equal(cp.asnumpy(rhs), np.ones(129))
+
+
+@pytest.mark.parametrize('false_estimate', [False, True])
+def test_late_smoothing_dense_spd_and_replacement(monkeypatch, false_estimate):
+    rng = np.random.default_rng(3009)
+    q, _ = np.linalg.qr(rng.normal(size=(129, 129)))
+    matrix = (q*np.geomspace(1., 80., 129))@q.T
+    b = rng.normal(size=129).astype(np.float32)
+    a, rhs = cp.asarray(matrix, dtype=cp.float32), cp.asarray(b)
+    def dot(x, y):
+        return float(cp.sum(x.astype(cp.float64)*y.astype(cp.float64)))
+    original = krylov.fused_update
+    calls, corrupted = [], False
+    def observed(*args):
+        nonlocal corrupted
+        norm = original(*args)
+        active = len(args) == 7
+        calls.append(active)
+        # Corrupt the estimate AFTER smoothing starts, so the audit must
+        # reset the delayed blend as well as the CG search direction.
+        if active and false_estimate and not corrupted:
+            corrupted = True
+            return 0.
+        return norm
+    monkeypatch.setattr(krylov, 'fused_update', observed)
+    x, _ = fused_cg(lambda v: a@v, rhs, dot, 1e-5, 250, cp, residual_smoothing=True)
+    result = cp.asnumpy(x).astype(np.float64)
+    assert not calls[0] and any(calls)
+    if false_estimate:
+        assert corrupted and not calls[calls.index(True)+1]
+    # Independent CPU64 equation and solution, rather than the recurrence.
+    assert np.linalg.norm(b-matrix@result)/np.linalg.norm(b) < 1.1e-5
+    ref = np.linalg.solve(matrix, b)
+    assert np.linalg.norm(result-ref)/np.linalg.norm(ref) < 8e-5
+    np.testing.assert_array_equal(cp.asnumpy(rhs), b)
+
+
+def test_smoothing_zero_rhs_budget_and_preconditioning():
+    dot = lambda a, b: float(cp.vdot(a, b).real)
+    rhs = cp.zeros(16, cp.complex64)
+    x, iterations = fused_cg(lambda v: v, rhs, dot, 1e-5, 10, cp, residual_smoothing=True)
+    assert iterations == 0 and not bool(cp.any(x))
+    rhs[:] = 1
+    with pytest.raises(NonlinearConvergenceError, match='true residual'):
+        fused_cg(lambda v: cp.arange(1, 17)*v, rhs, dot, 1e-5, 1, cp, residual_smoothing=True)
+    with pytest.raises(ValueError, match='symmetrically'):
+        fused_cg(lambda v: v, rhs, dot, 1e-5, 10, cp,
+            precondition=lambda v: v, residual_smoothing=True)
 
 
 def test_fused_cg_rejects_nonpositive_product():

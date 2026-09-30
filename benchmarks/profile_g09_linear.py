@@ -23,6 +23,7 @@ VERIFIED_SETTINGS = dict(
     postprocess_assembly='scalar', force_disk_cfield=False,
     linear_formulation='displacement', linear_preconditioning='symmetric_fused',
     linear_kernel_fusion=False,  # frozen baseline before the 2026-09-29 fusions
+    linear_residual_smoothing=False,  # frozen baseline before the 2026-09-30 smoothing
 )
 
 
@@ -38,6 +39,8 @@ def parser():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--repeats', type=int, default=3)
     p.add_argument('--defaults', action='store_true', help='Compare minimal GPU parameters too')
+    p.add_argument('--compare-smoothing', action='store_true',
+                   help='Compare current defaults with only residual smoothing disabled')
     return p
 
 
@@ -59,9 +62,13 @@ def run(args, variants=None):
         solver_atol=0., solver_maxiter=1000, require_convergence=True, solver_verbose=False,
         **{k: material[k] for k in ('Em', 'nu_m', 'Ef_L', 'Ef_T', 'nu_LT', 'nu_TT', 'G_LT')})
     if variants is None:
-        variants = dict(verified=(VERIFIED_SETTINGS, nullcontext))
-        if args.defaults:
-            variants['defaults'] = ({}, nullcontext)
+        if args.compare_smoothing:
+            variants = dict(previous=({'linear_residual_smoothing': False}, nullcontext),
+                            defaults=({}, nullcontext))
+        else:
+            variants = dict(verified=(VERIFIED_SETTINGS, nullcontext))
+            if args.defaults:
+                variants['defaults'] = ({}, nullcontext)
     device = cp.cuda.runtime.getDeviceProperties(cp.cuda.Device().id)['name']
     report = dict(shape=list(phase.shape), vf=float(phase.mean()), material=material,
         paths={k: str(v.resolve()) for k, v in files.items()}, input_sha256=hashes,

@@ -1,0 +1,144 @@
+[
+  {
+    "case": "laminate",
+    "kind": "base",
+    "radius": 0,
+    "relative_Ceff_error": 1.1593231362013056e-07,
+    "cg": 17,
+    "coarse": []
+  },
+  {
+    "case": "laminate",
+    "kind": "block",
+    "radius": 1,
+    "relative_Ceff_error": 1.1470069434477538e-07,
+    "cg": 100,
+    "coarse": [
+      {
+        "kind": "block",
+        "radius": 1,
+        "rank": 18,
+        "setup_s": 0.19209913699887693,
+        "coarse_symmetry": 3.5538365265610465e-08,
+        "coarse_eigenvalues": [
+          1.5413216676016641,
+          11.560634092004564
+        ],
+        "payload_bytes": 2592
+      }
+    ]
+  },
+  {
+    "case": "laminate",
+    "kind": "block",
+    "radius": 2,
+    "relative_Ceff_error": 1.2030635449598272e-07,
+    "cg": 104,
+    "coarse": [
+      {
+        "kind": "block",
+        "radius": 2,
+        "rank": 96,
+        "setup_s": 0.022120078094303608,
+        "coarse_symmetry": 9.337914848878932e-08,
+        "coarse_eigenvalues": [
+          1.0120057742764788,
+          22.110148550468242
+        ],
+        "payload_bytes": 73728
+      }
+    ]
+  },
+  {
+    "case": "laminate",
+    "kind": "balanced",
+    "radius": 1,
+    "relative_Ceff_error": 1.1763286840377444e-07,
+    "cg": 54,
+    "coarse": [
+      {
+        "kind": "balanced",
+        "radius": 1,
+        "rank": 18,
+        "setup_s": 0.0052441220032051206,
+        "coarse_symmetry": 3.5538365265610465e-08,
+        "coarse_eigenvalues": [
+          1.5413216676016641,
+          11.560634092004564
+        ],
+        "payload_bytes": 261792
+      }
+    ]
+  },
+  {
+    "case": "compact",
+    "kind": "base",
+    "radius": 0,
+    "relative_Ceff_error": 3.808950454636352e-08,
+    "cg": 149,
+    "coarse": []
+  },
+  {
+    "case": "compact",
+    "kind": "block",
+    "radius": 1,
+    "relative_Ceff_error": 3.5291334282829643e-08,
+    "cg": 221,
+    "coarse": [
+      {
+        "kind": "block",
+        "radius": 1,
+        "rank": 18,
+        "setup_s": 0.004438375937752426,
+        "coarse_symmetry": 4.268439753593857e-08,
+        "coarse_eigenvalues": [
+          1.0830587257168363,
+          6.487978205921195
+        ],
+        "payload_bytes": 2592
+      }
+    ]
+  },
+  {
+    "case": "compact",
+    "kind": "block",
+    "radius": 2,
+    "relative_Ceff_error": 3.672465158415851e-08,
+    "cg": 303,
+    "coarse": [
+      {
+        "kind": "block",
+        "radius": 2,
+        "rank": 96,
+        "setup_s": 0.0210615370888263,
+        "coarse_symmetry": 9.198202649155932e-08,
+        "coarse_eigenvalues": [
+          1.0095908432433107,
+          12.336963513886868
+        ],
+        "payload_bytes": 73728
+      }
+    ]
+  },
+  {
+    "case": "compact",
+    "kind": "balanced",
+    "radius": 1,
+    "relative_Ceff_error": 3.924104855239594e-08,
+    "cg": 157,
+    "coarse": [
+      {
+        "kind": "balanced",
+        "radius": 1,
+        "rank": 18,
+        "setup_s": 0.004342416068539023,
+        "coarse_symmetry": 4.268439753593857e-08,
+        "coarse_eigenvalues": [
+          1.0830587257168363,
+          6.487978205921195
+        ],
+        "payload_bytes": 261792
+      }
+    ]
+  }
+]

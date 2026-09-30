@@ -66,6 +66,7 @@ def test_minimal_gpu_six_loads_match_cpu64(shape, geometry, tmp_path):
     assert np.linalg.norm(result-ref)/np.linalg.norm(ref) < 2e-6
     detail = json.loads(timing.read_text())
     assert detail['linear_formulation'] == 'displacement'
+    assert detail['linear_residual_smoothing']
     assert detail['cfield_indexed']
     assert detail['cupy_preserve_plans'] and detail['keep_solution_on_device']
     assert detail['postprocess_batch_size'] == 1
@@ -97,4 +98,5 @@ def test_general_anisotropic_cfield_retains_compatible_route(tmp_path):
     detail = json.loads(timing.read_text())
     assert not detail['cfield_indexed']
     assert detail['linear_formulation'] == 'strain'
+    assert not detail['linear_residual_smoothing']
     assert detail['load_solver_summary']['all_converged']

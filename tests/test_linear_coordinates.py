@@ -116,3 +116,18 @@ def test_linear_preconditioning_selection(selection, tmp_path):
 def test_unknown_linear_preconditioning_is_rejected():
     with pytest.raises(ValueError, match='linear_preconditioning'):
         solve_homogenization(dict(case((4, 4, 4)), linear_preconditioning='unknown'))
+
+
+@pytest.mark.parametrize('smoothing', [False, True])
+def test_smoothing_selection_and_audits(smoothing, tmp_path):
+    p = dict(case((5, 7, 5)), linear_residual_smoothing=smoothing)
+    timing = tmp_path/'smoothing.json'
+    actual = solve_homogenization(dict(p, solver_timing_path=str(timing)))
+    reference = solve_homogenization(dict(p, fft_backend='scipy', solver_real_dtype='float64',
+        solver_rtol=1e-10, cfield_indexed=False, linear_formulation='strain'))
+    np.testing.assert_allclose(actual, reference, atol=3e-6, rtol=2e-6)
+    report = json.loads(timing.read_text())
+    assert report['linear_residual_smoothing'] is smoothing
+    infos = report['cufhom_core_application_timing']['primaldual']['primal']['load_solver_infos']
+    assert all(i['linear_residual_smoothing'] is smoothing and
+               i['true_norm_res_rel'] <= 1e-5 for i in infos)

@@ -319,7 +319,7 @@ def _solver_info_payload(info, load_ids):
         payload['true_residual_converged'] = info['true_residual_converged']
     for key in ('reference_eta', 'reference_iterations', 'correction_iterations', 'reference_hit_maxiter',
                 'reference_norm_res_rel', 'reference_audit_wall_s', 'coordinate_iterations',
-                'linear_preconditioning', 'warm_start_requested', 'warm_start_accepted',
+                'linear_preconditioning', 'linear_residual_smoothing', 'warm_start_requested', 'warm_start_accepted',
                 'warm_start_projected', 'initial_norm_res_rel'):
         if key in info:
             payload[key] = info[key]

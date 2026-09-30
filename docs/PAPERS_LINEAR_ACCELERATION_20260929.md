@@ -9,12 +9,15 @@ Conservar CG en coordenadas simétricas como base. La siguiente investigación
 con más interés es una **corrección global de Galerkin con una base construida
 desde el operador y subdominios de la malla**, acompañada de un precondicionador
 local. Debe servir para materiales y microestructuras generales: no requiere
-identificar fibras, su eje ni su relación de aspecto. Es una propuesta de
-adaptación pendiente: no hay una reducción nueva de CG demostrada en G09.
+identificar fibras, su eje ni su relación de aspecto. Esa adaptación sigue
+pendiente. Los modos Fourier bajos ya se probaron y no mejoraron G09.
 
-Las fusiones integradas en esta sesión reducen el tiempo por iteración; las
-seis cargas siguen sumando 288 CG. No atribuir ese ahorro a los artículos ni
-confundir una mejora contra CG sin precondicionar con una mejora contra CuFHom.
+Las fusiones iniciales redujeron el tiempo por iteración con 288 CG. Después,
+el **suavizado tardío de residuos** redujo las seis cargas a **276 CG** y el
+tiempo un **2,82 % adicional** en una comparación alternada de la implementación
+final. Se conserva la misma aceptación física 1e-5.
+[Mediciones y derivación](../benchmarks/g09_smoothing_20260930/RESULTS.md).
+No confundir mejoras contra CG sin precondicionar con mejoras contra CuFHom.
 
 ## Qué aportan las fuentes consultadas
 
@@ -115,7 +118,32 @@ para CuFHom: nuestra representación espectral tiene acoplamiento global y
 requiere estudiar operadores locales, coste de autovalores y memoria. No
 trasladar automáticamente las cotas FEM al operador FFT.
 
-## Adaptación propuesta, todavía sin implementar
+### 8. CG por bloques, CR y suavizado — ensayos ejecutados
+
+El CG por bloques sigue la recurrencia alternativa de
+[Dubrulle, 2001](https://etna.ricam.oeaw.ac.at/vol.12.2001/pp216-233.dir/pp216-233.pdf),
+con normalización espectral propia. En G09 no redujo las aplicaciones del
+operador y elevó el tiempo a 10,343 s: prototipo retirado.
+
+CR usa la recurrencia de
+[Saad, §6.8](https://www-users.cse.umn.edu/~saad/IterMethBook_2ndEd.pdf).
+Bajó 288 a 276 iteraciones, pero subió 3,034 a 3,169 s por el coste de vectores.
+La minimización del residuo por sí sola no garantizó una mejora de tiempo.
+
+[Zhou y Walker, 1994](https://users.wpi.edu/~walker/Papers/residual_smoothing,SISC_15,1994,297-312.pdf)
+estudian combinar aproximaciones para suavizar residuos y discuten los errores
+de las recurrencias. Aprovechamos la ortogonalidad de CG para calcular el peso
+mediante normas ya disponibles. Activarlo cerca de la tolerancia y fusionar
+su actualización son decisiones de implementación de CuFHom. La aceptación
+recalcula el residuo; la estimación armónica no se toma como cota en float32.
+
+La corrección de Galerkin balanceada ensayada sigue
+[Nabben y Vuik, ecuación 4](https://diamhomes.ewi.tudelft.nl/~kvuik/papers/Nab04V.pdf).
+Los 18 modos Fourier bajos elegidos para el piloto aumentaron tiempo e
+iteraciones. Esta base no reproduce la selección de autovectores locales GenEO.
+[Código y evidencia de los pilotos](../descartados/README.md).
+
+## Adaptación con subdominios propuesta, todavía sin implementar
 
 Nuestro operador en coordenadas es `H = R Q* C Q R`, SPD sobre los modos
 admisibles; `R` es la raíz inversa de la referencia isotrópica. Para una base
@@ -162,4 +190,5 @@ del operador completo, aunque no garantiza éxito.
 [Diagnóstico histórico](../descartados/evidencia/g09_krylov_spectrum_20260922.json),
 [reciclaje medido](../descartados/evidencia/g09_linear_recycling_confirm_20260924/report.json).
 
-Ninguna de estas propuestas pendientes se añadió como ruta del solver.
+La propuesta con subdominios sigue fuera del solver. El suavizado tardío sí
+está integrado; CR, bloques y modos Fourier bajos quedaron fuera de producción.
