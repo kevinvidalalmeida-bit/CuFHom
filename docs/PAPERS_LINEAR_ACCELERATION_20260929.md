@@ -1,16 +1,24 @@
 # Artículos para reducir iteraciones de CuFHom
 
-Revisión: 29–30 de septiembre de 2026. Alcance: elasticidad lineal periódica,
+Revisión: 29 de septiembre–2 de octubre de 2026. Alcance: elasticidad lineal periódica,
 GPU, G09 original 240³, seis cargas, aceptación física relativa `1e-5`.
 
 ## Conclusión para nuestro caso
 
-Conservar CG en coordenadas simétricas como base. La siguiente investigación
-con más interés es una **corrección global de Galerkin con una base construida
-desde el operador y subdominios de la malla**, acompañada de un precondicionador
-local. Debe servir para materiales y microestructuras generales: no requiere
-identificar fibras, su eje ni su relación de aspecto. Esa adaptación sigue
-pendiente. Los modos Fourier bajos ya se probaron y no mejoraron G09.
+Conservar CG en coordenadas simétricas como base. Se implementaron y midieron
+la corrección de Galerkin con bases locales GenEO, su variante con energía
+fina y el auxiliar Q1. Ninguna acelera G09: quedan en `descartados`, como
+detalla la última sección. Las optimizaciones aceptadas son la selección
+persistente de planes FFT y la fusión de energía/adjunto/update.
+[Resultados actuales](../benchmarks/linear_strategy_20261002/RESULTS.md).
+
+La [revisión posterior del código](../benchmarks/code_review_20261002/RESULTS.md)
+prueba la identidad `H = I + Q_R* (C-C₀) Q_R`: reduce el coste en varias
+mallas grandes, pero queda fuera de producción por cancelación para fases
+muy blandas y ausencia de ganancia general en mallas pequeñas. Sí se integra
+la reutilización de deformación/tensión en la auditoría final, validada con
+los seis campos y el residual físico original. Esta identidad no cambia el espectro de H
+ni reduce las iteraciones.
 
 Las fusiones iniciales redujeron el tiempo por iteración con 288 CG. Después,
 el **suavizado tardío de residuos** redujo las seis cargas a **276 CG** y el
@@ -21,7 +29,7 @@ No confundir mejoras contra CG sin precondicionar con mejoras contra CuFHom.
 
 ## Qué aportan las fuentes consultadas
 
-### 1. Schwarz de dos niveles con agrupaciones de nodos — prioridad de investigación
+### 1. Schwarz de dos niveles con agrupaciones de nodos — referencia para la adaptación ensayada
 
 Krysl combina subdominios solapados con un problema global reducido construido
 por Galerkin a partir de bases polinomiales locales. Sus ejemplos incluyen
@@ -40,6 +48,8 @@ implementado en Julia/FinEtools. No ofrece una sustitución directa para CuPy.
 El ensayo local Voigt/Reuss que descartamos no construía ese problema global;
 su fracaso no demuestra que Schwarz de dos niveles vaya a fracasar. Aun así,
 construir/factorizar bases y transferir campos puede consumir todo el ahorro.
+La adaptación Q1/GenEO realizada en octubre confirma ese problema de coste
+en nuestros ensayos y queda retirada; no reproduce el Schwarz completo del autor.
 
 ### 2. UNO-CG — útil para muchas consultas, ventaja pendiente frente a nuestra base
 

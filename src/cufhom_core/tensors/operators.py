@@ -776,7 +776,21 @@ class Operator():
         res.name='{0}({1})'.format(self.name[:6], x.name[:10])
         return res
 
-    def _call_cupy_fast_path(self, x):
+    def apply_material_result(self, stress, material, projection):
+        """Project an already evaluated material result for this same operator.
+
+        Return None when the supplied material/projection are not precisely
+        the factors of this operator or its native GPU path is unavailable.
+        """
+        if self.no_summands != 1 or len(self.mat_rev[0]) != 2:
+            return None
+        Aop, GNop = self.mat_rev[0]
+        if (_unwrap_timed(Aop) is not _unwrap_timed(material)
+                or _unwrap_timed(GNop) is not _unwrap_timed(projection)):
+            return None
+        return self._call_cupy_fast_path(stress, material_result=stress.val)
+
+    def _call_cupy_fast_path(self, x, material_result=None):
         if get_fft_backend() != 'cupy' or not CUPY_AVAILABLE:
             return None
         if not isinstance(x, Tensor):
@@ -805,10 +819,10 @@ class Operator():
 
         stats = getattr(self, '_component_profile', None)
         if stats is not None:
-            return self._profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats)
+            return self._profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats, material_result)
 
         x_val = to_backend_array(x.val, prefer_backend='cupy')
-        Ax = _tensor_apply_cupy(Araw, x_val)
+        Ax = (_tensor_apply_cupy(Araw, x_val) if material_result is None else material_result)
         use_unscaled_pair = (
             _CUPY_UNSCALED_FFT_PAIR and
             FNraw.fft_form == 0 and
@@ -844,7 +858,7 @@ class Operator():
         return x.copy(val=out)
 
     @staticmethod
-    def _profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats):
+    def _profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats, material_result=None):
         def measure(label, function, *args):
             cupy_synchronize()
             started = time.perf_counter()
@@ -855,7 +869,7 @@ class Operator():
             return result
 
         value = to_backend_array(x.val, prefer_backend='cupy')
-        ax = measure('A', _tensor_apply_cupy, Araw, value)
+        ax = (measure('A', _tensor_apply_cupy, Araw, value) if material_result is None else material_result)
         unscaled = (_CUPY_UNSCALED_FFT_PAIR and FNraw.fft_form == 0
                     and FiNraw.fft_form == 0 and not FNraw.inverse and FiNraw.inverse)
         unscaled_rfft = (_CUPY_UNSCALED_FFT_PAIR and FNraw.fft_form == 'r'

@@ -59,6 +59,13 @@ escritura y lectura de `Hp`. Su auditoría final conserva el operador físico
 original. Ambas opciones están activas por defecto en la ruta compatible;
 [derivación, validación y tiempos](benchmarks/linear_strategy_20261002/RESULTS.md).
 
+`linear_final_audit_reuse=True` reutiliza la deformación y la tensión de la
+última comprobación verdadera de CG. Conserva la proyección física y su
+residual; comprueba que los campos pertenezcan al mismo iterado y operador.
+Los campos iniciales añadidos y las rutas incompatibles usan la evaluación
+completa. Está activa por defecto; `False` permite comparar ambas políticas.
+[Tiempos, campos y revisión del código](benchmarks/code_review_20261002/RESULTS.md).
+
 La ruta de coordenadas simétricas requiere material indexado y seis cargas
 seriales. Los campos constitutivos generales y las configuraciones incompatibles
 usan la formulación en deformaciones. Las pruebas cubren ambos caminos; la

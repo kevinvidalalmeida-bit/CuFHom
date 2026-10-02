@@ -90,6 +90,13 @@ también se archiva: su método sí se integra mediante interfaces explícitas.
 
 ## Rutas que siguen activas
 
+La [separación de la referencia de H](reference_split_20261002/README.md)
+se conserva fuera de producción. Ahorra 1–4% en varias mallas grandes,
+pero no mejora G08 y presenta cancelación numérica para fases muy blandas.
+La variante de norma recurrente tampoco supera a la directa.
+Las seis cargas, los campos y el cribado de precisión están en el
+[informe del ensayo](../benchmarks/code_review_20261002/RESULTS.md).
+
 CPU/float64, formulación en deformaciones, comprobación del residuo verdadero,
 corrección de falsa convergencia y el PCG de referencia en desplazamientos
 siguen siendo útiles para precisión, compatibilidad y validación.

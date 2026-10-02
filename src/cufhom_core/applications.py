@@ -320,7 +320,8 @@ def _solver_info_payload(info, load_ids):
     for key in ('reference_eta', 'reference_iterations', 'correction_iterations', 'reference_hit_maxiter',
                 'reference_norm_res_rel', 'reference_audit_wall_s', 'coordinate_iterations',
                 'linear_preconditioning', 'linear_residual_smoothing', 'warm_start_requested', 'warm_start_accepted',
-                'warm_start_projected', 'initial_norm_res_rel', 'linear_fft_tuning', 'linear_energy_update'):
+                'warm_start_projected', 'initial_norm_res_rel', 'linear_fft_tuning', 'linear_energy_update',
+                'linear_final_strain_reuse', 'linear_final_audit_reuse'):
         if key in info:
             payload[key] = info[key]
     if rel_per_rhs is not None:

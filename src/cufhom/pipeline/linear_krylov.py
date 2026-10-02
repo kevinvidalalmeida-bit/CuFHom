@@ -147,7 +147,7 @@ def _finish_smoothing(x, y, weight):
 
 def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False,
              precondition=None, initial=None, action_and_dot=None, residual_smoothing=False,
-             update_callback=None):
+             update_callback=None, residual_action=None):
     """CG/PCG with true-residual restart and optional late residual smoothing.
 
     Smoothing uses Euclidean orthogonality of ordinary CG residuals, so it
@@ -197,7 +197,7 @@ def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False
             if y is not None:
                 _finish_smoothing(x, y, weight)
                 x = y
-            r = rhs-action(x)
+            r = rhs-(residual_action or action)(x)
             new = dot(r, r)
             if new <= limit:
                 return x, i+1

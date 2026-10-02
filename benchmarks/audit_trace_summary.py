@@ -4,7 +4,8 @@ import statistics
 from pathlib import Path
 from collections import defaultdict,Counter
 
-def summarize(path):
+def summarize(path, kernel_groups=None):
+    kernel_groups = kernel_groups or {}
     c=sqlite3.connect(path);c.row_factory=sqlite3.Row
     strings={r['id']:r['value'] for r in c.execute('select * from StringIds')}
     ranges=[dict(r) for r in c.execute('select * from NVTX_EVENTS where end is not null')]
@@ -22,6 +23,7 @@ def summarize(path):
         if e>s:events.append((s,1,category,priority));events.append((e,-1,category,priority))
     def group(name,t):
         if phase(t):return phase(t)+'_kernels'
+        if name in kernel_groups:return kernel_groups[name]
         if 'fft' in name:return 'operator_fft'
         if name in ('coordinates','adjoint_dot','indexed_sym21_apply','elasticity_direct_apply'):return 'operator_other'
         if name in ('update_rr','linear_cg_finish_smoothing','warp_update'):return 'solver_update'

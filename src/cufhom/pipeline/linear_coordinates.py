@@ -39,10 +39,19 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 (a.view(dtype), b.view(dtype), reduction.partial, np.int64(a.view(dtype).size)))
             return float(cp.sum(reduction.partial, dtype=cp.float64))
 
-        def action(z):
-            return Q.adjoint(A(B.copy(val=Q.strain(z))).val)
+        audit_cache = []
+
+        def action(z, retain=False):
+            audit_cache.clear()
+            strain = B.copy(val=Q.strain(z))
+            stress = A(strain)
+            value = Q.adjoint(stress.val)
+            if retain:
+                audit_cache[:] = [z, strain, stress]
+            return value
 
         def action_and_dot(z, *, direction=None):
+            audit_cache.clear()
             strain = (Q.strain(z) if direction is None
                       else Q.strain_updated_direction(z, *direction))
             return Q.adjoint_and_dot(A(B.copy(val=strain)).val, z)
@@ -57,7 +66,10 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 descriptor = getattr(A, 'op', A)
                 if supports_energy(Q, descriptor):
                     material_timing = ((A.stats, A.label) if getattr(A, 'stats', None) is not None else None)
-                    fused_options['action_and_dot'] = lambda z, direction=None: energy_action(Q, descriptor, z, direction, material_timing)
+                    def action_energy(z, direction=None):
+                        audit_cache.clear()
+                        return energy_action(Q, descriptor, z, direction, material_timing)
+                    fused_options['action_and_dot'] = action_energy
                     fused_options['update_callback'] = energy_update
 
         # The existing direct-projection raw-C2R operator multiplies both
@@ -86,6 +98,7 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 del residual
             del trial
 
+        strain_reused = stress_reused = False
         if initial is not None and initial_norm <= threshold:
             result, iterations, norm = initial, 0, initial_norm
         else:
@@ -114,12 +127,23 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 else:
                     fft_tuning = dict(status='same_solve', policy=previous['policy'],
                                       tuning_s=0., cache_key=previous.get('cache_key'))
+            if (mode == 'symmetric_fused' and initial is None
+                    and pb.solver.get('linear_final_audit_reuse', True)):
+                # Only true CG residual checks retain fields. Search-direction
+                # actions and FFT tuning never populate this cache.
+                fused_options['residual_action'] = lambda z: action(z, retain=True)
             z, iterations = inner_cg(action, rhs, dot, relative, par['maxiter'], cp,
                                      fused=True, precondition=precondition, **fused_options)
-            result = B.copy(val=Q.strain(z))
+            strain_reused = bool(audit_cache and audit_cache[0] is z and initial is None)
+            result = audit_cache[1] if strain_reused else B.copy(val=Q.strain(z))
             if initial is not None:
                 result.val += initial.val
-            residual = B.val-Afun(result).val
+            projected = None
+            if strain_reused and hasattr(Afun, 'apply_material_result'):
+                projected = Afun.apply_material_result(audit_cache[2], A, GN)
+            stress_reused = projected is not None
+            audit_cache.clear()
+            residual = B.val-(projected if stress_reused else Afun(result)).val
             norm = np.sqrt(dot(residual, residual)/volume)
         correction_iterations = 0
         if not np.isfinite(norm) or norm > threshold:
@@ -139,6 +163,8 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                     correction_iterations=correction_iterations, linear_preconditioning=mode,
                     linear_residual_smoothing=bool(fused_options.get('residual_smoothing', False)),
                     linear_energy_update='update_callback' in fused_options,
+                    linear_final_strain_reuse=strain_reused,
+                    linear_final_audit_reuse=stress_reused,
                     warm_start_requested=x0 is not None,
                     warm_start_accepted=initial is not None,
                     warm_start_projected=x0 is not None,
