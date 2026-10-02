@@ -12,13 +12,18 @@ from cufhom_core.tensors import fft as core_fft
 _KERNELS = {}
 
 
+def coordinate_source():
+    """Shared QR/RQ* formula, including the symmetric reference root."""
+    code = replace_once(_CODE, 'int adjoint)',
+                        'int adjoint, REAL transverse, REAL longitudinal)')
+    return replace_once(code, 'v[c]=r2*v[c]+(1-r2)*k[c]*dot;',
+        'v[c]=r2*transverse*v[c]+(longitudinal-r2*transverse)*k[c]*dot;')
+
+
 def _coordinate_kernel(dtype, mode='map'):
     key = ('root', dtype.str, mode)
     if key not in _KERNELS:
-        code = replace_once(_CODE, 'int adjoint)',
-                             'int adjoint, REAL transverse, REAL longitudinal)')
-        code = replace_once(code, 'v[c]=r2*v[c]+(1-r2)*k[c]*dot;',
-            'v[c]=r2*transverse*v[c]+(longitudinal-r2*transverse)*k[c]*dot;')
+        code = coordinate_source()
         if mode == 'dot':
             code = adjoint_dot_source(code)
         elif mode == 'direction':
@@ -141,7 +146,8 @@ def _finish_smoothing(x, y, weight):
 
 
 def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False,
-             precondition=None, initial=None, action_and_dot=None, residual_smoothing=False):
+             precondition=None, initial=None, action_and_dot=None, residual_smoothing=False,
+             update_callback=None):
     """CG/PCG with true-residual restart and optional late residual smoothing.
 
     Smoothing uses Euclidean orthogonality of ordinary CG residuals, so it
@@ -173,7 +179,7 @@ def fused_cg(action, rhs, dot, tolerance, maxiter, xp, project=None, fused=False
         if not np.isfinite([pap, rz]).all() or min(pap, rz) <= 0:
             raise NonlinearConvergenceError('Fused linear CG lost positivity')
         update_args = () if y is None else ((y, weight),)
-        new = fused_update(p, ap, rz/pap, x, r, partial, *update_args)
+        new = (update_callback or fused_update)(p, ap, rz/pap, x, r, partial, *update_args)
         if not np.isfinite(new) or new < 0:
             raise NonlinearConvergenceError('Nonfinite fused linear residual')
         estimate = new if y is None else estimate

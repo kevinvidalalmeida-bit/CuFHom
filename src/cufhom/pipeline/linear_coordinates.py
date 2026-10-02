@@ -52,12 +52,20 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
             fused_options['residual_smoothing'] = pb.solver.get('linear_residual_smoothing', True)
         if mode == 'symmetric_fused' and pb.solver.get('linear_kernel_fusion', True):
             fused_options['action_and_dot'] = action_and_dot
+            if pb.solver.get('linear_energy_update', True):
+                from .linear_energy import energy_action, energy_update, supports_energy
+                descriptor = getattr(A, 'op', A)
+                if supports_energy(Q, descriptor):
+                    material_timing = ((A.stats, A.label) if getattr(A, 'stats', None) is not None else None)
+                    fused_options['action_and_dot'] = lambda z, direction=None: energy_action(Q, descriptor, z, direction, material_timing)
+                    fused_options['update_callback'] = energy_update
 
         # The existing direct-projection raw-C2R operator multiplies both
         # sides by volume. Remove that common factor in physical coordinates.
         rhs_norm = np.sqrt(dot(B.val, B.val)/volume)
         threshold = max(par.get('atol', 0.), par['rtol']*rhs_norm)
         relative = threshold/rhs_norm if rhs_norm else par['rtol']
+        fft_tuning = None
         initial, initial_norm = None, None
         if x0 is not None:
             if not bool(cp.all(cp.isfinite(x0.val))):
@@ -97,6 +105,15 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 del residual
             else:
                 rhs = Q.adjoint(B.val)/dtype.type(volume)
+            if mode == 'symmetric_fused' and pb.solver.get('linear_fft_autotune', True):
+                from .linear_fft_tuning import tune
+                previous = pb.solver.get('_linear_fft_tuning')
+                if previous is None:
+                    fft_tuning = tune(action, rhs, shape)
+                    pb.solver['_linear_fft_tuning'] = fft_tuning
+                else:
+                    fft_tuning = dict(status='same_solve', policy=previous['policy'],
+                                      tuning_s=0., cache_key=previous.get('cache_key'))
             z, iterations = inner_cg(action, rhs, dot, relative, par['maxiter'], cp,
                                      fused=True, precondition=precondition, **fused_options)
             result = B.copy(val=Q.strain(z))
@@ -121,11 +138,14 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                     norm_res_log=[norm], coordinate_iterations=iterations,
                     correction_iterations=correction_iterations, linear_preconditioning=mode,
                     linear_residual_smoothing=bool(fused_options.get('residual_smoothing', False)),
+                    linear_energy_update='update_callback' in fused_options,
                     warm_start_requested=x0 is not None,
                     warm_start_accepted=initial is not None,
                     warm_start_projected=x0 is not None,
                     initial_norm_res_rel=(float(initial_norm/rhs_norm)
                                           if initial_norm is not None and rhs_norm > 0 else None))
+        if fft_tuning is not None:
+            info['linear_fft_tuning'] = fft_tuning
         _finalize_cg_info(info, rhs_norm, threshold, par['maxiter'])
         info.update(true_norm_res_rel=info['norm_res_rel'], true_residual_converged=True)
         if not par.get('keep_solution_on_device', False):

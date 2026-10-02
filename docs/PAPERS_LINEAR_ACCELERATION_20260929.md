@@ -112,11 +112,11 @@ resultado variacional y ejemplos de elasticidad; la construcción depende del
 operador, las particiones y el solapamiento. Revisé el artículo completo.
 [Artículo original](https://comptes-rendus.academie-sciences.fr/mathematique/item/10.1016/j.crma.2011.10.021.pdf).
 
-Mi valoración: encaja mejor con un solver general que una base elegida por
-tipo de inclusión. Es una referencia de diseño, no una implementación lista
-para CuFHom: nuestra representación espectral tiene acoplamiento global y
-requiere estudiar operadores locales, coste de autovalores y memoria. No
-trasladar automáticamente las cotas FEM al operador FFT.
+Se implementó una adaptación propia al espacio espectral de CuFHom y se
+midieron sus costes, campos y espectro en problemas pequeños. Las variantes
+ensayadas no aceleran el solve: **GenEO queda descartado de la ruta activa**.
+El artículo se conserva como referencia; sus cotas FEM no se atribuyen al
+operador FFT. La derivación y el rechazo se documentan al final de esta revisión.
 
 ### 8. CG por bloques, CR y suavizado — ensayos ejecutados
 
@@ -143,52 +143,52 @@ Los 18 modos Fourier bajos elegidos para el piloto aumentaron tiempo e
 iteraciones. Esta base no reproduce la selección de autovectores locales GenEO.
 [Código y evidencia de los pilotos](../descartados/README.md).
 
-## Adaptación con subdominios propuesta, todavía sin implementar
+## Adaptación con subdominios: implementada y descartada
 
-Nuestro operador en coordenadas es `H = R Q* C Q R`, SPD sobre los modos
-admisibles; `R` es la raíz inversa de la referencia isotrópica. Para una base
-`U` de rango completo, construida desde subdominios periódicos y el operador:
+Actualización: 2 de octubre de 2026. Se implementaron un espacio auxiliar
+elástico Q1, transferencia periódica con adjunto real, V-cycle simétrico,
+selección local GenEO y PCG con suavizado en la métrica del precondicionador.
+Los bloques se construyen por malla y operador, sin reglas para fibras.
+También se ensayó la energía fina real: para `U = T Z`,
 
 ```
 Hc = U* H U
-B  = I + U Hc^-1 U*
+B  = I + U Hc^+ U*
 ```
 
-Aquí `*` es el adjunto para el producto real de las coordenadas RFFT. `Hc`
-debe ser SPD y el segundo término es semidefinido positivo, por lo que `B`
-es SPD. Es un primer ensayo aditivo de dos niveles propuesto para CuFHom;
-no reproduce todavía todos los resolutores locales de Schwarz del artículo.
-El operador fino `H` y la aceptación física permanecen completos.
+Aquí `*` es el adjunto para el producto real de las coordenadas RFFT;
+`Hc^+` elimina las dependencias de la base mediante su descomposición espectral.
+El operador sigue siendo `H = R Q* C Q R`. La construcción garantiza B SPD,
+pero esa propiedad no garantiza reducir el número de iteraciones.
+Se evita almacenar una base densa en la malla fina y se conserva el criterio
+de aceptación con residual físico verdadero `1e-5`.
 
-Pasos y criterios concretos para una futura implementación:
+### Resultado en G09
 
-1. Partir de bloques de la malla con solapamiento, independientes del tipo de
-   inclusión. Comparar funciones locales de orden bajo con modos espectrales
-   seleccionados por el operador. Convertirlos al espacio de coordenadas
-   existente, retirando dependencias,
-   modos medios y planos de Nyquist. No confundir un campo de desplazamiento
-   real con el vector de coordenadas blanqueadas del solver.
-2. Usar `H` real para formar `Hc`; comprobar simetría, rango y Cholesky en
-   doble precisión. Una matriz constitutiva media por bloque no reemplaza esto.
-3. Medir coste de construcción, aplicación y memoria antes de G09. Una base
-   densa de 32 vectores complejos G09 ocupa aproximadamente **5,35 GB**;
-   `HU` duplica ese almacenamiento si se retiene. Hace falta una representación
-   compacta o una base mucho más pequeña para esta GPU de 16 GB.
-4. Exigir un coste total menor en las seis cargas, incluidos construcción y
-   auditorías. Con un sobrecoste ilustrativo de 20 % por iteración y sin
-   preparación, hay que bajar de 288 a menos de **240 CG** para ganar tiempo.
-   Es una cuenta de rentabilidad, no una predicción.
-5. Mantener el mismo residuo físico `1e-5`, comparar CPU64 en casos pequeños,
-   campos completos y `Ceff`, y medir al menos cinco repeticiones alternadas.
-   Validar laminados, inclusiones compactas, campos anisótropos y distintos
-   contrastes, además de G09. No fijar parámetros por nombre de caso.
+Tres repeticiones alternadas por variante, seis cargas y preparación incluida
+una vez por material. Cada fila usa su propia referencia contemporánea.
 
-Los Ritz históricos de G09 abarcan aproximadamente 1,07–71,2 y sugieren un
-espectro amplio; no son cotas certificadas. El reciclaje de solo 1–4 modos
-no redujo el coste en sus ensayos. Eso favorece estudiar bases que dependan
-del operador completo, aunque no garantiza éxito.
-[Diagnóstico histórico](../descartados/evidencia/g09_krylov_spectrum_20260922.json),
-[reciclaje medido](../descartados/evidencia/g09_linear_recycling_confirm_20260924/report.json).
+| Variante | Referencia s | Variante s | Preparación s | Iteraciones CG |
+| --- | ---: | ---: | ---: | ---: |
+| Auxiliar Q1 + V-cycle | 2,967 | 5,249 | 0,247 | 276 |
+| GenEO auxiliar, τ=0,15 | 2,967 | 5,540 | 0,533 | 276 |
+| GenEO con energía fina, τ=0,15 | 2,963 | 7,685 | 2,722 | 276 |
+| GenEO con energía fina, τ=0,5 | 2,965 | 9,401 | 4,431 | 276 |
 
-La propuesta con subdominios sigue fuera del solver. El suavizado tardío sí
-está integrado; CR, bloques y modos Fourier bajos quedaron fuera de producción.
+Ampliar el umbral a 0,5 selecciona 285 columnas, incluidas 123 deformables;
+quedan 282 direcciones independientes en la energía fina. Su preparación
+requiere 285 aplicaciones de H y tampoco reduce las 276 iteraciones.
+En los problemas CPU64 pequeños, el auxiliar empeora el condicionamiento;
+usar la energía fina lo aproxima al de la referencia, sin una mejora útil
+de CG. Estos resultados corresponden a las bases y transferencias ensayadas.
+
+**Decisión: retirar auxiliar Q1 y GenEO de producción.** El código y sus
+controles quedan en [descartados](../descartados/auxiliary_geneo_20261002/README.md).
+La [derivación propia](../benchmarks/linear_strategy_20261002/DERIVATION.md)
+documenta transferencia, autoproblemas locales, Galerkin fino y suavizado PCG.
+El [informe reproducible](../benchmarks/linear_strategy_20261002/RESULTS.md)
+incluye tiempos, campos, residual, espectro CPU64 y procedencia del código.
+
+Se integran por defecto la selección persistente de planes FFT y la fusión
+de energía/adjunto/update: reducen el coste de aplicar H y conservan las
+iteraciones. GenEO deja de figurar como una implementación pendiente.

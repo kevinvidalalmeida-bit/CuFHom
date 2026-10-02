@@ -30,7 +30,7 @@ except ImportError:
 FFT_WORKERS = 1
 FFT_BACKEND = "scipy"
 CUPY_PLAN_MODE = "auto"  # auto | manual | none
-CUPY_RFFT_BATCH_MODE = "auto"  # auto | full | component
+CUPY_RFFT_BATCH_MODE = "auto"  # auto | full | component | batch2 | batch3
 _CUPY_PLAN_CACHE = {}
 _COMPONENT_FFT_DEVICES = {}
 
@@ -43,8 +43,8 @@ def set_cupy_rfft_batch_mode(mode):
     permits explicit benchmarking on other compatible grids.
     """
     global CUPY_RFFT_BATCH_MODE
-    if mode not in {"auto", "full", "component"}:
-        raise ValueError("cupy_rfft_batch_mode must be auto, full or component")
+    if mode not in {"auto", "full", "component", "batch2", "batch3"}:
+        raise ValueError("cupy_rfft_batch_mode must be auto, full, component, batch2 or batch3")
     CUPY_RFFT_BATCH_MODE = mode
 
 
@@ -82,7 +82,7 @@ def _use_component_fft(x, shape, axes, inverse):
 
 
 def _component_fft(x, shape, inverse):
-    """Same I_6 tensor F transform, six sequential launches of one cached plan.
+    """Same I_6 tensor F transform, sequential subbatches of one cached plan.
 
     Each output owns its storage. As for the existing raw C2R path, inverse
     input is consumable. No copy/normalization pass is introduced. All launches
@@ -92,10 +92,11 @@ def _component_fft(x, shape, inverse):
     dtype = x.real.dtype if inverse else (cp.complex64 if x.dtype == cp.float32 else cp.complex128)
     out_shape = shape if inverse else shape[:-1]+(shape[-1]//2+1,)
     out = cp.empty((6,)+out_shape, dtype=dtype)
-    plan = _maybe_cupy_plan(x[:1], (1, 2, 3), 'C2R' if inverse else 'R2C',
+    batch = {'batch2': 2, 'batch3': 3}.get(CUPY_RFFT_BATCH_MODE, 1)
+    plan = _maybe_cupy_plan(x[:batch], (1, 2, 3), 'C2R' if inverse else 'R2C',
                             shape=shape if inverse else None)
-    for component in range(6):
-        plan.fft(x[component:component+1], out[component:component+1],
+    for component in range(0, 6, batch):
+        plan.fft(x[component:component+batch], out[component:component+batch],
                  cp.cuda.cufft.CUFFT_INVERSE if inverse else cp.cuda.cufft.CUFFT_FORWARD)
     return out
 

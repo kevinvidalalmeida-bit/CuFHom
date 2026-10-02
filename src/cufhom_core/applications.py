@@ -320,7 +320,7 @@ def _solver_info_payload(info, load_ids):
     for key in ('reference_eta', 'reference_iterations', 'correction_iterations', 'reference_hit_maxiter',
                 'reference_norm_res_rel', 'reference_audit_wall_s', 'coordinate_iterations',
                 'linear_preconditioning', 'linear_residual_smoothing', 'warm_start_requested', 'warm_start_accepted',
-                'warm_start_projected', 'initial_norm_res_rel'):
+                'warm_start_projected', 'initial_norm_res_rel', 'linear_fft_tuning', 'linear_energy_update'):
         if key in info:
             payload[key] = info[key]
     if rel_per_rhs is not None:
@@ -472,8 +472,11 @@ def solve_load_scalar(iL, dim, Nbar, Afun, pb, GN, A, add_macro2minimizer, linea
 def solve_load_elasticity(iL, D, Nbar, Afun, pb, GN, A, add_macro2minimizer, linear_solver, CallBack, CallBack_GA, fft_form='c'):
     solver_parameters = pb.solver
     factory = pb.solver.get('elasticity_krylov_factory')
+    profile_enabled = _profile_enabled(pb)
+    timing_stats = _new_component_stats() if profile_enabled else None
     if factory is not None:
-        linear_solver = factory(A=A, GN=GN, pb=pb, fallback=linear_solver)
+        factory_A = TimedCallable(A, 'A', timing_stats) if profile_enabled else A
+        linear_solver = factory(A=factory_A, GN=GN, pb=pb, fallback=linear_solver)
     real_dtype = _solver_real_dtype(pb)
     E = np.zeros(D, dtype=real_dtype)
     E[iL] = 1
@@ -501,8 +504,6 @@ def solve_load_elasticity(iL, D, Nbar, Afun, pb, GN, A, add_macro2minimizer, lin
             x0 = GN(x0)
     else:
         x0 = None
-    profile_enabled = _profile_enabled(pb)
-    timing_stats = _new_component_stats() if profile_enabled else None
     Afun_local = _instrument_afun_for_profile(Afun, GN, A, timing_stats) if profile_enabled else Afun
     rhs_t0 = time.perf_counter()
     B = Afun_local(-EN)

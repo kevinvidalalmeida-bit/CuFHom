@@ -24,6 +24,7 @@ VERIFIED_SETTINGS = dict(
     linear_formulation='displacement', linear_preconditioning='symmetric_fused',
     linear_kernel_fusion=False,  # frozen baseline before the 2026-09-29 fusions
     linear_residual_smoothing=False,  # frozen baseline before the 2026-09-30 smoothing
+    linear_fft_autotune=False, linear_energy_update=False,  # preserve this historical baseline
 )
 
 

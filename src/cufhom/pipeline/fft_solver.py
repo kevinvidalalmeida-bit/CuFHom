@@ -1754,6 +1754,8 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             'linear_preconditioning': linear_preconditioning,
             'linear_kernel_fusion': bool(p.get('linear_kernel_fusion', True)),
             'linear_residual_smoothing': bool(p.get('linear_residual_smoothing', True)),
+            'linear_fft_autotune': bool(p.get('linear_fft_autotune', True)),
+            'linear_energy_update': bool(p.get('linear_energy_update', True)),
             'kind': 'CG',
             'tol': solver_rtol,
             'rtol': solver_rtol,
@@ -2018,6 +2020,11 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
                 and linear_preconditioning == 'symmetric_fused' and p.get('linear_kernel_fusion', True)),
             "linear_residual_smoothing": bool(linear_formulation == 'displacement'
                 and linear_preconditioning == 'symmetric_fused' and p.get('linear_residual_smoothing', True)),
+            "linear_fft_autotune": bool(linear_formulation == 'displacement'
+                and linear_preconditioning == 'symmetric_fused' and p.get('linear_fft_autotune', True)),
+            "linear_energy_update": bool(linear_formulation == 'displacement'
+                and linear_preconditioning == 'symmetric_fused' and p.get('linear_kernel_fusion', True)
+                and p.get('linear_energy_update', True)),
             "use_cfield_material_fast_path": bool(use_cfield_material_fast_path),
             "cupy_fused_matvec": bool(cupy_fused_matvec),
             "cupy_unscaled_fft_pair": bool(cupy_unscaled_fft_pair),

@@ -31,13 +31,14 @@ def require_gpu():
 
 @pytest.mark.parametrize('shape', [(5,7,9),(6,8,10),(7,6,8),(6,8,9)])
 @pytest.mark.parametrize('dtype', [np.float32,np.float64])
-def test_roundtrip_and_distinct_outputs(shape,dtype):
+@pytest.mark.parametrize('policy', ['component', 'batch2', 'batch3'])
+def test_roundtrip_and_distinct_outputs(shape,dtype,policy):
     require_gpu()
     x = cp.asarray(np.random.default_rng(954).normal(size=(6,)+shape), dtype=dtype)
     saved = x.copy()
     fft.set_cupy_rfft_batch_mode('full')
     reference = fft.rfftn_cached(x,shape,(1,2,3))
-    fft.set_cupy_rfft_batch_mode('component')
+    fft.set_cupy_rfft_batch_mode(policy)
     h = fft.rfftn_cached(x,shape,(-3,-2,-1))
     tol = 2e-6 if dtype==np.float32 else 2e-14
     cp.testing.assert_allclose(h,reference,atol=100*tol,rtol=tol)

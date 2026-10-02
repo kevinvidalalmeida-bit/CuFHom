@@ -45,6 +45,20 @@ suavizado de residuos. Se activa cerca de la tolerancia y comprueba el residuo
 verdadero antes de aceptar. `linear_residual_smoothing=False` conserva el CG
 sin esa combinación para comparar rendimiento y precisión.
 
+En esa ruta, `linear_fft_autotune=True` compara una vez los lotes FFT de 1, 2,
+3 y 6 componentes usando el operador completo. Guarda la elección por forma,
+precisión, GPU y versiones en `~/.cache/cufhom/fft_tuning_v1.json` (o en
+`CUFHOM_FFT_TUNING_CACHE`). Una política `cupy_rfft_batch_mode` explícita tiene
+prioridad. El primer uso incluye el coste de selección; los informes registran
+ese coste y la procedencia de la elección. `linear_fft_autotune=False` permite
+comparar con la política anterior.
+
+`linear_energy_update=True` calcula `p*Hp` en el kernel de material, con suma
+float64, y fusiona el adjunto con la actualización del CG. Así elimina la
+escritura y lectura de `Hp`. Su auditoría final conserva el operador físico
+original. Ambas opciones están activas por defecto en la ruta compatible;
+[derivación, validación y tiempos](benchmarks/linear_strategy_20261002/RESULTS.md).
+
 La ruta de coordenadas simétricas requiere material indexado y seis cargas
 seriales. Los campos constitutivos generales y las configuraciones incompatibles
 usan la formulación en deformaciones. Las pruebas cubren ambos caminos; la

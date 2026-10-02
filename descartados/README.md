@@ -79,6 +79,15 @@ El [manifiesto de esta campaña](manifest_formulaciones_20260930.json) registra
 los prototipos, scripts e informes conservados. Los benchmarks archivados
 fijan el suavizado nuevo a `False` para conservar su referencia histórica.
 
+## Espacio auxiliar y GenEO, octubre
+
+[Auxiliar y GenEO](auxiliary_geneo_20261002/README.md) conservan los V-cycles,
+modos locales y dos versiones de Galerkin ensayadas. Ninguna reduce el tiempo
+en G09, incluso al ampliar la base con 123 modos deformables. Sus conexiones
+son parches de los runners aislados; no quedan opciones experimentales en
+producción. El [prototipo de energía](energia_integrada_20261002/README.md)
+también se archiva: su método sí se integra mediante interfaces explícitas.
+
 ## Rutas que siguen activas
 
 CPU/float64, formulación en deformaciones, comprobación del residuo verdadero,
