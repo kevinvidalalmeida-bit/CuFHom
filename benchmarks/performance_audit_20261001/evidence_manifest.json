@@ -270,14 +270,15 @@
     "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar5/N96/phase.npy": "ba359ded5109e2fa29896e9dcc9d3b2e6050aa18d4878afa3de1e4ba66b72d25",
     "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar5/N96/ori.npy": "3a8e6536c885b40cd69c53563b3645f1e223fc0bf33bb0268d7e0e7b2e8a1612"
   },
-  "evidence_sha256": "4ae3173237fcece6feaa0607d194868ef2eca65c1bfb28fc39b6664bd7dd76d7",
+  "evidence_sha256": "29a9bd754e81e10900ad2c930add6db999e16986e39d340d11386c982e5d71b9",
   "evidence_records": 221,
   "current_harness_sha256": {
-    "benchmarks/build_performance_audit.py": "3c7f8d4c816bf0603b5639c98d8909cd24f71a7378f1ca34734bcabb14f76de6",
-    "benchmarks/write_performance_report.py": "d76bc213df6d15a797461e289f58dac4b5ef61adf599d624cacd4f7932eea0da",
+    "benchmarks/build_gpu_counters.py": "a57560319286afa939795812fe1e679a96f0bd846cbb987b13b7996b641e8d68",
+    "benchmarks/build_performance_audit.py": "086d0dcd5656f3ba04bbe3cc730e4f23feaf272611201af3589d6be0e7a39bf2",
+    "benchmarks/write_performance_report.py": "9ccc78fa5f973fe5c3244317bc1421e0782c703a4ea253ad79d6251338f20507",
     "benchmarks/run_fiber_audit.py": "e63faf80dc306b2618003d75665d047c648beda252d97ebb108826dc73734306",
     "benchmarks/audit_gpu_calibration.py": "1538d0af86e609abc931eb8945177e72e18543ad996a31349003a2121e670086",
-    "benchmarks/archive_audit_evidence.py": "add80b0ec4a6702668b33c10f5b727eb8063c5b13bc4d07b40a1e3c8537b3e1b",
+    "benchmarks/archive_audit_evidence.py": "3da116aaa2f6116f848bee9e588cbae291fd066fa7c1e81c5fb379a3e374ce17",
     "benchmarks/audit_dual_accuracy.py": "eb8f8f9c555437c9010d141909cd2f1d322c7f254427b6ca32a564ca6fc3a25e",
     "benchmarks/run_audit_fft_traces.py": "6eb5cae894110993f1ad15c1b3829e192963f28dc27e95f1a1f65c3855279ab3",
     "benchmarks/audit_trace_summary.py": "3c71e045707210922f677a1dbd1323868963416b78afdc29e9d4f6c5967c8733",
@@ -287,6 +288,7 @@
     "benchmarks/build_audit_experiments.py": "72ecf8e25d84e24ce5a4341f680cd00209b02df0796ffc1f04023887f27ab51f",
     "benchmarks/profile_linear_smoothing.py": "88e6ba84243342921447da6aac137881fdca921b596cfeb6cdb5a31c05800f22",
     "benchmarks/audit_fft_policy.py": "f5ea20f3318ac75ff50c0053ab813a5ba554a10d375fb222c83f046c94ff6639",
+    "benchmarks/profile_gpu_counters.py": "c7cb962f2e1246182bd1547f58e8a34356b2c627ec70be13971c8c7473578a20",
     "benchmarks/build_fiber_audit.py": "47dd58e9bad39ab36345b884b9b60803bfa59cbc82fb07022f7afd25aea41a08",
     "benchmarks/profile_linear_pipeline.py": "47167b33878480a5618495a2bf16ac5108655d876114411e2cae42dfd69af28f",
     "benchmarks/audit_variant_fields.py": "7f1c046e7dc070387734516650641170230e8a4dc7c6e132e49e3835846e0572",
@@ -294,6 +296,7 @@
     "benchmarks/reproduce_fiber_audit.py": "f8e0a88208050929d194149266da40586452df3c0fb72b5e999815ff534a4de1",
     "benchmarks/audit_linear_performance.py": "2163c57e8cc5f8aa7941029a1b1e86e39b4ab83fc01f31a183f94f48c29a6c8d",
     "benchmarks/prepare_fiber_audit.py": "9dfcf7433a98904a20b895c0c747465b3617f1c83c7eaa42f340cb1e9b705936",
+    "benchmarks/profile_gpu_counters.sh": "569b61d908e987a7a48e7eeca7422489633f2440d939d06ea4535b185a1a4b51",
     "descartados/performance_audit_20261001/cufhom_physical_metric.py": "ce0dd02c454234b2269253cd3ae4cf97ddbb9888fb391310108886918cf10b95",
     "descartados/performance_audit_20261001/cufhom_single_reduction_validate.py": "844b29b396a07373da94f7272623b4903ef2272cde7f832b65884f38fe838b20",
     "descartados/performance_audit_20261001/cufhom_acoustic_local_benchmark.py": "9981b85e585e855aadf16bac0cf6d01ed97c772f029866a60ff0c620087b2223",
@@ -315,7 +318,13 @@
     "f4d0a0974ec4bde542db0fc64b52cf6d6cd946b262b61f11b2ee2f0b2f9f98b3"
   ],
   "note": "Harness evolved to add geometry families, NVTX labels and an explicit FFT policy; all recorded production hashes agree. Baselines used auto policy. Diagnostic/variant timing is kept separate. Individual report hashes remain unchanged in the bundle.",
-  "counters_status": "ERR_NVGPUCTRPERM; RmProfilingAdminOnly=1",
+  "counters_status": "administrator capture succeeded; normal-user driver restriction unchanged",
+  "counter_evidence": {
+    "bundle": "counter_evidence.json.gz",
+    "sha256": "23fb8ba1e914ec87128a128733edd5725a4851ee38469eae6b48a071a69cdb82",
+    "captures": 60,
+    "manifest": "counter_manifest.json"
+  },
   "reproduction_N32": {
     "masters": 12,
     "arrays": 24,

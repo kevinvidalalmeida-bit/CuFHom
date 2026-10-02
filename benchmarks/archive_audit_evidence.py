@@ -25,6 +25,11 @@ def main():
     records['profiling_permission']=dict(driver_flag=[line for line in driver.read_text().splitlines()
         if 'Profiling' in line] if driver.exists() else [],
         probe_logs={path.name:path.read_text() for path in Path('/tmp').glob('cufhom-ncu-probe*.log')})
+    counter_path=a.output/'counter_manifest.json'
+    counters=json.loads(counter_path.read_text()) if counter_path.exists() else None
+    if counters:
+        records['profiling_permission']['administrator_capture']=counters
+        records['profiling_permission']['note']='Earlier probes failed as normal user; subsequent one-time administrator capture succeeded without changing driver permissions.'
     # Known fixture failure: keep it explicit instead of excluding an unsuccessful experiment.
     records['operator_G09_rhs6_failure']=dict(status='out of memory in diagnostic fixture',
         allocated_bytes=14720575488,attempted_extra_bytes=1990656000,
@@ -48,7 +53,8 @@ def main():
     with bundle.open('wb') as f:
         with gzip.GzipFile(fileobj=f,mode='wb',mtime=0) as z:z.write(encoded)
     scripts={str(path.relative_to(root)):sha(path) for path in (root/'benchmarks').glob('*.py')
-        if path.name.startswith(('audit_','build_','prepare_fiber','profile_linear','run_audit','run_fiber','reproduce_fiber','write_performance','archive_audit'))}
+        if path.name.startswith(('audit_','build_','prepare_fiber','profile_linear','profile_gpu','run_audit','run_fiber','reproduce_fiber','write_performance','archive_audit'))}
+    scripts.update({str(path.relative_to(root)):sha(path) for path in (root/'benchmarks').glob('profile_gpu*.sh')})
     archive=root/'descartados/performance_audit_20261001'
     scripts.update({str(path.relative_to(root)):sha(path) for path in archive.glob('*.py')})
     hashes=sorted(set(r['benchmark_sha256'] for r in measured_baselines))
@@ -58,7 +64,9 @@ def main():
         benchmark_hashes_as_measured=hashes,
         note='Harness evolved to add geometry families, NVTX labels and an explicit FFT policy; all recorded production hashes agree. '
             'Baselines used auto policy. Diagnostic/variant timing is kept separate. Individual report hashes remain unchanged in the bundle.',
-        counters_status='ERR_NVGPUCTRPERM; RmProfilingAdminOnly=1',
+        counters_status=counters['status'] if counters else 'ERR_NVGPUCTRPERM; RmProfilingAdminOnly=1',
+        counter_evidence=(dict(bundle='counter_evidence.json.gz',sha256=counters['bundle_sha256'],
+            captures=counters['captures'],manifest='counter_manifest.json') if counters else None),
         reproduction_N32=dict(masters=12,arrays=24,phase_and_orientation_sha256_identical=True))
     (a.output/'evidence_manifest.json').write_text(json.dumps(result,indent=2)+'\n')
     archive_manifest=dict(scope='Isolated pilots, excluded from installed package and production imports',

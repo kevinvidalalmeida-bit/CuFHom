@@ -121,7 +121,7 @@ def main():
                 b=(4*V+8*H)*batch if ('r2c' in namek or 'c2r' in namek) else 16*H*batch
                 f=(2.5*V if ('r2c' in namek or 'c2r' in namek) else 5*H)*math.log2(N)*batch;d=0.
                 basis='1D reference FFT operation/I-O model; actual cuFFT traffic/instructions unmeasured'
-                limiter='large: bandwidth/FFT layout candidate; small: device latency candidate; counters unavailable'
+                limiter='large: bandwidth/FFT layout candidate; small: device latency candidate; see sampled counters when present'
             elif namek=='indexed_sym21_apply':
                 b=52*V;f=66*V;d=0.;basis='SoA six-input/six-output + int32 ID; table assumed cached; 66 scalar ops/voxel'
                 limiter='bandwidth candidate from low logical arithmetic intensity'
@@ -210,7 +210,7 @@ def main():
                 tm=max(max(0,b-2*l2)/(util*bw),b/l2bw,f/fp32,d/fp64,latency)
                 total+=tm*k['calls']*1000
             ideal.append(dict(case=name,scenario=f'cache_model_{int(util*100)}pct_sustainable_BW',total_ms=total,removed_ms=wall-total,
-                scope='conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable'))
+                scope='conditional optimistic L2-residency/FFT-I-O model; does not use sampled DRAM counters'))
         def opportunity(title,cost,best,evidence,difficulty,experiment):
             opportunities.append(dict(case=name,opportunity=title,current_cost_ms=cost,fraction_total=cost/wall,
                 estimated_best_cost_ms=best,max_global_speedup=wall/(wall-cost+best),evidence=evidence,
@@ -218,7 +218,7 @@ def main():
         fftbest=sum(k['fixed_kernel_p10_sum_ms'] for k in kernels if k['case']==name and 'fft' in k['kernel'])
         opportunity('cuFFT current kernels at observed P10; remove host gaps separately',groups['cuFFT'],fftbest,
             'CUPTI kernel durations; observed P10 grouped by kernel registers/phase; extrapolation, not a new solver result',
-            'high','Nsight Compute DRAM/L2 counters; retain exact transforms and discretization')
+            'high','Compare FFT policies using full-solve statistics and sampled DRAM/L2 evidence; retain exact transforms and discretization')
         opportunity('GPU-resident CG scalar decisions / remove CPU gaps',host_idle,0.,
             'Exclusive CUPTI/NVTX host idle; absolute optimistic ceiling, includes mandatory CPU setup',
             'high','Small-grid diagnostic with device FP64 reductions and unchanged true physical audit')
@@ -268,6 +268,10 @@ def main():
                     'Review six complete field errors and repeat across contrasting geometries before changing defaults')))
     opportunities.sort(key=lambda r:(r.get('decision','').startswith('rejected'),
         -(r['current_cost_ms']-r['estimated_best_cost_ms'])))
+    counter_path=a.output/'gpu_counters.csv'
+    if counter_path.exists():
+        from build_gpu_counters import attach_counters
+        with counter_path.open() as f:attach_counters(kernels,list(csv.DictReader(f)))
     for file,rows in [('performance_baseline.csv',baseline),('scaling_results.csv',scaling),('kernel_profile.csv',kernels),
         ('optimization_opportunities.csv',opportunities),('component_breakdown.csv',breakdowns),('stage_breakdown.csv',stages),
         ('amdahl.csv',amdahl),('ideal_solver_scenarios.csv',ideal),('scaling_fits.csv',fitrows),

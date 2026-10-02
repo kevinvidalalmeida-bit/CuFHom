@@ -15,11 +15,7 @@ después de terminar CG en coordenadas. En Vf=5%, AR=10, 256³ son **48 iteracio
 La aceptación con dos normas evita parte de ese trabajo a la tolerancia pública, pero **el control de precisión
 comparable pierde la mejora**. Ese resultado descarta promoverla como aceleración general.
 
-**No se ha demostrado un límite físico global.** Nsight Systems funciona, pero Nsight Compute devuelve
-`ERR_NVGPUCTRPERM`; el controlador sigue mostrando `RmProfilingAdminOnly: 1`. Faltan bytes DRAM reales,
-ocupación, hits de caché y stalls. Los modelos de roofline son escenarios condicionados y se identifican así.
-La [documentación de NVIDIA](https://developer.nvidia.com/nvidia-development-tools-solutions-err_nvgpuctrperm-permission-issue-performance-counters)
-describe esta restricción del controlador. Dar acceso a los archivos no cambia ese permiso.
+**Se obtuvieron 60 capturas completas de Nsight Compute con una ejecución administrativa puntual, sin reiniciar.** En G09 los mapas/updates alcanzan 747–798 GB/s de DRAM y 81–99% de ocupación; las reducciones muestran uso alto de FP64. El acceso normal sigue restringido por el controlador. [Contadores y límites de interpretación](GPU_COUNTERS.md). **No se ha demostrado un límite físico global:** son muestras por lanzamiento con replay y caché/relojes sin controlar.
 
 ## 1. Diseño de la campaña y controles
 
@@ -225,17 +221,15 @@ de bus; no se usa esa cifra como ancho de banda sostenible medido.
 El CSV estima bytes y FLOPs de los mapas, Cε, updates, reducciones y kernels FFT que cubren aproximadamente
 91% de CUDA en G08, 90% en N64, 98% en G09 y 96% en N256. En FFT se usa un modelo de referencia de operaciones
 y E/S por transformación 1D; cuFFT puede mover más o menos datos y ejecuta instrucciones diferentes.
-Las clasificaciones de bandwidth/latencia/FP64 son **hipótesis respaldadas por tiempos e intensidad lógica**;
-faltan contadores para confirmarlas.
+Los contadores muestreados ahora respaldan el coste de memoria de los mapas/updates grandes y el uso alto de FP64 en reducciones. Los datos y banderas de calidad están en [gpu_counters.csv](gpu_counters.csv); no cubren todas las variantes ni certifican un techo global.
 
 Se calcula `max(bytes/BW, FLOPs32/F32, FLOPs64/F64, latencia)` y una sensibilidad optimista a caché
 `max(max(bytes-2L2,0)/BW, bytes/BW_cache, …)`. La supuesta residencia de 2L2 no se ha medido.
 Si el modelo predice un tiempo mayor al observado, esa fila se marca **calibration roof exceeded: invalid bound**.
 No se interpreta una eficiencia >1 como eficiencia física; invalida esa calibración para ese kernel/patrón.
 
-Los registros y memoria local de los kernels grandes están disponibles en CUPTI: los principales mapas/updates
-usan aproximadamente 32–40 registros y memoria local estática reportada 0. Eso no certifica ocupación real,
-ausencia de stalls ni ancho de banda alcanzado. Esas columnas quedan vacías con el motivo del bloqueo.
+Los principales mapas/updates usan aproximadamente 32–40 registros y memoria local estática reportada 0 en CUPTI.
+Las columnas de contadores en `kernel_profile.csv` describen la muestra nombrada por `primary_counter_sample`, con unidades y alcance explícitos. Los valores fuera de rango se conservan y marcan. `DRAM_bytes` y `warp_efficiency` siguen vacíos: no se recogieron directamente. El tráfico reconstruido se guarda por separado y no se mezcla con los bytes lógicos del modelo.
 La metodología y las diferencias entre métricas se documentan en
 [Nsight Compute](https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html) y
 [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html).
@@ -425,8 +419,8 @@ Si se redujera 50% de CG sin ningún coste nuevo, Amdahl daría aproximadamente
 
 **A. ¿Está cerca del límite práctico?** No de manera uniforme. En 192³ el default deja 24% recuperable
 medido, o al menos 1,31×. Para G09 se calcula 1,208× frente a una extrapolación P10 sin host y 1,85× frente
-al modelo optimista de caché. Ninguna razón usa un mínimo hardware certificado. Con los contadores bloqueados
-no se puede afirmar honestamente un `T_actual/T_practical_lower_bound` definitivo para G09.
+al modelo optimista de caché. Ninguna razón usa un mínimo hardware certificado. Los contadores muestreados
+no bastan para afirmar un `T_actual/T_practical_lower_bound` definitivo para G09.
 
 **B. ¿Algoritmo o implementación?** Ambos. El exceso demostrado en 128³/192³ es de implementación cuFFT.
 En algunas geometrías el cambio de norma dispara corrección, un coste algorítmico medido cuyo reemplazo probado
@@ -492,5 +486,4 @@ Después de completar los diagnósticos/experimentos, regenerar las tablas:
 
 Los pilotos se ejecutan exclusivamente desde `descartados/performance_audit_20261001` mediante PYTHONPATH explícito.
 No se importan desde producción. [Estado y criterios de descarte](../../descartados/performance_audit_20261001/README.md).
-Queda pendiente medir contadores Nsight Compute para cerrar el límite hardware; esta entrega conserva esa
-limitación de forma explícita y no la sustituye por cifras inventadas.
+La nueva captura resuelve el acceso a contadores y orienta las siguientes mejoras. Todavía faltan cobertura de variantes y control/repeticiones para estimar un límite hardware global. [Informe de contadores](GPU_COUNTERS.md).
