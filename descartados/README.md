@@ -1,8 +1,10 @@
 # Rutas retiradas de CuFHom
 
 Estas carpetas conservan evidencia y código histórico. No se instalan como
-paquetes ni se importan desde `src/`, los comandos o los benchmarks activos.
-Las pruebas normales se limitan a `tests/`.
+paquetes ni se importan desde `src/` o los comandos normales.
+Las pruebas normales se limitan a `tests/`. Los diagnósticos aislados de la
+[auditoría de octubre](performance_audit_20261001/README.md) pueden importar
+sus pilotos mediante un `PYTHONPATH` explícito; producción no los importa.
 
 ## Qué se retiró el 29 de septiembre de 2026
 

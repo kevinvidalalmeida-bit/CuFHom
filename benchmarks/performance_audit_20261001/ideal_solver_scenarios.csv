@@ -1,0 +1,52 @@
+case,scenario,total_ms,removed_ms,scope
+G08,current,66.935915,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,no_actual_transfers,66.636776,0.299139,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,no_cuda_allocations,66.935915,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,no_launch_api_idle,61.883922999999996,5.051992,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,zero_largest_kernel,58.936691999999994,7.999223,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,no_host_idle,27.882844999999996,39.05307,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G08,cache_model_70pct_sustainable_BW,55.91902765552136,11.016887344478633,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G08,cache_model_80pct_sustainable_BW,55.91902765552136,11.016887344478633,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G08,cache_model_90pct_sustainable_BW,55.91902765552136,11.016887344478633,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G09,current,2950.024611,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,no_actual_transfers,2947.4227189999997,2.601892,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,no_cuda_allocations,2950.024611,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,no_launch_api_idle,2942.878265,7.146346,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,zero_largest_kernel,1956.0348519999998,993.989759,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,no_host_idle,2855.574001,94.45061,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+G09,cache_model_70pct_sustainable_BW,2205.2631233872808,744.7614876127191,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G09,cache_model_80pct_sustainable_BW,2018.5922806710312,931.4323303289686,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G09,cache_model_90pct_sustainable_BW,1873.4038474472816,1076.6207635527182,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N64,current,49.246719,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,no_actual_transfers,49.026812,0.219907,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,no_cuda_allocations,49.246719,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,no_launch_api_idle,45.732704999999996,3.514014,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,zero_largest_kernel,43.837967,5.408752,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,no_host_idle,19.770198999999998,29.47652,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N64,cache_model_70pct_sustainable_BW,42.228148023066126,7.018570976933873,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N64,cache_model_80pct_sustainable_BW,42.228148023066126,7.018570976933873,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N64,cache_model_90pct_sustainable_BW,42.228148023066126,7.018570976933873,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N256,current,2028.167471,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,no_actual_transfers,2026.372694,1.794777,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,no_cuda_allocations,2028.167471,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,no_launch_api_idle,2025.215915,2.951556,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,zero_largest_kernel,1286.9077809999999,741.25969,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,no_host_idle,1982.414435,45.753036,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+N256,cache_model_70pct_sustainable_BW,2400.5887845142424,-372.42131351424246,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N256,cache_model_80pct_sustainable_BW,2116.4192546999616,-88.2517836999616,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+N256,cache_model_90pct_sustainable_BW,1895.398509288855,132.76896171114504,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+sfrp_vf15_ar10_N192,current,1568.882092,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,no_actual_transfers,1567.540307,1.341785,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,no_cuda_allocations,1568.882092,0.0,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,no_launch_api_idle,1564.0918900000001,4.790202,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,zero_largest_kernel,1029.970417,538.911675,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,no_host_idle,1491.883863,76.998229,optimistic subtraction from exclusive trace; dependent decisions may prevent attainment
+sfrp_vf15_ar10_N192,cache_model_70pct_sustainable_BW,1555.583157344715,13.298934655285166,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+sfrp_vf15_ar10_N192,cache_model_80pct_sustainable_BW,1375.4122460516255,193.46984594837454,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+sfrp_vf15_ar10_N192,cache_model_90pct_sustainable_BW,1235.2793150458895,333.6027769541106,conditional optimistic L2-residency/FFT-I-O model; actual DRAM traffic unavailable
+G08,CG_iterations_reduced_25pct,47.666661695255364,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.
+G08,CG_iterations_reduced_50pct,35.61635622317797,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.
+G08,CG_iterations_reduced_75pct,23.566050751100565,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.
+G09,CG_iterations_reduced_25pct,2263.463420710896,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.
+G09,CG_iterations_reduced_50pct,1582.8211743596885,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.
+G09,CG_iterations_reduced_75pct,902.1789280084811,,Hypothetical same physical tolerance; no preconditioner setup/apply cost. Not an observed speedup.

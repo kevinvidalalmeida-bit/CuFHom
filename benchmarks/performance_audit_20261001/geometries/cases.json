@@ -1,0 +1,669 @@
+[
+  {
+    "case": "sfrp_vf15_ar12.5",
+    "Vf_target": 0.15,
+    "AR": 12.5,
+    "diameter_um": 1.0,
+    "length_um": 12.5,
+    "box_um": 25.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_00",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf15_ar12.5/continuous_fibers_master.csv",
+    "seed": 2026081400,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.006035688520785731,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 117,
+        "j": 173,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9939643114792143
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.012341577094048262,
+    "fiber_count": 227,
+    "master_sha256": "e91867b1c52ba2b67392f378d7183034d53dbad026c14e3ea49ef41eb6f77315",
+    "A2_continuous": [
+      [
+        0.3320107143760249,
+        0.0008530091153827909,
+        6.009735132753952e-05
+      ],
+      [
+        0.0008530091153827909,
+        0.33387103940387036,
+        -5.529185462808693e-05
+      ],
+      [
+        6.009735132753952e-05,
+        -5.529185462808693e-05,
+        0.3341182462201047
+      ]
+    ],
+    "continuous_capsule_vf": 0.15023514948486869
+  },
+  {
+    "case": "sfrp_vf05_ar12.5",
+    "Vf_target": 0.05,
+    "AR": 12.5,
+    "diameter_um": 1.0,
+    "length_um": 12.5,
+    "box_um": 25.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_01",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf05_ar12.5/continuous_fibers_master.csv",
+    "seed": 2026081401,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.00374035534701056,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 2,
+        "j": 41,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9962596446529894
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.0016553860623389482,
+    "fiber_count": 75,
+    "master_sha256": "9f913990d7659f97a6a182d6bf34de57b0a559a340b2da21f92b3c430b90c877",
+    "A2_continuous": [
+      [
+        0.33190781670125896,
+        0.0004386470328618318,
+        -0.00043625291272674004
+      ],
+      [
+        0.0004386470328618318,
+        0.3319499760530149,
+        -0.002195340752455624
+      ],
+      [
+        -0.00043625291272674004,
+        -0.002195340752455624,
+        0.3361422072457261
+      ]
+    ],
+    "continuous_capsule_vf": 0.04963716392671873
+  },
+  {
+    "case": "sfrp_vf25_ar12.5",
+    "Vf_target": 0.25,
+    "AR": 12.5,
+    "diameter_um": 1.0,
+    "length_um": 12.5,
+    "box_um": 25.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_02",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar12.5/continuous_fibers_master.csv",
+    "seed": 2026081402,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.006803731936821933,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 123,
+        "j": 124,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9931962680631781
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.03356100106611848,
+    "fiber_count": 378,
+    "master_sha256": "4db94121e01055795ce949732d6a1bd4625ec7c3f7f03cd98988c0a490abe60b",
+    "A2_continuous": [
+      [
+        0.33335969490901685,
+        0.00010301764460454591,
+        0.00012924273375598434
+      ],
+      [
+        0.00010301764460454591,
+        0.33382440757563797,
+        -0.00010362485189670796
+      ],
+      [
+        0.00012924273375598434,
+        -0.00010362485189670796,
+        0.33281589751534546
+      ]
+    ],
+    "continuous_capsule_vf": 0.2501713061906624
+  },
+  {
+    "case": "sfrp_vf15_ar5",
+    "Vf_target": 0.15,
+    "AR": 5.0,
+    "diameter_um": 1.0,
+    "length_um": 5.0,
+    "box_um": 10.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_03",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf15_ar5/continuous_fibers_master.csv",
+    "seed": 2026081403,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.007477517530571576,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 19,
+        "j": 32,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9925224824694284
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.0006754070054739714,
+    "fiber_count": 34,
+    "master_sha256": "cd5d33e7dd8793f0d7ca3798996468927f9de1d78d9740d69c03924b5ea56cd6",
+    "A2_continuous": [
+      [
+        0.3341791808203111,
+        0.0016881917427895114,
+        -0.0009364762964114502
+      ],
+      [
+        0.0016881917427895114,
+        0.3331823038650697,
+        -0.0019157854365716726
+      ],
+      [
+        -0.0009364762964114502,
+        -0.0019157854365716726,
+        0.33263851531461924
+      ]
+    ],
+    "continuous_capsule_vf": 0.1513200461479084
+  },
+  {
+    "case": "sfrp_vf15_ar20",
+    "Vf_target": 0.15,
+    "AR": 20.0,
+    "diameter_um": 1.0,
+    "length_um": 20.0,
+    "box_um": 40.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_04",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf15_ar20/continuous_fibers_master.csv",
+    "seed": 2026081404,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_repair": {
+      "initial_audit": {
+        "accepted": false,
+        "violating_image_contacts": 1,
+        "nonnearest_violating_image_contacts": 1,
+        "maximum_relative_overlap": 0.09147308847142666,
+        "tolerance_relative": 0.008333333333333333,
+        "worst": {
+          "i": 174,
+          "j": 578,
+          "image_shift": [
+            0,
+            0,
+            1
+          ],
+          "distance": 0.9085269115285733
+        },
+        "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+      },
+      "removed_original_rows": [
+        174
+      ],
+      "scope": "Local master only; minimum-contact repair by deleting offending fibers; original source unchanged."
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.005428151944243065,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 172,
+        "j": 399,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9945718480557569
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.08561668312177062,
+    "fiber_count": 590,
+    "master_sha256": "fedfe6bbdcc11ec992b9b6bd2b0dc6fe9e80dc0cd00529afa5aac830724f60a4",
+    "A2_continuous": [
+      [
+        0.3341521170805205,
+        -0.0001615165176120721,
+        -0.000175260363965745
+      ],
+      [
+        -0.0001615165176120721,
+        0.3336750985190026,
+        -5.3437753608645604e-05
+      ],
+      [
+        -0.000175260363965745,
+        -5.3437753608645604e-05,
+        0.3321727844004772
+      ]
+    ],
+    "continuous_capsule_vf": 0.14963471258895134
+  },
+  {
+    "case": "sfrp_vf05_ar5",
+    "Vf_target": 0.05,
+    "AR": 5.0,
+    "diameter_um": 1.0,
+    "length_um": 5.0,
+    "box_um": 10.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_08",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf05_ar5/continuous_fibers_master.csv",
+    "seed": 2026081408,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.0063683530072762284,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 2,
+        "j": 3,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9936316469927238
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.0003954020794481039,
+    "fiber_count": 11,
+    "master_sha256": "aec0e41209c9845a16e09d7075e77b5e1d77083f9fc3431be6280f51c1e4b8d8",
+    "A2_continuous": [
+      [
+        0.33448242100919107,
+        -0.00032432207304190856,
+        0.0006659406398394967
+      ],
+      [
+        -0.00032432207304190856,
+        0.33194544693362515,
+        -0.00028957570103425656
+      ],
+      [
+        0.0006659406398394967,
+        -0.00028957570103425656,
+        0.33357213205718383
+      ]
+    ],
+    "continuous_capsule_vf": 0.048956485518440944
+  },
+  {
+    "case": "sfrp_vf25_ar20",
+    "Vf_target": 0.25,
+    "AR": 20.0,
+    "diameter_um": 1.0,
+    "length_um": 20.0,
+    "box_um": 40.0,
+    "source": "/home/user/Documents/geometry_compiled/results/cmame_method/interpretable_vf05_25_ar5_20/geometries/geometry_09",
+    "source_type": "existing campaign master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar20/continuous_fibers_master.csv",
+    "seed": 2026081409,
+    "source_generation_acceptance": {
+      "orientation": true,
+      "overlap": true,
+      "volume_fraction": true
+    },
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.008017076843711002,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 250,
+        "j": 935,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.991982923156289
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.2728395420126617,
+    "fiber_count": 985,
+    "master_sha256": "3cb54b796a27bc3d80b11a3c2c3ee2937f862e5745efdbccc2063c0e9ef8e55c",
+    "A2_continuous": [
+      [
+        0.3333226431717972,
+        -3.875740250411051e-06,
+        8.042652323935235e-06
+      ],
+      [
+        -3.875740250411051e-06,
+        0.33333934853651326,
+        -4.713183506566921e-06
+      ],
+      [
+        8.042652323935235e-06,
+        -4.713183506566921e-06,
+        0.3333380082916894
+      ]
+    ],
+    "continuous_capsule_vf": 0.2498138845764696
+  },
+  {
+    "case": "sfrp_vf05_ar20",
+    "Vf_target": 0.05,
+    "AR": 20.0,
+    "diameter_um": 1.0,
+    "length_um": 20.0,
+    "box_um": 40.0,
+    "source": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar20/continuous_fibers_master.csv",
+    "source_type": "orientation-balanced random subset of dense-long master",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf05_ar20/continuous_fibers_master.csv",
+    "seed": 2026100105,
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.004530782668573763,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 78,
+        "j": 145,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9954692173314262
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.00917124911211431,
+    "fiber_count": 197,
+    "master_sha256": "5ce26263e81d17e4840d467d81ed09831102b76bf219d4b13754ffa97323b30e",
+    "A2_continuous": [
+      [
+        0.3350447692153799,
+        0.005181665803040924,
+        -0.012558631130070974
+      ],
+      [
+        0.005181665803040924,
+        0.33337517064637484,
+        0.004158209904038774
+      ],
+      [
+        -0.012558631130070974,
+        0.004158209904038774,
+        0.3315800601382452
+      ]
+    ],
+    "continuous_capsule_vf": 0.049962776915293924
+  },
+  {
+    "case": "sfrp_vf25_ar5",
+    "Vf_target": 0.25,
+    "AR": 5.0,
+    "diameter_um": 1.0,
+    "length_um": 5.0,
+    "box_um": 10.0,
+    "source_type": "new local continuous RVE using unchanged generator",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar5/continuous_fibers_master.csv",
+    "seed": 2026100125,
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.008323911368603998,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 6,
+        "j": 16,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.991676088631396
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.0012298470828682184,
+    "fiber_count": 56,
+    "master_sha256": "5f84e80759a89743a57942a0baa7127eb152a47ddf4e993bf14038993bd42920",
+    "A2_continuous": [
+      [
+        0.33578012087424153,
+        0.0033033226948095675,
+        0.00018562445981890705
+      ],
+      [
+        0.0033033226948095675,
+        0.33169713072971846,
+        0.002201022496726232
+      ],
+      [
+        0.00018562445981890705,
+        0.002201022496726232,
+        0.3325227483960401
+      ]
+    ],
+    "continuous_capsule_vf": 0.24923301718479027
+  },
+  {
+    "case": "sfrp_vf15_ar10",
+    "Vf_target": 0.15,
+    "AR": 10.0,
+    "diameter_um": 1.0,
+    "length_um": 10.0,
+    "box_um": 20.0,
+    "source_type": "new local continuous RVE using unchanged generator",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf15_ar10/continuous_fibers_master.csv",
+    "seed": 2026100115,
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.008253952751891225,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 35,
+        "j": 94,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9917460472481088
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.004939437843859196,
+    "fiber_count": 143,
+    "master_sha256": "4ac8e144c474764157c15a1870d32af336f8646666222f7a719eb299397fe196",
+    "A2_continuous": [
+      [
+        0.333176101922883,
+        8.236290006753298e-06,
+        -0.0005751032272595614
+      ],
+      [
+        8.236290006753298e-06,
+        0.33378557303036427,
+        0.00040024556052143317
+      ],
+      [
+        -0.0005751032272595614,
+        0.00040024556052143317,
+        0.33303832504675285
+      ]
+    ],
+    "continuous_capsule_vf": 0.14974924982111346
+  },
+  {
+    "case": "sfrp_vf05_ar10",
+    "Vf_target": 0.05,
+    "AR": 10.0,
+    "diameter_um": 1.0,
+    "length_um": 10.0,
+    "box_um": 20.0,
+    "source_type": "new local continuous RVE using unchanged generator",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf05_ar10/continuous_fibers_master.csv",
+    "seed": 2026100105,
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.006505594224605504,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 6,
+        "j": 40,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9934944057753945
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.0008104811422526836,
+    "fiber_count": 48,
+    "master_sha256": "3a23a7c1c45008171cec5a169a44f1aad03fe2fae5446ac391e877d2b9cece2c",
+    "A2_continuous": [
+      [
+        0.3353371735,
+        -0.000789029641494792,
+        -0.001550486163916947
+      ],
+      [
+        -0.000789029641494792,
+        0.3341809009070113,
+        -0.0008205374963748701
+      ],
+      [
+        -0.001550486163916947,
+        -0.0008205374963748701,
+        0.3304819255929887
+      ]
+    ],
+    "continuous_capsule_vf": 0.05026548245743669
+  },
+  {
+    "case": "sfrp_vf25_ar10",
+    "Vf_target": 0.25,
+    "AR": 10.0,
+    "diameter_um": 1.0,
+    "length_um": 10.0,
+    "box_um": 20.0,
+    "source_type": "new local continuous RVE using unchanged generator",
+    "table": "benchmarks/results/performance_audit_20261001/fiber_geometries/sfrp_vf25_ar10/continuous_fibers_master.csv",
+    "seed": 202610012510,
+    "periodic_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.006603395281811308,
+      "tolerance_relative": 0.008333333333333333,
+      "worst": {
+        "i": 119,
+        "j": 223,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9933966047181887
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "audit_wall_s": 0.013704914832487702,
+    "fiber_count": 239,
+    "master_sha256": "73807f42e6a7f9f89f574018b36df887a4720b65430d6ed54f6bfa48a0b7c771",
+    "A2_continuous": [
+      [
+        0.33317246954708685,
+        0.00016146631456290478,
+        0.00010175389599375175
+      ],
+      [
+        0.00016146631456290478,
+        0.3338790284052234,
+        -6.011123253428205e-05
+      ],
+      [
+        0.00010175389599375175,
+        -6.011123253428205e-05,
+        0.3329485020476901
+      ]
+    ],
+    "continuous_capsule_vf": 0.25028021473598683
+  }
+]
