@@ -136,6 +136,10 @@ La matriz usa plasticidad J2 con endurecimiento isotrópico; las fibras son
 elásticas. Las seis curvas incluyen deformaciones normales y cortantes
 ingenieriles. Hay checkpoints, reinicio y descarga mediante `--unload`.
 
+El comando selecciona la formulación en desplazamientos y el precondicionador
+de matriz utilizados en las mediciones de rendimiento. Las rutas de referencia
+siguen disponibles en la API Python para verificación.
+
 Para una geometría propia usa `--case geometry --geometry geometry.npz
 --material material.json`. El material se especifica explícitamente:
 

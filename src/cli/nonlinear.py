@@ -25,10 +25,6 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--profile', action='store_true')
     parser.add_argument('--globalization', choices=['auto', 'newton', 'ptc'], default='auto')
-    parser.add_argument('--formulation', choices=['strain', 'displacement'], default='displacement',
-                        help='displacement is the verified fast route; strain is the reference formulation')
-    parser.add_argument('--preconditioner', choices=['none', 'matrix'], default='matrix',
-                        help='matrix is the verified displacement route')
     parser.add_argument('--checkpoint', action='store_true')
     parser.add_argument('--restart', type=Path)
     parser.add_argument('--start', type=float, default=0.,
@@ -66,7 +62,7 @@ def main():
     parameters = dict(phase_array=phase, ori_array=ori, matrix=matrix, fiber=fiber,
                       backend=args.backend,
                       profile=args.profile, globalization=args.globalization,
-                      formulation=args.formulation, preconditioner=args.preconditioner)
+                      formulation='displacement', preconditioner='matrix')
     if args.dtype:
         parameters['dtype'] = args.dtype
     if args.restart:
