@@ -125,6 +125,44 @@ La ruta GPU (`fft_backend="cupy"`) aplica los defaults compatibles de RFFT,
 material indexado, proyección directa, fusiones y auditoría del residuo real.
 Las formulaciones de referencia se mantienen para verificación.
 
+### Benchmark común con FANS
+
+`cufhom.fft.linear.hex8` proporciona un operador periódico HEX8 con ocho puntos
+de Gauss para comparar el mismo sistema nodal que el ejemplo oficial de FANS.
+Admite dos fases isotrópicas y float64; conserva todas las frecuencias salvo
+las traslaciones uniformes. Sus arrays espaciales usan el orden Z,Y,X y sus
+componentes Mandel el orden 11,22,33,12,13,23.
+
+El stencil reúne exactamente las contribuciones de los elementos incidentes.
+Las 256 combinaciones de fases permiten almacenar sus bloques sin construir
+una matriz global. El solver recalcula `b - K u` y exige
+`max(abs(b - K u)) / max(abs(b)) <= rtol`.
+
+Con CuPy y PyTorch instalados en el mismo entorno, una copia del
+[código oficial](https://github.com/DataAnalyticsEngineering/UNOCG) y la muestra
+original `test/dset_1` de `3d_microstructures.h5` del
+[dataset publicado](https://doi.org/10.18419/DARUS-5686):
+
+```bash
+python tools/benchmark_hex8.py --phase runs/paper_fans_192/phase.npy \
+  --reference external/solver_references/UNOCG --output runs/hex8_comparison
+```
+
+El script valida primero operador, carga y precondicionador en mallas pequeñas.
+Después alterna las mediciones 192³, con una carga, float64 y residuo máximo
+relativo `1e-6`. El código original de FANS audita ambos resultados; se comparan
+también desplazamientos y tensiones por celda. La preparación se registra
+por separado; el tiempo de resolución incluye la auditoría común y excluye
+las transferencias y la comparación de campos. Los datos externos y resultados
+permanecen excluidos de Git. `--small-only` ejecuta la comprobación pequeña en CPU.
+
+En la RTX 5070 Ti, tres pares alternados dieron medianas de **22,101 s para
+FANS** y **1,463 s para CuFHom-HEX8**: **15,10×** de aceleración local. Ambos
+usaron 19 iteraciones y residuo verdadero máximo relativo `3,80e-7`.
+Los errores relativos entre los campos completos fueron `3,31e-13` para
+desplazamientos y `8,91e-14` para tensiones. La cifra publicada de 1,3008 s
+para FANS en H100 tiene otro hardware y alcance de cronometraje.
+
 ## FFT no lineal
 
 ```bash
