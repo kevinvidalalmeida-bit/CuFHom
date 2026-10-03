@@ -5,9 +5,9 @@ of trigonometric polynomials and relating operators.
 
 import numpy as np
 from cufhom_core.general.base import Representation
-from cufhom_core.trigpol import mean_index, fft_form_default, get_Nodd
+from cufhom_core.trigpol import mean_index, fft_form_default
 from cufhom_core.mechanics.matcoef import ElasticTensor
-from cufhom_core.trigpol import enlarge, decrease, get_inverse, Grid
+from cufhom_core.trigpol import decrease, get_inverse, Grid
 from cufhom_core.tensors.fft import (
     fftn, ifftn, fftnc, icfftn, rfftn, irfftn,
     CUPY_AVAILABLE, get_array_module, get_fft_backend, is_array_type,
@@ -678,9 +678,7 @@ class Tensor(TensorFuns):
         if N is None:
             N = self.N
 
-        from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
-        from cufhom_core.trigpol import Grid
 
         coord=Grid.get_coordinates(N, self.Y)
 

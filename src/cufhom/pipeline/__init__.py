@@ -1,1 +1,0 @@
-"""Pipeline principal Sobol GPU."""

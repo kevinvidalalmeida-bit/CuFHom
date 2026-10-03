@@ -368,7 +368,6 @@ class VecTri(FieldFun, Grid):
         if N is None:
             N=self.N
 
-        from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
         from cufhom_core.trigpol import Grid
         fig=plt.figure()
@@ -632,41 +631,6 @@ class Matrix(FieldFun):
                 submatrix=np.diag(self.val[ii, jj].ravel())
                 matrix[pN*ii:pN*(ii+1), pN*jj:pN*(jj+1)]=submatrix
         return matrix
-
-
-class ShiftMatrix():
-    """
-    Matrix object defining shift of Fourier coefficients.
-    """
-    @staticmethod
-    def get_shift_matrix(N, ss=None):
-        N=np.array(N)
-        d=np.size(N)
-        if ss is None:
-            ss=np.zeros(d)
-        else:
-            ss=np.array(ss)
-
-        def omeg2N(s, k, n):
-            return np.exp(-2*np.pi*1j*(s*k/n))
-
-        ZNl=VecTri.get_ZNl(N)
-        SS=np.outer(omeg2N(ss[0], ZNl[0], 2*N[0]),
-                      omeg2N(ss[1], ZNl[1], 2*N[1]))
-        return SS
-
-    def __init__(self, N):
-        self.N=N
-        self.d=np.size(N)
-
-    def get_shift(self, ss, transpose=False):
-        SS=Matrix(N=self.N, Fourier=True)
-        S=self.get_shift_matrix(self.N, ss)
-        if transpose:
-            S=S.conj()
-        for ii in np.arange(self.d):
-            SS.val[ii, ii]=S
-        return SS
 
 
 class Id():
@@ -1092,68 +1056,6 @@ class MultiOper():
         name='(%s)^T'%self.name
         return MultiOper(name=name, val=val)
 
-
-class ScipyOper():
-    def __init__(self, name='ScipyLinOper', A=None, X=None, AT=None,
-                 dtype=None):
-        self.name=name
-        self.A=A
-        if dtype is not None:
-            self.dtype=dtype
-        else:
-            self.dtype=np.float64
-
-        if AT is not None:
-            self.AT=AT
-
-        Y=A(X)
-        self.shape=(Y.size, X.size)
-        self.X=X
-        self.Y=Y
-
-    def rmatvec(self, x):
-        X=self.revecD(x)
-        ATX=self.AT(X)
-        return ATX.vec()
-
-    def revec(self, x):
-        val=[]
-        x_end=0
-        for m in self.X._iter:
-            x_beg=x_end
-            x_end=x_beg+self.X.lsize[m]
-            xpart=x[x_beg:x_end]
-            if self.X.ltype[m]=='VecTri':
-                comp=VecTri(val=np.reshape(xpart, self.X.lshape[m]))
-            val.append(comp)
-        return MultiVector(val=val)
-
-    def revecD(self, x):
-        return self.revec(x)
-
-    def get_size(self, X):
-            N=0
-            X_shape=[]
-            if isinstance(X, VecTri):
-                N+=X.size
-                X_shape.append(X.shape())
-            elif isinstance(X, MultiVector):
-                for m in np.arange(X.lsize):
-                    X_type=type(X)
-                    N+=X[m].size
-            return N, X_type
-
-    def matvec(self, x):
-        X=self.revec(x)
-        AX=self.A(X)
-        return AX.vec()
-
-    def __repr__(self):
-        ss='Class : %s\n    name : %s\n'%(self.__class__.__name__,
-                                              self.name)
-        ss+='    shape = %s\n'%(str(self.shape))
-        ss+='    A : %s\n'%(self.A.name)
-        return ss
 
 def enlargeF(xN, M):
     """

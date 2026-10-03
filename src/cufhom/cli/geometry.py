@@ -2,7 +2,7 @@
 import argparse
 from pathlib import Path
 import sys
-from cufhom.pipeline.geometry import GeometryRequest, generate_geometry
+from cufhom.geometry import GeometryRequest, generate_geometry
 
 
 def main():

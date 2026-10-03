@@ -11,7 +11,11 @@ def test_imports_outside_checkout(tmp_path):
     command = '''
 from pathlib import Path
 import cufhom, cufhom_core
-from cufhom.pipeline import sam_orientation, fft_solver, nonlinear_solver
+from cufhom.geometry import GeometryRequest, generate_geometry
+from cufhom.fft import solve_homogenization, solve_nonlinear_homogenization
+from cufhom.materials import J2Material, engineering_constants_from_Cmandel
+assert all(callable(f) for f in (GeometryRequest, generate_geometry, solve_homogenization,
+    solve_nonlinear_homogenization, J2Material, engineering_constants_from_Cmandel))
 assert 'geometry_compiled' not in cufhom.__file__
 assert 'geometry_compiled' not in cufhom_core.__file__
 print(cufhom.__file__)
@@ -20,10 +24,10 @@ print(cufhom.__file__)
                    check=True, capture_output=True, text=True, timeout=30)
 
 
-def test_sobol_help_does_not_require_cuda(tmp_path):
-    result = subprocess.run([sys.executable, '-I', '-m', 'cufhom.cli.sobol', '--help'],
+def test_nonlinear_help_does_not_require_cuda(tmp_path):
+    result = subprocess.run([sys.executable, '-I', '-m', 'cufhom.cli.nonlinear', '--help'],
                             cwd=tmp_path, check=True, capture_output=True, text=True, timeout=30)
-    assert '--smoke' in result.stdout
+    assert '--geometry' in result.stdout
 
 
 def test_geometry_help_outside_checkout(tmp_path):

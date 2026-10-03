@@ -1000,7 +1000,7 @@ def grad(X):
     if X.Fourier:
         FX=X
     else:
-        F=DFT(N=X.N, fft_form=X.fft_form) # TODO:change to X.fourier()
+        F=DFT(N=X.N, fft_form=X.fft_form)
         FX=F(X)
 
     dim=len(X.N)
@@ -1054,8 +1054,6 @@ def div(X):
     dX.name='div({0})'.format(X.name[:10])
     return dX
 
-def laplace(X):
-    return div(grad(X))
 
 def symgrad(X):
     gX=grad(X)
@@ -1122,8 +1120,6 @@ def matrix2tensor(M):
     return Tensor(name=M.name, val=M.val, order=2, multype=21,
                   Fourier=M.Fourier, fft_form=fft_form_default)
 
-def vector2tensor(V):
-    return Tensor(name=V.name, val=V.val, order=1, Fourier=V.Fourier)
 
 def grad_div_tensor(N, Y=None, grad=True, div=True, fft_form=fft_form_default):
     if grad and div:

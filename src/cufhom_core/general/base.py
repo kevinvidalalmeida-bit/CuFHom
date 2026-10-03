@@ -18,26 +18,6 @@ class Representation():
                 ss+='{0}{1}{3} = {2}\n'.format(skip, key, str(attr), (nstr-key.__len__())*' ')
         return ss
 
-class PrintControl():
-    flag=True
-
-    def __init__(self, flag=True):
-        self.flag=True
-
-    def activate(self):
-        self.flag=True
-
-    def deactivate(self):
-        self.flag=False
-
-    def disable(self):
-        if self.flag:
-            sys.stdout = open(os.devnull, 'w')
-
-    def enable(self):
-        if self.flag:
-            sys.stdout.close()
-            sys.stdout = sys.__stdout__
 
 class Timer():
     def __init__(self, name='time', start=True):

@@ -4,8 +4,8 @@ import argparse
 import json
 import numpy as np
 
-from cufhom.pipeline.nonlinear_solver import solve_nonlinear_homogenization
-from cufhom.pipeline.nonlinear_curves import (MANDEL_COMPONENTS, CONSTITUTIVE_COMPONENTS,
+from cufhom.fft import solve_nonlinear_homogenization
+from cufhom.fft.nonlinear.curves import (MANDEL_COMPONENTS, CONSTITUTIVE_COMPONENTS,
                                        loading_component, export_constitutive_curves)
 
 

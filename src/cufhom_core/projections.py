@@ -1,11 +1,9 @@
 import numpy as np
-import scipy as sp
 from cufhom_core.trigpol import Grid, get_Nodd, mean_index, fft_form_default
 from cufhom_core.matvecs import Matrix
 from cufhom_core.tensors import Tensor
 from cufhom_core.tensors.fft import CUPY_AVAILABLE, cp, get_fft_backend
 from cufhom_core.tensors.objects import SYM21_PAIRS
-import itertools
 
 
 def _array_backend(backend):

@@ -11,6 +11,7 @@ source .venv/bin/activate
 python -m pip install -e '.[test]'
 python -m pytest -q
 python examples/smoke_cpu.py
+python examples/smoke_cpu.py --geometry
 ```
 
 Python >= 3.11. `requirements-cpu.lock` contiene las versiones comprobadas en
@@ -85,14 +86,15 @@ cufhom-generate --output runs/continued \
 
 Para fibras flexibles: `--fiber-model flexible --solver a2 --segments 4`.
 Su AR usa longitud de contorno; el modelo representa cadenas de cápsulas con
-curvatura geométrica. La separación mínima y la reanudación se admiten en el
+curvatura geométrica; cada segmento debe medir al menos un diámetro
+(`AR >= segments`). La separación mínima y la reanudación se admiten en el
 modo recto.
 
 API de generación:
 
 ```python
 from pathlib import Path
-from cufhom.pipeline.geometry import GeometryRequest, generate_geometry
+from cufhom.geometry import GeometryRequest, generate_geometry
 
 summary = generate_geometry(GeometryRequest(
     output=Path("runs/example"), vf=.08, ar=4, box=12, grid=72,
@@ -103,7 +105,7 @@ summary = generate_geometry(GeometryRequest(
 
 ```python
 import numpy as np
-from cufhom.pipeline.fft_solver import solve_homogenization
+from cufhom.fft import solve_homogenization
 
 with np.load("runs/geometry01/geometry.npz", allow_pickle=False) as data:
     phase, ori = data["phase"], data["ori"]
@@ -117,7 +119,7 @@ C = solve_homogenization(dict(
 
 Los módulos usan las mismas unidades de tensión para todos los materiales;
 los ejemplos usan GPa. `C` es la rigidez 6×6 en Mandel, orden
-11, 22, 33, 23, 13, 12. `cufhom.engineering` convierte a constantes ingenieriles.
+11, 22, 33, 23, 13, 12. `cufhom.materials` convierte a constantes ingenieriles.
 El solver también acepta `Cfield_array` y geometrías constitutivas compiladas.
 La ruta GPU (`fft_backend="cupy"`) aplica los defaults compatibles de RFFT,
 material indexado, proyección directa, fusiones y auditoría del residuo real.
@@ -144,25 +146,48 @@ Para una geometría propia usa `--case geometry --geometry geometry.npz
 }
 ```
 
-API: `cufhom.pipeline.nonlinear_solver.solve_nonlinear_homogenization`.
+API: `from cufhom.fft import solve_nonlinear_homogenization`.
 El [ejemplo CPU](examples/smoke_cpu.py) comprueba límites analíticos de ambos
 solvers. `cufhom-nonlinear --help` muestra los controles de carga y reinicio.
 
-## Campañas Sobol
-
-`cufhom-sobol --smoke` ejecuta un diseño y una realización con FFT GPU.
-La configuración está en `cufhom.cli.sobol`; `--points`, `--seeds` y
-`--no-overlap` permiten acotar una campaña. Todos los diseños usan
-el mismo generador certificado, con cilindros y A4. Los resultados quedan en
-`results/` y están excluidos de Git. CuPy/CUDA se comprueba antes de iniciar.
-
 ## Estructura y distribución
 
-- `src/cufhom`: geometría, solvers y comandos.
-- `src/cufhom_core`: núcleo espectral y formulaciones de referencia.
-- `tests`: controles físicos, gradientes, CPU/GPU y comandos.
-- `examples`: ejemplos independientes de campañas externas.
-- `third_party`: atribución del código incorporado.
+```text
+src/cufhom/
+    geometry/        # Rectas, flexibles, contactos, orientación y raster
+    fft/
+        linear/      # Ensamblaje elástico y CG optimizado
+        nonlinear/   # Equilibrio incremental y curvas constitutivas
+        operators.py # Espacio admisible, cargas mixtas y precondicionador
+        krylov.py    # CG compartido con auditoría del residuo real
+    materials/       # Elasticidad, rotaciones y plasticidad J2
+    cli/             # Generación y curvas no lineales
+src/cufhom_core/     # Núcleo espectral incorporado, aviso MIT conservado
+tests/
+    geometry/        # Incluye referencias geométricas independientes
+    fft/linear/
+    fft/nonlinear/
+    materials/
+examples/
+```
 
-No se incluyen resultados, binarios de solvers externos ni rutas experimentales.
-[Publicación y licencia](docs/PUBLISHING.md).
+Las APIs públicas son `cufhom.geometry`, `cufhom.fft` y `cufhom.materials`.
+Los antiguos imports `cufhom.pipeline.*` se sustituyen por estas rutas.
+Las campañas Sobol y su comando se retiraron del paquete.
+Se conservan las formulaciones de referencia que validan los operadores
+optimizados, los checkpoints funcionales y los controles de convergencia.
+Los resultados y las instalaciones locales externas están excluidos de Git.
+
+Para crear una distribución:
+
+```bash
+python -m pip wheel . --no-deps --wheel-dir /tmp/cufhom-wheel
+```
+
+### Licencias
+
+El núcleo incorporado mantiene la licencia MIT de FFTHomPy y sus avisos de
+autoría: [atribución](third_party/ffthompy/README.md).
+La licencia del código propio y el nombre completo del titular están pendientes
+de elección del autor; el aviso MIT del núcleo no licencia todo el proyecto.
+El archivo [LICENSE](LICENSE) registra este estado.

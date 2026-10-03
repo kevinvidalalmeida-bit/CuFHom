@@ -24,3 +24,22 @@ external/
 .DS_Store
 *.pem
 *.key
+# Generated geometry, solver states and GPU profiles
+outputs/
+checkpoints/
+dumps/
+profiles/
+*.ncu-rep
+*.nsys-rep
+*.qdrep
+*.nvvp
+*.cubin
+*.ptx
+*.o
+*.so
+# Other local editor and analysis caches
+.idea/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+coverage.xml

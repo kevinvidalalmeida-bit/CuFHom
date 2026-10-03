@@ -8,16 +8,14 @@ version = "0.1.0"
 description = "Periodic fiber geometry and linear/nonlinear FFT homogenization"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["numpy>=1.26,<3", "scipy>=1.11", "numba>=0.60", "pandas>=2",
-                "openpyxl>=3.1", "tqdm>=4.66", "threadpoolctl>=3"]
+dependencies = ["numpy>=1.26,<3", "scipy>=1.11", "numba>=0.60"]
 
 [project.optional-dependencies]
-test = ["pytest>=8", "matplotlib>=3.8"]
+test = ["pytest>=9", "matplotlib>=3.8"]
 plots = ["matplotlib>=3.8"]
 
 [project.scripts]
 cufhom-generate = "cufhom.cli.geometry:main"
-cufhom-sobol = "cufhom.cli.sobol:main"
 cufhom-nonlinear = "cufhom.cli.nonlinear:main"
 
 [tool.setuptools.packages.find]

@@ -71,52 +71,6 @@ class Grid():
         return coord
 
 
-class TrigPolBasis(Grid):
-    """
-    This represents a basis functions of trigonometric polynomials.
-    """
-    def eval_phi_k_N(self, x):
-        val = np.zeros_like(x, dtype=np.complex128)
-        coef = 1./np.prod(self.N)
-        for ii in self.get_ZNl(self.N)[0]:
-            val += coef*np.exp(2*1j*np.pi*ii*(x/self.Y - self.order/self.N))
-        return val
-
-    def eval_phi_k(self, x):
-        val = np.exp(2*np.pi*1j*x*self.order/self.Y)
-        return val
-
-    def get_nodes(self):
-        ZNl = self.get_ZNl(self.N)[0]
-        x_nodes = ZNl*self.Y/self.N
-        vals = np.zeros_like(x_nodes)
-        ind = self.order + np.trunc(self.N/2)
-        vals[ind] = 1
-        return x_nodes, vals
-
-    def __init__(self, order, N=None, Y=None):
-        self.order = order
-        self.dim = np.size(order)
-        self.N = np.array(N)
-
-        if Y is None:
-            self.Y = np.ones(self.dim)
-
-        if N is None:
-            self.Fourier = True
-            self.eval = self.eval_phi_k
-        else:
-            self.Fourier = False
-            self.eval = self.eval_phi_k_N
-
-    def __repr__(self):
-        if self.Fourier:
-            ss = "Fourier basis function for k = %d" % (self.order,)
-        else:
-            ss = "Shape basis function for k = %d and N = %s" \
-                % (self.order, str(self.N))
-        return ss
-
 def get_inverse(A):
     """
     It calculates the inverse of conductivity coefficients at grid points,

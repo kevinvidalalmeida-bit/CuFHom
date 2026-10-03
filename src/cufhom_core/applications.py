@@ -40,11 +40,6 @@ CG_PROFILE_LABELS = (
 _ELASTICITY_PROJECTION_CACHE = {}
 
 
-def clear_elasticity_projection_cache():
-    """Release session-owned Fourier projection tensors."""
-    _ELASTICITY_PROJECTION_CACHE.clear()
-
-
 def _elasticity_projection_cache_key(
     pb, *, fft_form, real_dtype, projection_storage, projection_backend
 ):
