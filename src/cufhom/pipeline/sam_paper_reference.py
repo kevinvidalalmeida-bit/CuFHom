@@ -2,13 +2,13 @@
 
 References: Schneider (2017), doi:10.1007/s00466-016-1350-7, eq. 9;
 Mehta & Schneider (2022), doi:10.1007/s00466-022-02201-x, eqs. 3.12--3.15.
-Equal-length capsules, general A4, inertia metric, normalized tangent step
-(2017) or optional sphere exponential map (2022). Armijo is our safeguard.
-The physical volume/raster convention remains capsules, not a 2017 replica.
+Equal-length capsule contacts, general A4 and inertia metric. Solvers use either
+an Armijo tangent step (optionally geodesic) or normalized-coordinate L-BFGS.
+The CLI separately selects capsule or flat-cylinder physical volume and raster.
 """
 import numpy as np
 from numba import njit
-from .sam_contact_energy import contact_energy, _closest
+from .sam_contact_energy import contact_energy, _closest_components
 from .sam_neighbor_cache import build_aabb_pairs, endpoint_motion_bound
 from .sam_periodic_audit import audit_periodic_fibers
 from .sam_orientation import resolve_orientation
@@ -59,18 +59,21 @@ def _near_segment_pairs(pairs, centers, u, length, box, reach):
     keep = np.zeros(len(pairs), dtype=np.bool_)
     for k in range(len(pairs)):
         i, j = pairs[k]
-        delta = centers[j]-centers[i]
-        delta -= np.rint(delta/box)*box
-        a, b = length*u[i], length*u[j]
-        ext = .5*(np.abs(a)+np.abs(b))+reach+1e-12
-        lo = np.ceil((-ext-delta)/box).astype(np.int64)
-        hi = np.floor((ext-delta)/box).astype(np.int64)
-        for sx in range(lo[0], hi[0]+1):
-            for sy in range(lo[1], hi[1]+1):
-                for sz in range(lo[2], hi[2]+1):
-                    shift = box*np.array([sx, sy, sz])
-                    if _closest(delta+shift, a, b)[0] <= reach+1e-12:
+        dx,dy,dz=centers[j,0]-centers[i,0],centers[j,1]-centers[i,1],centers[j,2]-centers[i,2]
+        dx-=np.rint(dx/box[0])*box[0]
+        dy-=np.rint(dy/box[1])*box[1]
+        dz-=np.rint(dz/box[2])*box[2]
+        ax,ay,az=length*u[i,0],length*u[i,1],length*u[i,2]
+        bx,by,bz=length*u[j,0],length*u[j,1],length*u[j,2]
+        ex,ey,ez=.5*(abs(ax)+abs(bx))+reach+1e-12,.5*(abs(ay)+abs(by))+reach+1e-12,.5*(abs(az)+abs(bz))+reach+1e-12
+        for sx in range(int(np.ceil((-ex-dx)/box[0])),int(np.floor((ex-dx)/box[0]))+1):
+            if keep[k]: break
+            for sy in range(int(np.ceil((-ey-dy)/box[1])),int(np.floor((ey-dy)/box[1]))+1):
+                if keep[k]: break
+                for sz in range(int(np.ceil((-ez-dz)/box[2])),int(np.floor((ez-dz)/box[2]))+1):
+                    if _closest_components(dx+sx*box[0],dy+sy*box[1],dz+sz*box[2],ax,ay,az,bx,by,bz)[0] <= reach+1e-12:
                         keep[k] = True
+                        break
     return pairs[keep]
 
 
@@ -172,7 +175,9 @@ def objective(centers, u, length, domain, weight=1., neighbors=None, target_a4=N
 
     E = E_contact + N*epsilon*weight/8 * ||A4-A4_target||_F**2.
     Dividing the orientation gradient by epsilon recovers the torque/A4
-    balance in the published equation for equal lengths.
+    balance in eq. (9) for equal lengths. The printed eq. (8) lacks N;
+    its literal derivative with averaged A4 would be smaller by N. This
+    objective consistently matches the eq. (9) vector field, not eq. (8).
     """
     kwargs = {}
     if neighbors is not None:
@@ -196,8 +201,9 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
                           orientation_weight=1., overlap_tolerance=1/120,
                           a2_tolerance=.035, a4_tolerance=1e-4,
                           progress=None, use_neighbors=True, target_a4=None,
-                          rotation_update='retraction', min_gap=0., neighbor_mode='single'):
-    """Keep the best feasibility score, audit independently, never mutate input.
+                          rotation_update='retraction', min_gap=0., neighbor_mode='single',
+                          optimizer='gradient', neighbor_skin=.5):
+    """Keep feasible success or lowest-energy progress; audit, never mutate input.
 
     A2 input chooses the explicit ACG closure unless A4 is supplied. Full tensor
     Frobenius norm is used, not unweighted engineering-Voigt norm. Both A2 and
@@ -211,6 +217,10 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
     update = sphere_retract if rotation_update == 'retraction' else sphere_exp
     if neighbor_mode not in ('single', 'multilevel'):
         raise ValueError('Unknown neighbor mode')
+    if optimizer not in ('gradient', 'lbfgs'):
+        raise ValueError('Unknown A4 optimizer')
+    if optimizer == 'lbfgs' and rotation_update != 'retraction':
+        raise ValueError('L-BFGS uses normalized coordinates; geodesic update requires gradient optimizer')
     if not (np.allclose(f[:, 6:], f[0, 6:])):
         raise ValueError('Equal lengths and diameters required')
     if (not np.isfinite([orientation_weight, overlap_tolerance, a2_tolerance, a4_tolerance]).all()
@@ -227,7 +237,8 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
     u = np.ascontiguousarray(f[:, 3:6])
     eps = rotational_inertia(length, 1.)
     neighbor_type = ContactNeighbors if neighbor_mode == 'single' else MultilevelContactNeighbors
-    neighbors = neighbor_type(length, domain, contact_diameter=contact_diameter) if use_neighbors else None
+    neighbors = neighbor_type(length, domain, skin=neighbor_skin,
+                              contact_diameter=contact_diameter) if use_neighbors else None
     evaluations = 0
 
     def evaluate(c, u):
@@ -236,17 +247,20 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
         return objective(c, u, length, domain, orientation_weight, neighbors,
                          target_a4, contact_diameter)
 
-    current = evaluate(c, u)
+    current = evaluate(c, u) if optimizer == 'gradient' else None
     history = []
     best_score, best_c, best_u = np.inf, c.copy(), u.copy()
+    lowest_energy, energy_c, energy_u = np.inf, c.copy(), u.copy()
     step, accepted_steps = .3, 0
     status = 'iteration_budget_exhausted'
-    for iteration in range(maxiter+1):
+    for iteration in range(maxiter+1 if optimizer == 'gradient' else 0):
         energy, gc, gu, overlap, a4 = current
         a2 = float(np.linalg.norm(u.T@u/len(u)-target)/np.linalg.norm(target))
         score = max(overlap/overlap_tolerance, a2/a2_tolerance, a4/a4_tolerance)
         if score < best_score:
             best_score, best_c, best_u = score, c.copy(), u.copy()
+        if energy < lowest_energy:
+            lowest_energy, energy_c, energy_u = energy, c.copy(), u.copy()
         row = dict(iteration=iteration, energy=energy, overlap_relative=overlap,
                    A2_error=a2, A4_error=a4, step=step, evaluations=evaluations)
         # Bounded history: checkpoints/progress contain every 25th iteration.
@@ -279,6 +293,16 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
         else:
             status = 'line_search_stalled'
             break
+    if optimizer == 'lbfgs':
+        from .sam_lbfgs_a4 import minimize_a4
+        best_c, best_u, result = minimize_a4(
+            c, u, evaluate, eps, target, maxiter=maxiter,
+            overlap_tolerance=overlap_tolerance, a2_tolerance=a2_tolerance,
+            a4_tolerance=a4_tolerance, progress=progress)
+        history, accepted_steps = result['history'], result['iterations']
+        status = result['optimizer_message']
+    elif best_score > 1:
+        best_c, best_u = energy_c, energy_u
     f[:, :3] = np.mod(best_c*diameter, np.asarray(box))
     f[:, 3:6] = best_u
     after = audit_periodic_fibers(f, box, overlap_tolerance)
@@ -297,6 +321,13 @@ def relax_paper_reference(fibers, box, target, *, maxiter=300,
                    neighbor_mode=neighbor_mode if use_neighbors else 'dense',
                    neighbor_level_rebuilds=getattr(neighbors, 'level_rebuilds', []),
                    orientation_norm='full_tensor_frobenius',
-                   orientation_target=orientation, rotation_update=rotation_update,
+                   orientation_target=orientation,
+                   rotation_update=rotation_update if optimizer == 'gradient' else 'normalized_coordinates',
                    gap_audit=gap_audit, min_gap=min_gap,
-                   solver='inertia_A4_Armijo')
+                   optimizer=optimizer, neighbor_skin=neighbor_skin,
+                   returned_state=(result['returned_state'] if optimizer=='lbfgs' else
+                                   'best_feasible' if best_score<=1 else 'lowest_energy_infeasible'),
+                   recoverable_stop=result['recoverable_stop'] if optimizer=='lbfgs' else False,
+                   final_gradient_inf_norm=result['final_gradient_inf_norm'] if optimizer=='lbfgs' else None,
+                   fallback_step=result['fallback_step'] if optimizer=='lbfgs' else None,
+                   solver='inertia_A4_Armijo' if optimizer == 'gradient' else 'inertia_A4_LBFGS')

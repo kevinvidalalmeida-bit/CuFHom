@@ -1,0 +1,242 @@
+[
+  {
+    "attempt": 0,
+    "iterations": 3109,
+    "evaluations": 3251,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561227,
+    "wall_seconds": 13.808380980044603,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983514,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561227,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168385,
+      "axis_coordinate_radius_max": 9.722645048168392
+    },
+    "last": {
+      "iteration": 3109,
+      "energy": 46.36561689710424,
+      "overlap_relative": 0.7205761541390845,
+      "A2_error": 0.0068902148645261785,
+      "A4_error": 0.011719173996737003,
+      "evaluations": 3251,
+      "axis_coordinate_radius_min": 9.722773874638373,
+      "axis_coordinate_radius_max": 9.803199496945348
+    }
+  },
+  {
+    "attempt": 1,
+    "iterations": 3142,
+    "evaluations": 3340,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 12.360354186967015,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168385,
+      "axis_coordinate_radius_max": 9.72264504816839
+    },
+    "last": {
+      "iteration": 3142,
+      "energy": 46.450623899007766,
+      "overlap_relative": 0.725350273857307,
+      "A2_error": 0.006847847970770816,
+      "A4_error": 0.011729605038347033,
+      "evaluations": 3340,
+      "axis_coordinate_radius_min": 9.722760248067152,
+      "axis_coordinate_radius_max": 9.781956842652383
+    }
+  },
+  {
+    "attempt": 2,
+    "iterations": 3078,
+    "evaluations": 3447,
+    "accepted": false,
+    "message": "ABNORMAL: ",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 12.521670566871762,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168387,
+      "axis_coordinate_radius_max": 9.722645048168392
+    },
+    "last": {
+      "iteration": 3078,
+      "energy": 46.44543166797206,
+      "overlap_relative": 0.7260368991689241,
+      "A2_error": 0.0068266599060746065,
+      "A4_error": 0.011703957985159733,
+      "evaluations": 3447,
+      "axis_coordinate_radius_min": 9.72276521693835,
+      "axis_coordinate_radius_max": 9.779742521168217
+    }
+  },
+  {
+    "attempt": 3,
+    "iterations": 3359,
+    "evaluations": 3577,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 14.887622224865481,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168385,
+      "axis_coordinate_radius_max": 9.72264504816839
+    },
+    "last": {
+      "iteration": 3359,
+      "energy": 46.171575323074784,
+      "overlap_relative": 0.7279961305827923,
+      "A2_error": 0.006802452233241144,
+      "A4_error": 0.011748262617012338,
+      "evaluations": 3577,
+      "axis_coordinate_radius_min": 9.72279003699761,
+      "axis_coordinate_radius_max": 9.802714787364879
+    }
+  },
+  {
+    "attempt": 4,
+    "iterations": 4190,
+    "evaluations": 4399,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 16.634443264221773,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168387,
+      "axis_coordinate_radius_max": 9.722645048168392
+    },
+    "last": {
+      "iteration": 4190,
+      "energy": 45.9055640143354,
+      "overlap_relative": 0.7145573939368843,
+      "A2_error": 0.00675129983706823,
+      "A4_error": 0.011767262888590268,
+      "evaluations": 4399,
+      "axis_coordinate_radius_min": 9.722853608259099,
+      "axis_coordinate_radius_max": 9.800315749921378
+    }
+  },
+  {
+    "attempt": 5,
+    "iterations": 3359,
+    "evaluations": 3577,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 14.947866034926847,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168385,
+      "axis_coordinate_radius_max": 9.72264504816839
+    },
+    "last": {
+      "iteration": 3359,
+      "energy": 46.171575323074784,
+      "overlap_relative": 0.7279961305827923,
+      "A2_error": 0.006802452233241144,
+      "A4_error": 0.011748262617012338,
+      "evaluations": 3577,
+      "axis_coordinate_radius_min": 9.72279003699761,
+      "axis_coordinate_radius_max": 9.802714787364879
+    }
+  },
+  {
+    "attempt": 6,
+    "iterations": 4190,
+    "evaluations": 4399,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 16.629366640932858,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168387,
+      "axis_coordinate_radius_max": 9.722645048168392
+    },
+    "last": {
+      "iteration": 4190,
+      "energy": 45.9055640143354,
+      "overlap_relative": 0.7145573939368843,
+      "A2_error": 0.00675129983706823,
+      "A4_error": 0.011767262888590268,
+      "evaluations": 4399,
+      "axis_coordinate_radius_min": 9.722853608259099,
+      "axis_coordinate_radius_max": 9.800315749921378
+    }
+  },
+  {
+    "attempt": 7,
+    "iterations": 3359,
+    "evaluations": 3577,
+    "accepted": false,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gap_violation": 0.694984727635681,
+    "A4_error": 0.011918097649561218,
+    "wall_seconds": 14.873639309080318,
+    "first": {
+      "iteration": 0,
+      "energy": 47.53404092983516,
+      "overlap_relative": 0.6956797123633166,
+      "A2_error": 0.00677763877721041,
+      "A4_error": 0.011918097649561218,
+      "evaluations": 1,
+      "axis_coordinate_radius_min": 9.722645048168385,
+      "axis_coordinate_radius_max": 9.72264504816839
+    },
+    "last": {
+      "iteration": 3359,
+      "energy": 46.171575323074784,
+      "overlap_relative": 0.7279961305827923,
+      "A2_error": 0.006802452233241144,
+      "A4_error": 0.011748262617012338,
+      "evaluations": 3577,
+      "axis_coordinate_radius_min": 9.72279003699761,
+      "axis_coordinate_radius_max": 9.802714787364879
+    }
+  }
+]

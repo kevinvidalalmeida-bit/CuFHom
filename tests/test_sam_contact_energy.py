@@ -6,8 +6,10 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import numpy as np
-from cufhom.pipeline.sam_contact_energy import objective, contact_energy, relax_contact_energy
+from cufhom.pipeline.sam_contact_energy import (objective, contact_energy, relax_contact_energy,
+                                               candidate_contact_energies)
 from cufhom.pipeline.sam_periodic_audit import audit_periodic_fibers
 from cufhom.pipeline import rve_generator as raster
 
@@ -16,6 +18,61 @@ class ContactEnergyTests(unittest.TestCase):
     def setUp(self):
         from numba import set_num_threads
         set_num_threads(2)
+
+    def test_candidate_batch_matches_individual_periodic_insertions(self):
+        rng = np.random.default_rng(2718)
+        # Strided views match the layout used by the proposal table.
+        table = rng.uniform(0., 4., (7, 8))
+        table[:, 3:6] = rng.normal(size=(7, 3))
+        table[:, 3:6] /= np.linalg.norm(table[:, 3:6], axis=1)[:, None]
+        c, u = table[:, :3], table[:, 3:6]
+        cc = rng.uniform(-4., 8., (9, 3))
+        uu = rng.normal(size=(9, 3))
+        uu /= np.linalg.norm(uu, axis=1)[:, None]
+        original = table.copy()
+        for length, diameter in ((2., 1.), (5., 1.001)):
+            for existing in (0, len(c)):
+                args = (length, diameter, np.full(3, 4.))
+                actual = candidate_contact_energies(c[:existing], u[:existing], cc, uu, *args)
+                expected = np.array([contact_energy(np.vstack((c[:existing], center)),
+                                    np.vstack((u[:existing], direction)), *args,
+                                    first_new=existing)[0] for center, direction in zip(cc, uu)])
+                np.testing.assert_array_equal(actual, expected)
+                if existing == 0 and length == 5.:
+                    self.assertGreater(actual.max(), 0.)  # self images still count
+        np.testing.assert_array_equal(table, original)
+
+    def test_candidate_alternatives_do_not_contact_each_other(self):
+        empty = np.empty((0, 3))
+        c = np.array([[2., 2., 2.], [2., 2., 2.]])
+        u = np.array([[1., 0., 0.], [1., 0., 0.]])
+        actual = candidate_contact_energies(empty, empty, c, u, 2., 1., np.full(3, 8.))
+        np.testing.assert_array_equal(actual, [0., 0.])
+
+    def test_a2_cache_reuses_callbacks_and_tracks_mutated_coordinates(self):
+        f = np.array([[2., 2., 2., 1., 0., 0., 2., 1.],
+                      [2., 4., 2., 1., 0., 0., 2., 1.]])
+        visited = []
+        def counted(x, *args):
+            visited.append(x.copy())
+            return objective(x, *args)
+        def solver(fun, x, *, callback, **kwargs):
+            fun(x)
+            callback(x)
+            fun(x.copy())
+            x[0] += .25  # changing the same array must invalidate the cache
+            fun(x)
+            callback(x)
+            fun(x.copy())
+            return SimpleNamespace(x=x, success=True, message='checked', nit=1, nfev=4)
+        with patch('cufhom.pipeline.sam_contact_energy.objective', counted), \
+             patch('cufhom.pipeline.sam_contact_energy.minimize', solver):
+            out, info = relax_contact_energy(f, 8., np.diag([1., 0., 0.]))
+        self.assertTrue(info['contact_and_A2_accepted'])
+        self.assertEqual(info['objective_evaluations'], 2)
+        self.assertEqual(len(visited), 2)
+        self.assertAlmostEqual(visited[1][0]-visited[0][0], .25)
+        np.testing.assert_array_equal(out[:, 6:], f[:, 6:])
 
     def test_gradient_finite_differences(self):
         rng = np.random.default_rng(258)

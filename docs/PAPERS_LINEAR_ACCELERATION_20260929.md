@@ -20,6 +20,14 @@ la reutilización de deformación/tensión en la auditoría final, validada con
 los seis campos y el residual físico original. Esta identidad no cambia el espectro de H
 ni reduce las iteraciones.
 
+La [revisión con curvas de Vf/AR](../benchmarks/vf_ar_curves_20261002/RESULTS.md)
+integra además la reutilización del espectro final y la rotación directa en
+Mandel. Las ganancias son pequeñas y conservan CG. El
+[informe del código](../benchmarks/vf_ar_curves_20261002/CODE_REVIEW.md)
+prioriza escalares de CG en GPU para mallas pequeñas y estudiar reutilización
+de modos entre las seis cargas para mallas grandes. Ambas propuestas siguen
+pendientes; no se presentan como nuevos resultados de los artículos.
+
 Las fusiones iniciales redujeron el tiempo por iteración con 288 CG. Después,
 el **suavizado tardío de residuos** redujo las seis cargas a **276 CG** y el
 tiempo un **2,82 % adicional** en una comparación alternada de la implementación

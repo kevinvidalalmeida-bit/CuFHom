@@ -4813,8 +4813,16 @@ class SAMLiteGenerator:
 
     @staticmethod
     def rotational_scale(length: float, diameter: float) -> float:
+        """Capsule transverse inertia per mass, in length squared.
+
+        Schneider (2017), eq. (7): the aspect-ratio polynomial is divided
+        by AR + 2/3. Multiplication suppresses ordinary contact rotations
+        by roughly AR**2; FIRE/compaction gains can compensate separately.
+        """
+        if not np.isfinite([length, diameter]).all() or min(length, diameter) <= 0:
+            raise ValueError("Positive finite length and diameter required")
         a = length / diameter
-        return diameter**2 * (2.0/3.0 + a * (a**3/12.0 + a**2/6.0 + 3.0*a/16.0 + 1.0/15.0))
+        return diameter**2 * (a**3/12.0 + a**2/6.0 + 3.0*a/16.0 + 1.0/15.0) / (a + 2.0/3.0)
 
     @staticmethod
     def _sanitize_A2(A2: Array) -> Array:

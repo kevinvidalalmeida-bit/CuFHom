@@ -45,9 +45,14 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
             audit_cache.clear()
             strain = B.copy(val=Q.strain(z))
             stress = A(strain)
-            value = Q.adjoint(stress.val)
+            spectrum = None
+            if (retain and mode == 'symmetric_fused'
+                    and pb.solver.get('linear_final_spectrum_reuse', True)):
+                value, spectrum = Q.adjoint_with_spectrum(stress.val)
+            else:
+                value = Q.adjoint(stress.val)
             if retain:
-                audit_cache[:] = [z, strain, stress]
+                audit_cache[:] = [z, strain, stress, spectrum]
             return value
 
         def action_and_dot(z, *, direction=None):
@@ -98,7 +103,7 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 del residual
             del trial
 
-        strain_reused = stress_reused = False
+        strain_reused = stress_reused = spectrum_reused = False
         if initial is not None and initial_norm <= threshold:
             result, iterations, norm = initial, 0, initial_norm
         else:
@@ -140,7 +145,12 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                 result.val += initial.val
             projected = None
             if strain_reused and hasattr(Afun, 'apply_material_result'):
-                projected = Afun.apply_material_result(audit_cache[2], A, GN)
+                if audit_cache[3] is None:
+                    projected = Afun.apply_material_result(audit_cache[2], A, GN)
+                else:
+                    projected = Afun.apply_material_result(audit_cache[2], A, GN,
+                                                          spectrum=audit_cache[3])
+                    spectrum_reused = projected is not None
             stress_reused = projected is not None
             audit_cache.clear()
             residual = B.val-(projected if stress_reused else Afun(result)).val
@@ -165,6 +175,7 @@ def make_linear_solver(*, A, GN, pb, fallback, bulk, shear, preconditioning=None
                     linear_energy_update='update_callback' in fused_options,
                     linear_final_strain_reuse=strain_reused,
                     linear_final_audit_reuse=stress_reused,
+                    linear_final_spectrum_reuse=spectrum_reused,
                     warm_start_requested=x0 is not None,
                     warm_start_accepted=initial is not None,
                     warm_start_projected=x0 is not None,

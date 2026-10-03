@@ -68,6 +68,25 @@ class A4CommandTests(unittest.TestCase):
             self.assertIn('cannot be null', result.stderr)
             self.assertFalse((folder/'out').exists())
 
+    def test_a2_only_export_and_default_a4_closure_are_distinct(self):
+        with tempfile.TemporaryDirectory() as temp:
+            for solver in ('lbfgs-a2', 'auto'):
+                output = Path(temp)/solver
+                result = self.invoke(output, '--shape', 'cylinder', '--a2', '.6', '.3',
+                                     '--solver', solver, '--overlap-tolerance', '1e-6')
+                self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+                summary = json.loads((output/'summary.json').read_text())
+                self.assertTrue(summary['accepted'])
+                with np.load(output/'geometry.npz', allow_pickle=False) as data:
+                    np.testing.assert_allclose(data['A2_target'], np.diag([.6, .3, .1]))
+                    if solver == 'lbfgs-a2':
+                        self.assertEqual(data['A4_target'].size, 0)
+                        self.assertNotIn('voxel_A4_error', summary)
+                        self.assertIn('checking A2 only', result.stdout)
+                    else:
+                        self.assertEqual(data['A4_target'].shape, (3,3,3,3))
+                        self.assertTrue(summary['voxel_A4_ok'])
+
 
 if __name__ == '__main__':
     unittest.main()

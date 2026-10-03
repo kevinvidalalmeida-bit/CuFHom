@@ -776,11 +776,12 @@ class Operator():
         res.name='{0}({1})'.format(self.name[:6], x.name[:10])
         return res
 
-    def apply_material_result(self, stress, material, projection):
+    def apply_material_result(self, stress, material, projection, *, spectrum=None):
         """Project an already evaluated material result for this same operator.
 
-        Return None when the supplied material/projection are not precisely
-        the factors of this operator or its native GPU path is unavailable.
+        The optional spectrum is the same stress's unscaled RFFT, supplied by
+        the owning solve's true check. Return None for mismatched factors,
+        incompatible FFT conventions, or an unavailable native GPU path.
         """
         if self.no_summands != 1 or len(self.mat_rev[0]) != 2:
             return None
@@ -788,9 +789,10 @@ class Operator():
         if (_unwrap_timed(Aop) is not _unwrap_timed(material)
                 or _unwrap_timed(GNop) is not _unwrap_timed(projection)):
             return None
-        return self._call_cupy_fast_path(stress, material_result=stress.val)
+        return self._call_cupy_fast_path(stress, material_result=stress.val,
+                                        material_spectrum=spectrum)
 
-    def _call_cupy_fast_path(self, x, material_result=None):
+    def _call_cupy_fast_path(self, x, material_result=None, material_spectrum=None):
         if get_fft_backend() != 'cupy' or not CUPY_AVAILABLE:
             return None
         if not isinstance(x, Tensor):
@@ -817,12 +819,6 @@ class Operator():
         if not (isinstance(FNraw, DFT) and isinstance(hGraw, Tensor) and isinstance(FiNraw, DFT)):
             return None
 
-        stats = getattr(self, '_component_profile', None)
-        if stats is not None:
-            return self._profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats, material_result)
-
-        x_val = to_backend_array(x.val, prefer_backend='cupy')
-        Ax = (_tensor_apply_cupy(Araw, x_val) if material_result is None else material_result)
         use_unscaled_pair = (
             _CUPY_UNSCALED_FFT_PAIR and
             FNraw.fft_form == 0 and
@@ -837,10 +833,30 @@ class Operator():
             not FNraw.inverse and
             FiNraw.inverse
         )
+        if material_spectrum is not None:
+            shape = FNraw._N_tuple
+            expected = x.val.shape[:-len(shape)]+shape[:-1]+(shape[-1]//2+1,)
+            if (not use_unscaled_rfft_pair or material_result is None
+                    or not isinstance(x.val, cp.ndarray)
+                    or tuple(a % x.val.ndim for a in FNraw._axes) != (1, 2, 3)
+                    or not isinstance(material_spectrum, cp.ndarray)
+                    or material_spectrum.shape != expected
+                    or material_spectrum.real.dtype != x.val.dtype
+                    or material_spectrum.dtype not in (cp.complex64, cp.complex128)
+                    or not material_spectrum.flags.c_contiguous
+                    or material_spectrum.device.id != x.val.device.id):
+                return None
+        stats = getattr(self, '_component_profile', None)
+        if stats is not None:
+            return self._profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats,
+                                              material_result, material_spectrum)
+        x_val = to_backend_array(x.val, prefer_backend='cupy')
+        Ax = (_tensor_apply_cupy(Araw, x_val) if material_result is None else material_result)
         if use_unscaled_pair:
             Fx = fftn_unscaled_cached(Ax, FNraw._N_tuple, FNraw._axes)
         elif use_unscaled_rfft_pair:
-            Fx = rfftn_cached(Ax, FNraw._N_tuple, FNraw._axes)
+            Fx = (rfftn_cached(Ax, FNraw._N_tuple, FNraw._axes)
+                  if material_spectrum is None else material_spectrum)
         else:
             Fx = _apply_dft_raw(FNraw, Ax)
         projection = (
@@ -858,7 +874,8 @@ class Operator():
         return x.copy(val=out)
 
     @staticmethod
-    def _profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats, material_result=None):
+    def _profile_cupy_sequence(x, Araw, FNraw, hGraw, FiNraw, stats, material_result=None,
+                              material_spectrum=None):
         def measure(label, function, *args):
             cupy_synchronize()
             started = time.perf_counter()
@@ -877,7 +894,8 @@ class Operator():
         if unscaled:
             fx = measure('FN', fftn_unscaled_cached, ax, FNraw._N_tuple, FNraw._axes)
         elif unscaled_rfft:
-            fx = measure('FN', rfftn_cached, ax, FNraw._N_tuple, FNraw._axes)
+            fx = (measure('FN', rfftn_cached, ax, FNraw._N_tuple, FNraw._axes)
+                  if material_spectrum is None else material_spectrum)
         else:
             fx = measure('FN', _apply_dft_raw, FNraw, ax)
         projection = _rfft_unscaled_projection(hGraw, FNraw._prodN) if unscaled_rfft else hGraw

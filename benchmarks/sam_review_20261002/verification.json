@@ -1,0 +1,62 @@
+{
+  "checkpoints": [
+    {
+      "pilot": "pilot_vf05",
+      "certificate": {
+        "accepted": true,
+        "A2_error": 1.1951052235032886e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.540529203322379e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 357,
+            "j": 405,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990459470797
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 1.3593620782090818e-06,
+        "A4_tolerance": 0.0001
+      },
+      "count": 448
+    },
+    {
+      "pilot": "pilot_continuation",
+      "certificate": {
+        "accepted": true,
+        "A2_error": 4.512013301560919e-09,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.635851671019324e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 149,
+            "j": 903,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990364148329
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 2.8900804563182372e-08,
+        "A4_tolerance": 0.0001
+      },
+      "count": 1120
+    }
+  ],
+  "report_links_ok": true,
+  "scripts_parse": true
+}

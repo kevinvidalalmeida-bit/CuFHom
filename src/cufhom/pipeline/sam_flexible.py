@@ -200,6 +200,8 @@ def generate_flexible(s, target, *, progress=None, checkpoint=None):
     target = validate_settings(s, target)
     if s.solver != 'lbfgs-a2' or s.min_gap:
         raise ValueError('Flexible generator currently supports lbfgs-a2 without explicit minimum gap only')
+    if s.insertion_policy != 'ranked' or s.batch_reduction != 'halve':
+        raise ValueError('Insertion policy and batch reduction controls currently require straight fibers')
     if (s.segments < 2 or int(s.segments) != s.segments or not np.isfinite(s.bending_weight)
             or s.bending_weight < 0 or not 0 < s.max_turn_degrees < 90):
         raise ValueError('Flexible mode requires >=2 segments, nonnegative bending and turn in (0,90)')

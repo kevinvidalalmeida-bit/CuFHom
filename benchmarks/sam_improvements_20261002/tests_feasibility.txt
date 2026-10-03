@@ -1,0 +1,9 @@
+Command:
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python -m pytest -q tests/test_sam*.py
+
+Result after production SAM inertia correction:
+94 passed, 7 subtests passed in 7.63s
+
+Focused new checks:
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python -m pytest -q tests/test_sam_inertia.py
+6 passed in 0.58s

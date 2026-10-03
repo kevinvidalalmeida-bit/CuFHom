@@ -48,6 +48,16 @@ class SymmetricCoordinates(DisplacementCoordinates):
         v = value.reshape((3,)+self.hshape)
         return (self.transverse*v+(self.longitudinal-self.transverse)*k*np.sum(k*v, axis=0)).ravel()
 
+    def adjoint_with_spectrum(self, field):
+        """Keep the unscaled RFFT only for a final original-equation audit.
+
+        The coordinate map reads its input. The physical projection creates
+        a separate spectrum, so the inverse FFT never consumes this snapshot.
+        """
+        with self.P.timers.measure('coordinates_adjoint'):
+            h = core_fft.rfftn_cached(field, self.shape, (1, 2, 3))
+            return self._map(h, True), h
+
     def _map(self, x, adjoint):
         if self.xp is np:
             return self.root(super()._map(x, True)) if adjoint else super()._map(self.root(x), False)

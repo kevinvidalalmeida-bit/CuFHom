@@ -68,10 +68,70 @@ def test_mismatched_physical_operator_keeps_full_audit(monkeypatch,tmp_path):
     from cufhom_core.tensors.operators import Operator
     original=Operator.apply_material_result
     calls=[]
-    def mismatch(self,stress,material,projection):
+    def mismatch(self,stress,material,projection,**kwargs):
         calls.append(1)
-        return original(self,stress,object(),projection)
+        return original(self,stress,object(),projection,**kwargs)
     monkeypatch.setattr(Operator,'apply_material_result',mismatch)
     _,_,infos=run(case((5,7,5)),tmp_path/'mismatch.json')
     assert len(calls)==6
     assert all(i['linear_final_strain_reuse'] and not i['linear_final_audit_reuse'] for i in infos)
+
+
+@pytest.mark.parametrize('shape,policy',[((5,7,5),'full'),((6,4,8),'component'),
+                                       ((6,4,8),'batch2'),((6,4,8),'batch3')])
+def test_spectrum_reuse_removes_six_RFFT_calls(shape,policy,tmp_path,monkeypatch):
+    from cufhom_core.tensors import operators
+    original=operators.rfftn_cached
+    calls=[]
+    def observed(*args):
+        calls.append(1);return original(*args)
+    monkeypatch.setattr(operators,'rfftn_cached',observed)
+    parameters=dict(case(shape),cupy_rfft_batch_mode=policy)
+    C,fields,base=run(dict(parameters,linear_final_spectrum_reuse=False),tmp_path/'base.json')
+    old=len(calls);calls.clear()
+    new,new_fields,infos=run(parameters,tmp_path/'new.json')
+    assert old-len(calls)==6
+    assert all(i['linear_final_spectrum_reuse'] for i in infos)
+    assert not any(i['linear_final_spectrum_reuse'] for i in base)
+    np.testing.assert_array_equal(new,C)
+    for a,b in zip(fields,new_fields):np.testing.assert_array_equal(a,b)
+    np.testing.assert_array_equal([i['true_norm_res_rel'] for i in infos],[i['true_norm_res_rel'] for i in base])
+
+
+@pytest.mark.parametrize('invalid',['shape','dtype','scaling'])
+def test_incompatible_spectrum_retains_full_audit(invalid,tmp_path,monkeypatch):
+    from cufhom_core.tensors import operators
+    original=operators.Operator.apply_material_result
+    reference,fields,_=run(case((5,7,5)),tmp_path/'base.json')
+    calls=[]
+    def incompatible(self,stress,material,projection,**kwargs):
+        spectrum=kwargs['spectrum'];calls.append(1)
+        if invalid=='shape':kwargs['spectrum']=spectrum[:1]
+        elif invalid=='dtype':kwargs['spectrum']=spectrum.astype(cp.complex128)
+        else:
+            with monkeypatch.context() as m:
+                m.setattr(operators,'_CUPY_UNSCALED_FFT_PAIR',False)
+                return original(self,stress,material,projection,**kwargs)
+        return original(self,stress,material,projection,**kwargs)
+    monkeypatch.setattr(operators.Operator,'apply_material_result',incompatible)
+    C,new_fields,infos=run(case((5,7,5)),tmp_path/'new.json')
+    assert len(calls)==6 and not any(i['linear_final_spectrum_reuse'] or i['linear_final_audit_reuse'] for i in infos)
+    np.testing.assert_array_equal(C,reference)
+    for a,b in zip(fields,new_fields):np.testing.assert_array_equal(a,b)
+
+
+def test_profile_skips_only_material_and_forward(tmp_path,monkeypatch):
+    from cufhom_core.tensors.operators import Operator
+    original=Operator.apply_material_result;profiles=[]
+    def profiled(self,*args,**kwargs):
+        stats={name:dict(seconds=0.,calls=0) for name in ['A','FN','hG','FiN']}
+        self._component_profile=stats
+        try:return original(self,*args,**kwargs)
+        finally:
+            profiles.append(stats);del self._component_profile
+    monkeypatch.setattr(Operator,'apply_material_result',profiled)
+    _,_,infos=run(case((5,7,5)),tmp_path/'new.json')
+    assert len(profiles)==6 and all(i['linear_final_spectrum_reuse'] for i in infos)
+    for p in profiles:
+        assert p['A']['calls']==p['FN']['calls']==0
+        assert p['hG']['calls']==p['FiN']['calls']==1

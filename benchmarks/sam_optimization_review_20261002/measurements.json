@@ -1,0 +1,153 @@
+{
+  "scope": "Paired, warmed A2/A4 generation timings with independent accepted exports.",
+  "numba_threads": 1,
+  "repeats": 3,
+  "compilation_excluded": true,
+  "cases": {
+    "a2": {
+      "samples": {
+        "before": [
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_before_0",
+            "generation_s": 0.8246810389682651,
+            "total_s": 1.067977595841512,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_before_1",
+            "generation_s": 0.8205506950616837,
+            "total_s": 1.0620939370710403,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_before_2",
+            "generation_s": 0.8175948199350387,
+            "total_s": 1.0580612178891897,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          }
+        ],
+        "after": [
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_after_0",
+            "generation_s": 0.2708833289798349,
+            "total_s": 0.5092869210056961,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_after_1",
+            "generation_s": 0.2733310488983989,
+            "total_s": 0.5142026790417731,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a2_after_2",
+            "generation_s": 0.26924835704267025,
+            "total_s": 0.5077874020207673,
+            "count": 458,
+            "vf": 0.04997550116644965,
+            "voxel_A2_error": 0.0003425915642635549,
+            "voxel_A4_error": null
+          }
+        ]
+      },
+      "median_total_s": {
+        "before": 1.0620939370710403,
+        "after": 0.5092869210056961
+      },
+      "speedup": 2.0854529996052293,
+      "identical_continuous_state": true,
+      "state_sha256": "648075d3af518c8820f2af9ab2bc4af76e430f6811295f6ab49a65d622ded959"
+    },
+    "a4": {
+      "samples": {
+        "before": [
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_before_0",
+            "generation_s": 2.825593796093017,
+            "total_s": 3.0843647411093116,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_before_1",
+            "generation_s": 2.805443407036364,
+            "total_s": 3.05875403014943,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_before_2",
+            "generation_s": 2.821926726028323,
+            "total_s": 3.074584530899301,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          }
+        ],
+        "after": [
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_after_0",
+            "generation_s": 0.7328231469728053,
+            "total_s": 0.9901686229277402,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_after_1",
+            "generation_s": 0.7361883199773729,
+            "total_s": 0.9946363468188792,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          },
+          {
+            "directory": "benchmarks/results/sam_optimization_comparison_20261002/a4_after_2",
+            "generation_s": 0.7384129560086876,
+            "total_s": 0.9981241261120886,
+            "count": 458,
+            "vf": 0.04996010109230324,
+            "voxel_A2_error": 0.0005843283271755289,
+            "voxel_A4_error": 0.0007893215370777563
+          }
+        ]
+      },
+      "median_total_s": {
+        "before": 3.074584530899301,
+        "after": 0.9946363468188792
+      },
+      "speedup": 3.091164465015449,
+      "identical_continuous_state": true,
+      "state_sha256": "8a47280ff7f9a04e5c5ca394a73959f29e21cd40c267a7eec73558553ad24574"
+    }
+  },
+  "source_sha256": {
+    "benchmarks/sam_optimization_review_20261002/reference_before.py": "a701df15169aa83028ccb50813e7aa0d70344287a4cc7b8ccbc6a89bfdde56b1",
+    "benchmarks/sam_optimization_review_20261002/measure_optimizations.py": "de61cb47ddb4a204bd653729c7cd0019c4e9244b6d058dd303cf433874b9b903",
+    "src/cufhom/pipeline/sam_contact_energy.py": "b0d6967e0a31d3401735b55cb1731e24bf4171c93ff0cb0f8688c10e09ce5c20",
+    "src/cufhom/pipeline/sam_staged_insertion.py": "4df2a15a7b14477f0454890e7824e9f6b85bbc4d0618bc3136f46806c4100eaf",
+    "src/cufhom/cli/geometry.py": "121b307289343acd0629e2a8f47f121f0da6f15cce9039ff19bae1297928804c"
+  }
+}

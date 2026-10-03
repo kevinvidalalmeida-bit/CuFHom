@@ -1017,50 +1017,9 @@ def _build_cfield_gpu(
         R_batch = geometry_layout['rotations']
         n_unique = len(R_batch)
 
-    Cf_local_f64 = Cf_local.astype(np.float64)
-    C4_local = mandel_to_tensor4(Cf_local_f64)
-
-    pairs = [(0,0),(1,1),(2,2),(1,2),(0,2),(0,1)]
-    fac = np.array(
-        [1, 1, 1, np.sqrt(2), np.sqrt(2), np.sqrt(2)],
-        dtype=np.dtype(Cm.dtype),
-    )
-    fac_gpu = cp.asarray(fac)
-    fac_outer = fac_gpu[:, None] * fac_gpu[None, :]
-
-    C4_gpu = cp.asarray(C4_local, dtype=gpu_dtype)
-    rot_chunk = int(rotation_batch_size)
-    if rot_chunk <= 0:
-        rot_chunk = int(n_unique)
-    rot_chunk = max(1, min(rot_chunk, int(n_unique)))
-
-    if packed_sym21:
-        Cm_rot = cp.empty((n_unique, 21), dtype=gpu_dtype)
-    else:
-        Cm_rot = cp.empty((n_unique, 6, 6), dtype=gpu_dtype)
-
-    for rot_start in range(0, n_unique, rot_chunk):
-        rot_end = min(rot_start + rot_chunk, n_unique)
-        R_gpu = cp.asarray(R_batch[rot_start:rot_end], dtype=gpu_dtype)
-        T1 = cp.einsum('gip,pqrs->giqrs', R_gpu, C4_gpu)
-        T2 = cp.einsum('gjq,giqrs->gijrs', R_gpu, T1)
-        T3 = cp.einsum('gkr,gijrs->gijks', R_gpu, T2)
-        C4_rot = cp.einsum('gls,gijks->gijkl', R_gpu, T3)
-
-        if packed_sym21:
-            for K, (I, J) in enumerate(_SYM21_PAIRS):
-                i, j = pairs[I]
-                k, l = pairs[J]
-                Cm_rot[rot_start:rot_end, K] = (
-                    fac_outer[I, J] * C4_rot[:, i, j, k, l]
-                )
-        else:
-            for I, (i, j) in enumerate(pairs):
-                for J, (k, l) in enumerate(pairs):
-                    Cm_rot[rot_start:rot_end, I, J] = (
-                        fac_outer[I, J] * C4_rot[:, i, j, k, l]
-                    )
-        del R_gpu, T1, T2, T3, C4_rot
+    from .material_rotation import rotate_mandel_batch_gpu
+    Cm_rot = rotate_mandel_batch_gpu(
+        Cf_local, R_batch, gpu_dtype, packed_sym21, rotation_batch_size)
 
     inv_idx_gpu = cp.asarray(inv_idx, dtype=cp.int32)
     if indexed:
@@ -1757,6 +1716,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             'linear_fft_autotune': bool(p.get('linear_fft_autotune', True)),
             'linear_energy_update': bool(p.get('linear_energy_update', True)),
             'linear_final_audit_reuse': bool(p.get('linear_final_audit_reuse', True)),
+            'linear_final_spectrum_reuse': bool(p.get('linear_final_spectrum_reuse', True)),
             'kind': 'CG',
             'tol': solver_rtol,
             'rtol': solver_rtol,
@@ -2028,6 +1988,9 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
                 and p.get('linear_energy_update', True)),
             "linear_final_audit_reuse": bool(linear_formulation == 'displacement'
                 and linear_preconditioning == 'symmetric_fused' and p.get('linear_final_audit_reuse', True)),
+            "linear_final_spectrum_reuse": bool(linear_formulation == 'displacement'
+                and linear_preconditioning == 'symmetric_fused' and p.get('linear_final_audit_reuse', True)
+                and p.get('linear_final_spectrum_reuse', True)),
             "use_cfield_material_fast_path": bool(use_cfield_material_fast_path),
             "cupy_fused_matvec": bool(cupy_fused_matvec),
             "cupy_unscaled_fft_pair": bool(cupy_unscaled_fft_pair),

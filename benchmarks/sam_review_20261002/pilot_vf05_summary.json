@@ -1,0 +1,546 @@
+{
+  "status": "target_count_reached",
+  "accepted_count": 448,
+  "target_count": 448,
+  "geometric_certificate": {
+    "accepted": true,
+    "A2_error": 1.1951052236144773e-07,
+    "audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 9.540529203322379e-07,
+      "tolerance_relative": 1e-06,
+      "worst": {
+        "i": 357,
+        "j": 405,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9999990459470797
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "A4_error": 1.3593620782090818e-06,
+    "A4_tolerance": 0.0001
+  },
+  "orientation_target": {
+    "source": "A2_to_A4_angular_central_Gaussian",
+    "A2": [
+      [
+        0.3333333333333333,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.3333333333333333,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.3333333333333333
+      ]
+    ],
+    "A4": [
+      [
+        [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.06666666666666667
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.06666666666666667,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.06666666666666667,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ]
+      ]
+    ],
+    "contraction_error": 5.551115123125783e-17,
+    "norm": "full_tensor_frobenius",
+    "warning": "A2 does not uniquely determine A4; closure is a distributional assumption"
+  },
+  "vf_not_certified": true,
+  "events": [
+    {
+      "event": "trial_start",
+      "stage": 0,
+      "attempt": 0,
+      "accepted_count": 0,
+      "addition": 48
+    },
+    {
+      "event": "commit",
+      "stage": 0,
+      "attempt": 0,
+      "previous_count": 0,
+      "proposed_count": 48,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 6.812912942073671e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.913249749970987e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 29,
+            "j": 43,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.999999008675025
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 4.5745378829833485e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 326,
+      "optimizer_evaluations": 327
+    },
+    {
+      "event": "trial_start",
+      "stage": 1,
+      "attempt": 0,
+      "accepted_count": 48,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 1,
+      "attempt": 0,
+      "previous_count": 48,
+      "proposed_count": 112,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 4.324088800011518e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.889677886620873e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 43,
+            "j": 93,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990110322113
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 2.8419155073862473e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 332,
+      "optimizer_evaluations": 333
+    },
+    {
+      "event": "trial_start",
+      "stage": 2,
+      "attempt": 0,
+      "accepted_count": 112,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 2,
+      "attempt": 0,
+      "previous_count": 112,
+      "proposed_count": 176,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 3.006397100680054e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.935400451244192e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 44,
+            "j": 134,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990064599549
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 2.299201068738174e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 263,
+      "optimizer_evaluations": 264
+    },
+    {
+      "event": "trial_start",
+      "stage": 3,
+      "attempt": 0,
+      "accepted_count": 176,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 3,
+      "attempt": 0,
+      "previous_count": 176,
+      "proposed_count": 240,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 2.423873717388396e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.889884359237655e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 120,
+            "j": 137,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990110115641
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 2.363496441702107e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 259,
+      "optimizer_evaluations": 260
+    },
+    {
+      "event": "trial_start",
+      "stage": 4,
+      "attempt": 0,
+      "accepted_count": 240,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 4,
+      "attempt": 0,
+      "previous_count": 240,
+      "proposed_count": 304,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 2.623492490222886e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.436782488769779e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 235,
+            "j": 243,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990563217511
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 2.2134938112747844e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 250,
+      "optimizer_evaluations": 251
+    },
+    {
+      "event": "trial_start",
+      "stage": 5,
+      "attempt": 0,
+      "accepted_count": 304,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 5,
+      "attempt": 0,
+      "previous_count": 304,
+      "proposed_count": 368,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 2.1925111204407998e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.693341018746082e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 223,
+            "j": 269,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990306658981
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 1.718389698608075e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 259,
+      "optimizer_evaluations": 260
+    },
+    {
+      "event": "trial_start",
+      "stage": 6,
+      "attempt": 0,
+      "accepted_count": 368,
+      "addition": 64
+    },
+    {
+      "event": "commit",
+      "stage": 6,
+      "attempt": 0,
+      "previous_count": 368,
+      "proposed_count": 432,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 1.2883915756258827e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.841473580518567e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 185,
+            "j": 191,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.999999015852642
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 1.6673868596078075e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 294,
+      "optimizer_evaluations": 295
+    },
+    {
+      "event": "trial_start",
+      "stage": 7,
+      "attempt": 0,
+      "accepted_count": 432,
+      "addition": 16
+    },
+    {
+      "event": "commit",
+      "stage": 7,
+      "attempt": 0,
+      "previous_count": 432,
+      "proposed_count": 448,
+      "certificate": {
+        "accepted": true,
+        "A2_error": 1.1951052236144773e-07,
+        "audit": {
+          "accepted": true,
+          "violating_image_contacts": 0,
+          "nonnearest_violating_image_contacts": 0,
+          "maximum_relative_overlap": 9.540529203322379e-07,
+          "tolerance_relative": 1e-06,
+          "worst": {
+            "i": 357,
+            "j": 405,
+            "image_shift": [
+              0,
+              0,
+              0
+            ],
+            "distance": 0.9999990459470797
+          },
+          "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+        },
+        "A4_error": 1.3593620782090818e-06,
+        "A4_tolerance": 0.0001
+      },
+      "optimizer_iterations": 290,
+      "optimizer_evaluations": 291
+    }
+  ],
+  "fiber_model": "straight",
+  "experimental": true,
+  "accepted": false,
+  "wall_s": 2.3190490710549057,
+  "grid": 360,
+  "vf_target": 0.05,
+  "voxel_checks_performed": false,
+  "nominal_capsule_vf": 0.049955201701526585,
+  "nominal_cylinder_vf": 0.048869219055841226,
+  "total_wall_s": 2.3206741439644247
+}

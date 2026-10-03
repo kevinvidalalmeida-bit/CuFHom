@@ -1,0 +1,33 @@
+Fri Oct  2 04:28:09 2026    /tmp/cufhom_sam_ar30_pilot_20261002.prof
+
+         3624341 function calls (3498168 primitive calls) in 2.834 seconds
+
+   Ordered by: cumulative time
+   List reduced from 5962 to 44 due to restriction <'sam_|contact|audit|propose'>
+   List reduced from 44 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    2.319    2.319 sam_staged_insertion.py:160(generate_staged)
+        8    0.051    0.006    1.658    0.207 sam_paper_reference.py:195(relax_paper_reference)
+     2281    0.001    0.000    1.125    0.000 sam_paper_reference.py:233(evaluate)
+     2281    0.502    0.000    1.124    0.000 sam_paper_reference.py:169(objective)
+       25    0.312    0.012    0.651    0.026 sam_periodic_audit.py:22(audit_periodic_fibers)
+        8    0.083    0.010    0.392    0.049 sam_staged_insertion.py:120(propose)
+        9    0.000    0.000    0.257    0.029 sam_staged_insertion.py:176(certify)
+        9    0.002    0.000    0.257    0.029 sam_staged_insertion.py:80(certificate)
+        1    0.000    0.000    0.233    0.233 sam_orientation.py:1(<module>)
+      448    0.006    0.000    0.223    0.000 sam_staged_insertion.py:103(draw_directions)
+      448    0.089    0.000    0.209    0.000 sam_acceleration.py:69(fused_angular_transform)
+     2281    0.098    0.000    0.111    0.000 sam_paper_reference.py:92(get)
+     2745    0.007    0.000    0.049    0.000 sam_paper_reference.py:32(fourth_moment)
+     2273    0.012    0.000    0.035    0.000 sam_paper_reference.py:50(sphere_retract)
+       25    0.003    0.000    0.020    0.001 sam_periodic_audit.py:6(segment_distance)
+       19    0.000    0.000    0.014    0.001 sam_orientation.py:106(resolve_orientation)
+       19    0.001    0.000    0.013    0.001 sam_orientation.py:25(validate_a4)
+      125    0.003    0.000    0.010    0.000 sam_periodic_audit.py:11(distance2)
+      103    0.000    0.000    0.009    0.000 sam_staged_insertion.py:220(<lambda>)
+        1    0.000    0.000    0.008    0.008 sam_staged_insertion.py:1(<module>)
+     2289    0.004    0.000    0.007    0.000 sam_paper_reference.py:17(rotational_inertia)
+        1    0.000    0.000    0.005    0.005 sam_acceleration.py:1(<module>)
+
+

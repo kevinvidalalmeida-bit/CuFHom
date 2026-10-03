@@ -1,0 +1,35 @@
+{
+  "status": "wall_budget_exhausted",
+  "accepted_count": 1120,
+  "target_count": 5381,
+  "geometric_certificate": {
+    "accepted": true,
+    "A2_error": 4.512013301560919e-09,
+    "audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 9.635851671019324e-07,
+      "tolerance_relative": 1e-06,
+      "worst": {
+        "i": 149,
+        "j": 903,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.9999990364148329
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "A4_error": 2.8900804563182372e-08,
+    "A4_tolerance": 0.0001
+  },
+  "nominal_capsule_vf": 0.12488800425381645,
+  "nominal_cylinder_vf": 0.12217304763960306,
+  "accepted": false,
+  "vf_not_certified": true,
+  "voxel_checks_performed": false,
+  "total_wall_s": 61.25277006509714
+}

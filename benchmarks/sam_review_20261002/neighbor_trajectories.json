@@ -1,0 +1,91 @@
+{
+  "scope": "objective evaluations on fixed synthetic trajectories; not full generation",
+  "repeats": 3,
+  "excludes_first_pass": true,
+  "rows": [
+    {
+      "fibers": 64,
+      "AR": 4.0,
+      "box": 12.0,
+      "evaluations": 22,
+      "mode": "ContactNeighbors",
+      "median_s": 0.004094443051144481,
+      "rebuilds": 5,
+      "level_rebuilds": [],
+      "matches_dense_bitwise": true
+    },
+    {
+      "fibers": 64,
+      "AR": 4.0,
+      "box": 12.0,
+      "evaluations": 22,
+      "mode": "MultilevelContactNeighbors",
+      "median_s": 0.006073151016607881,
+      "rebuilds": 5,
+      "level_rebuilds": [
+        3,
+        5,
+        5
+      ],
+      "matches_dense_bitwise": true
+    },
+    {
+      "fibers": 256,
+      "AR": 16.0,
+      "box": 40.0,
+      "evaluations": 22,
+      "mode": "ContactNeighbors",
+      "median_s": 0.021003501024097204,
+      "rebuilds": 7,
+      "level_rebuilds": [],
+      "matches_dense_bitwise": true
+    },
+    {
+      "fibers": 256,
+      "AR": 16.0,
+      "box": 40.0,
+      "evaluations": 22,
+      "mode": "MultilevelContactNeighbors",
+      "median_s": 0.05206024018116295,
+      "rebuilds": 7,
+      "level_rebuilds": [
+        3,
+        3,
+        4,
+        7,
+        7
+      ],
+      "matches_dense_bitwise": true
+    },
+    {
+      "fibers": 512,
+      "AR": 33.0,
+      "box": 70.0,
+      "evaluations": 22,
+      "mode": "ContactNeighbors",
+      "median_s": 0.1100081920158118,
+      "rebuilds": 11,
+      "level_rebuilds": [],
+      "matches_dense_bitwise": true
+    },
+    {
+      "fibers": 512,
+      "AR": 33.0,
+      "box": 70.0,
+      "evaluations": 22,
+      "mode": "MultilevelContactNeighbors",
+      "median_s": 0.6582243829034269,
+      "rebuilds": 11,
+      "level_rebuilds": [
+        3,
+        3,
+        3,
+        3,
+        5,
+        11,
+        11
+      ],
+      "matches_dense_bitwise": true
+    }
+  ]
+}

@@ -1,0 +1,1785 @@
+{
+  "source_checkpoint": "benchmarks/results/sam_paper_control_lbfgs_ar33_20261002/last_geometrically_valid.npz",
+  "source_sha256": "99561498ea8be1781cc7e90027134aad7d33c9dd30db8af2db839e5f5c36b403",
+  "accepted_count": 1655,
+  "trial_count": 1986,
+  "settings": {
+    "box": 70.0,
+    "length": 33.0,
+    "diameter": 1.0,
+    "target_count": 7940,
+    "initial_count": 331,
+    "batch_size": 331,
+    "candidates": 1,
+    "attempts": 1,
+    "max_stages": 1000,
+    "relax_iterations": 500000,
+    "orientation_weight": 1.0,
+    "overlap_tolerance": 1e-06,
+    "a2_tolerance": 0.035,
+    "seed": 2026100201,
+    "solver": "paper-a4",
+    "a4_tolerance": 1e-07,
+    "rotation_update": "retraction",
+    "min_gap": 0.001,
+    "neighbor_mode": "single",
+    "bootstrap_max_count": 48,
+    "optimizer": "lbfgs",
+    "neighbor_skin": 0.5,
+    "adaptive_batches": false,
+    "max_relax_iterations": 500000,
+    "retry_shake": 0.0,
+    "insertion_policy": "random",
+    "batch_reduction": "one"
+  },
+  "relaxation_wall_seconds": 18.757282960927114,
+  "optimization": {
+    "before": {
+      "accepted": false,
+      "violating_image_contacts": 3392,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.9992402575968705,
+      "tolerance_relative": 1e-06,
+      "worst": {
+        "i": 1426,
+        "j": 1796,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.0007597424031295064
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "after": {
+      "accepted": false,
+      "violating_image_contacts": 9233,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.6946797123633184,
+      "tolerance_relative": 1e-06,
+      "worst": {
+        "i": 1771,
+        "j": 1812,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.3053202876366816
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "A2_error": 0.006777638777210416,
+    "A4_error": 0.011918097649561166,
+    "contact_and_A2_accepted": false,
+    "contact_A2_A4_accepted": false,
+    "vf_not_certified": true,
+    "optimizer_success": false,
+    "optimizer_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "iterations": 3273,
+    "evaluations": 3413,
+    "history": [
+      {
+        "iteration": 0,
+        "energy": 542.7308993361173,
+        "overlap_relative": 1.00024025759687,
+        "A2_error": 0.014665612317088721,
+        "A4_error": 0.021186508839067655,
+        "evaluations": 1,
+        "axis_coordinate_radius_min": 9.722645048168385,
+        "axis_coordinate_radius_max": 9.72264504816839
+      },
+      {
+        "iteration": 25,
+        "energy": 73.37751067047232,
+        "overlap_relative": 0.7474478395185755,
+        "A2_error": 0.010418585097096216,
+        "A4_error": 0.016591514437617628,
+        "evaluations": 26,
+        "axis_coordinate_radius_min": 9.723289037731815,
+        "axis_coordinate_radius_max": 9.885567285570072
+      },
+      {
+        "iteration": 50,
+        "energy": 63.00642613556502,
+        "overlap_relative": 0.7034376739701704,
+        "A2_error": 0.009941862265435789,
+        "A4_error": 0.015974139404030134,
+        "evaluations": 51,
+        "axis_coordinate_radius_min": 9.723707588956144,
+        "axis_coordinate_radius_max": 9.892491520730436
+      },
+      {
+        "iteration": 75,
+        "energy": 58.715975554486384,
+        "overlap_relative": 0.7088214656943165,
+        "A2_error": 0.00883741562920042,
+        "A4_error": 0.0146966469191368,
+        "evaluations": 76,
+        "axis_coordinate_radius_min": 9.725992523474831,
+        "axis_coordinate_radius_max": 9.902150391229338
+      },
+      {
+        "iteration": 100,
+        "energy": 55.91336764840962,
+        "overlap_relative": 0.7283540293857645,
+        "A2_error": 0.008378245947620641,
+        "A4_error": 0.014083206272846453,
+        "evaluations": 101,
+        "axis_coordinate_radius_min": 9.726586164334389,
+        "axis_coordinate_radius_max": 9.924029063775794
+      },
+      {
+        "iteration": 125,
+        "energy": 54.815648054673225,
+        "overlap_relative": 0.7308678683980907,
+        "A2_error": 0.00820746784904874,
+        "A4_error": 0.013873243447225186,
+        "evaluations": 126,
+        "axis_coordinate_radius_min": 9.7267929250489,
+        "axis_coordinate_radius_max": 9.929298999024056
+      },
+      {
+        "iteration": 150,
+        "energy": 53.8323008265715,
+        "overlap_relative": 0.7273418617660319,
+        "A2_error": 0.007983089084374874,
+        "A4_error": 0.013615124778962052,
+        "evaluations": 151,
+        "axis_coordinate_radius_min": 9.726946484036766,
+        "axis_coordinate_radius_max": 9.936293411267165
+      },
+      {
+        "iteration": 175,
+        "energy": 52.9958868766117,
+        "overlap_relative": 0.7199001370135507,
+        "A2_error": 0.007657576867017921,
+        "A4_error": 0.013316199786554987,
+        "evaluations": 176,
+        "axis_coordinate_radius_min": 9.72705110451051,
+        "axis_coordinate_radius_max": 9.947988219582564
+      },
+      {
+        "iteration": 200,
+        "energy": 51.80687510593598,
+        "overlap_relative": 0.7268838949219576,
+        "A2_error": 0.007471888935350509,
+        "A4_error": 0.013201392993434254,
+        "evaluations": 202,
+        "axis_coordinate_radius_min": 9.727168083351714,
+        "axis_coordinate_radius_max": 9.957420154092624
+      },
+      {
+        "iteration": 225,
+        "energy": 51.1985422327989,
+        "overlap_relative": 0.721955858622808,
+        "A2_error": 0.007247864406503656,
+        "A4_error": 0.012914511420517938,
+        "evaluations": 227,
+        "axis_coordinate_radius_min": 9.727248307007063,
+        "axis_coordinate_radius_max": 9.963274546043989
+      },
+      {
+        "iteration": 250,
+        "energy": 50.753569371161255,
+        "overlap_relative": 0.7183126721833442,
+        "A2_error": 0.007019286136971921,
+        "A4_error": 0.012692094188097866,
+        "evaluations": 252,
+        "axis_coordinate_radius_min": 9.727326629466251,
+        "axis_coordinate_radius_max": 9.988458626628159
+      },
+      {
+        "iteration": 275,
+        "energy": 50.42296482340429,
+        "overlap_relative": 0.718243735054968,
+        "A2_error": 0.006949081197539114,
+        "A4_error": 0.012658135092262417,
+        "evaluations": 277,
+        "axis_coordinate_radius_min": 9.727470858379677,
+        "axis_coordinate_radius_max": 9.997116620018973
+      },
+      {
+        "iteration": 300,
+        "energy": 50.129386284525324,
+        "overlap_relative": 0.7259410567672895,
+        "A2_error": 0.006906157338164646,
+        "A4_error": 0.012473394653558711,
+        "evaluations": 302,
+        "axis_coordinate_radius_min": 9.727626838609195,
+        "axis_coordinate_radius_max": 10.002127479091252
+      },
+      {
+        "iteration": 325,
+        "energy": 49.72728189739374,
+        "overlap_relative": 0.7370015739142065,
+        "A2_error": 0.006973026605396577,
+        "A4_error": 0.012419461437642729,
+        "evaluations": 328,
+        "axis_coordinate_radius_min": 9.727754361776507,
+        "axis_coordinate_radius_max": 10.003842619300942
+      },
+      {
+        "iteration": 350,
+        "energy": 49.18160469588734,
+        "overlap_relative": 0.7374701316410635,
+        "A2_error": 0.006943192133441108,
+        "A4_error": 0.012360615302150608,
+        "evaluations": 353,
+        "axis_coordinate_radius_min": 9.727809996723293,
+        "axis_coordinate_radius_max": 10.004267116175464
+      },
+      {
+        "iteration": 375,
+        "energy": 49.05497094215479,
+        "overlap_relative": 0.7213979759595213,
+        "A2_error": 0.00693731521602876,
+        "A4_error": 0.012243088011774242,
+        "evaluations": 378,
+        "axis_coordinate_radius_min": 9.727866999953825,
+        "axis_coordinate_radius_max": 10.004657152623498
+      },
+      {
+        "iteration": 400,
+        "energy": 48.90011235428114,
+        "overlap_relative": 0.729248305284552,
+        "A2_error": 0.006926091391839859,
+        "A4_error": 0.012140456366973125,
+        "evaluations": 405,
+        "axis_coordinate_radius_min": 9.727964828490213,
+        "axis_coordinate_radius_max": 10.005037422260967
+      },
+      {
+        "iteration": 425,
+        "energy": 48.3309848250459,
+        "overlap_relative": 0.7287012763057104,
+        "A2_error": 0.006794135478092436,
+        "A4_error": 0.011931525468110118,
+        "evaluations": 430,
+        "axis_coordinate_radius_min": 9.72851055142844,
+        "axis_coordinate_radius_max": 10.005231371781864
+      },
+      {
+        "iteration": 450,
+        "energy": 48.10271234958798,
+        "overlap_relative": 0.711325121315638,
+        "A2_error": 0.006844390373910255,
+        "A4_error": 0.011968770723798554,
+        "evaluations": 455,
+        "axis_coordinate_radius_min": 9.728780436886826,
+        "axis_coordinate_radius_max": 10.005373888647616
+      },
+      {
+        "iteration": 475,
+        "energy": 47.874548294597254,
+        "overlap_relative": 0.7037933505945043,
+        "A2_error": 0.006728762713569164,
+        "A4_error": 0.011827471943575836,
+        "evaluations": 480,
+        "axis_coordinate_radius_min": 9.728805934148683,
+        "axis_coordinate_radius_max": 10.005683554091311
+      },
+      {
+        "iteration": 500,
+        "energy": 47.759359378471096,
+        "overlap_relative": 0.7016321146386097,
+        "A2_error": 0.006713258202741819,
+        "A4_error": 0.011865844416689463,
+        "evaluations": 506,
+        "axis_coordinate_radius_min": 9.728817235598356,
+        "axis_coordinate_radius_max": 10.005889999012194
+      },
+      {
+        "iteration": 525,
+        "energy": 47.65558448465013,
+        "overlap_relative": 0.7013998844688727,
+        "A2_error": 0.006771656845643343,
+        "A4_error": 0.011965241155560502,
+        "evaluations": 532,
+        "axis_coordinate_radius_min": 9.728825561233661,
+        "axis_coordinate_radius_max": 10.00594745981123
+      },
+      {
+        "iteration": 550,
+        "energy": 47.583011427728,
+        "overlap_relative": 0.6974845421994857,
+        "A2_error": 0.006789206800780345,
+        "A4_error": 0.01195715198796686,
+        "evaluations": 557,
+        "axis_coordinate_radius_min": 9.728835273984545,
+        "axis_coordinate_radius_max": 10.005995758837011
+      },
+      {
+        "iteration": 575,
+        "energy": 47.52076958624435,
+        "overlap_relative": 0.6980901652449174,
+        "A2_error": 0.006779541307089389,
+        "A4_error": 0.011902592396201294,
+        "evaluations": 582,
+        "axis_coordinate_radius_min": 9.728844350544168,
+        "axis_coordinate_radius_max": 10.006020949884048
+      },
+      {
+        "iteration": 600,
+        "energy": 47.49777618266748,
+        "overlap_relative": 0.696834335745816,
+        "A2_error": 0.006778345510483909,
+        "A4_error": 0.011877861642752625,
+        "evaluations": 607,
+        "axis_coordinate_radius_min": 9.728849180013846,
+        "axis_coordinate_radius_max": 10.006033191688218
+      },
+      {
+        "iteration": 625,
+        "energy": 47.4753233696876,
+        "overlap_relative": 0.6971432419268031,
+        "A2_error": 0.006812461383625731,
+        "A4_error": 0.01191405883093174,
+        "evaluations": 632,
+        "axis_coordinate_radius_min": 9.728854991954396,
+        "axis_coordinate_radius_max": 10.006046775581902
+      },
+      {
+        "iteration": 650,
+        "energy": 47.45568050876358,
+        "overlap_relative": 0.7006195265698252,
+        "A2_error": 0.006819210454478154,
+        "A4_error": 0.011899288159053127,
+        "evaluations": 657,
+        "axis_coordinate_radius_min": 9.728863204147748,
+        "axis_coordinate_radius_max": 10.006059411206722
+      },
+      {
+        "iteration": 675,
+        "energy": 47.418616443647416,
+        "overlap_relative": 0.6992975678274383,
+        "A2_error": 0.00683038925643204,
+        "A4_error": 0.011861756224325812,
+        "evaluations": 685,
+        "axis_coordinate_radius_min": 9.728869196747459,
+        "axis_coordinate_radius_max": 10.006062949303699
+      },
+      {
+        "iteration": 700,
+        "energy": 47.3863571008515,
+        "overlap_relative": 0.7008429689669989,
+        "A2_error": 0.0068558461950054845,
+        "A4_error": 0.011847153156491416,
+        "evaluations": 710,
+        "axis_coordinate_radius_min": 9.728874418750033,
+        "axis_coordinate_radius_max": 10.006067639330723
+      },
+      {
+        "iteration": 725,
+        "energy": 47.37728327150537,
+        "overlap_relative": 0.7000113579916446,
+        "A2_error": 0.006856411974048172,
+        "A4_error": 0.011831162830869487,
+        "evaluations": 737,
+        "axis_coordinate_radius_min": 9.728877005388796,
+        "axis_coordinate_radius_max": 10.006069795274664
+      },
+      {
+        "iteration": 750,
+        "energy": 47.368408532677,
+        "overlap_relative": 0.6987997082292825,
+        "A2_error": 0.006831696134146153,
+        "A4_error": 0.011785955874561285,
+        "evaluations": 762,
+        "axis_coordinate_radius_min": 9.728880879097614,
+        "axis_coordinate_radius_max": 10.006073654813571
+      },
+      {
+        "iteration": 775,
+        "energy": 47.36106250105778,
+        "overlap_relative": 0.6989144525633311,
+        "A2_error": 0.006810420128784007,
+        "A4_error": 0.011769482859331222,
+        "evaluations": 789,
+        "axis_coordinate_radius_min": 9.72888384245436,
+        "axis_coordinate_radius_max": 10.00607881971852
+      },
+      {
+        "iteration": 800,
+        "energy": 47.34743557383521,
+        "overlap_relative": 0.701315306514571,
+        "A2_error": 0.00684174480297725,
+        "A4_error": 0.011798440442353276,
+        "evaluations": 815,
+        "axis_coordinate_radius_min": 9.728890164766659,
+        "axis_coordinate_radius_max": 10.006087354497275
+      },
+      {
+        "iteration": 825,
+        "energy": 47.332341064356854,
+        "overlap_relative": 0.701694894711019,
+        "A2_error": 0.00685371994150403,
+        "A4_error": 0.011802562584199308,
+        "evaluations": 842,
+        "axis_coordinate_radius_min": 9.72889238236382,
+        "axis_coordinate_radius_max": 10.00609539877568
+      },
+      {
+        "iteration": 850,
+        "energy": 47.30669122529082,
+        "overlap_relative": 0.703152921764412,
+        "A2_error": 0.006833362324143812,
+        "A4_error": 0.011779157432621735,
+        "evaluations": 868,
+        "axis_coordinate_radius_min": 9.728900993502556,
+        "axis_coordinate_radius_max": 10.006113550025862
+      },
+      {
+        "iteration": 875,
+        "energy": 47.26083123678825,
+        "overlap_relative": 0.7026236763278338,
+        "A2_error": 0.006893896733805525,
+        "A4_error": 0.01183078292458446,
+        "evaluations": 893,
+        "axis_coordinate_radius_min": 9.728916055986511,
+        "axis_coordinate_radius_max": 10.006118718611715
+      },
+      {
+        "iteration": 900,
+        "energy": 47.19805983681976,
+        "overlap_relative": 0.7032357281313719,
+        "A2_error": 0.006922765484535338,
+        "A4_error": 0.01182919980745118,
+        "evaluations": 918,
+        "axis_coordinate_radius_min": 9.728951372006355,
+        "axis_coordinate_radius_max": 10.00615275365756
+      },
+      {
+        "iteration": 925,
+        "energy": 47.17142237853369,
+        "overlap_relative": 0.7017833792582964,
+        "A2_error": 0.006898767310708924,
+        "A4_error": 0.011827177186074355,
+        "evaluations": 944,
+        "axis_coordinate_radius_min": 9.728973591332801,
+        "axis_coordinate_radius_max": 10.00617462737208
+      },
+      {
+        "iteration": 950,
+        "energy": 47.1013717392146,
+        "overlap_relative": 0.70299814271455,
+        "A2_error": 0.006961740370488709,
+        "A4_error": 0.011882184736515377,
+        "evaluations": 969,
+        "axis_coordinate_radius_min": 9.728990005076072,
+        "axis_coordinate_radius_max": 10.00623722162598
+      },
+      {
+        "iteration": 975,
+        "energy": 47.035864733985775,
+        "overlap_relative": 0.7020432865574047,
+        "A2_error": 0.006954102750053018,
+        "A4_error": 0.011940438231645756,
+        "evaluations": 996,
+        "axis_coordinate_radius_min": 9.728997530704175,
+        "axis_coordinate_radius_max": 10.006325223973223
+      },
+      {
+        "iteration": 1000,
+        "energy": 46.993867342143936,
+        "overlap_relative": 0.7024697159512046,
+        "A2_error": 0.006989963908405479,
+        "A4_error": 0.011972244407816345,
+        "evaluations": 1025,
+        "axis_coordinate_radius_min": 9.729002297079969,
+        "axis_coordinate_radius_max": 10.006474257372613
+      },
+      {
+        "iteration": 1025,
+        "energy": 46.87009349665626,
+        "overlap_relative": 0.7000153914551744,
+        "A2_error": 0.007052583318196321,
+        "A4_error": 0.011993130740021786,
+        "evaluations": 1051,
+        "axis_coordinate_radius_min": 9.729006191124707,
+        "axis_coordinate_radius_max": 10.00652945199708
+      },
+      {
+        "iteration": 1050,
+        "energy": 46.83310489376877,
+        "overlap_relative": 0.7020973151912486,
+        "A2_error": 0.007065547080752144,
+        "A4_error": 0.011963150086161512,
+        "evaluations": 1078,
+        "axis_coordinate_radius_min": 9.729009677492861,
+        "axis_coordinate_radius_max": 10.006536476781967
+      },
+      {
+        "iteration": 1075,
+        "energy": 46.80618716157063,
+        "overlap_relative": 0.7033470044359564,
+        "A2_error": 0.0070695432235666645,
+        "A4_error": 0.011983056277492604,
+        "evaluations": 1105,
+        "axis_coordinate_radius_min": 9.729016887196742,
+        "axis_coordinate_radius_max": 10.006548742883984
+      },
+      {
+        "iteration": 1100,
+        "energy": 46.76168770962815,
+        "overlap_relative": 0.6989801270333285,
+        "A2_error": 0.007086554301106766,
+        "A4_error": 0.012031371788429076,
+        "evaluations": 1132,
+        "axis_coordinate_radius_min": 9.729030648611149,
+        "axis_coordinate_radius_max": 10.006572989786656
+      },
+      {
+        "iteration": 1125,
+        "energy": 46.65784954665328,
+        "overlap_relative": 0.7065672504241233,
+        "A2_error": 0.007072396154019698,
+        "A4_error": 0.012004107968223045,
+        "evaluations": 1157,
+        "axis_coordinate_radius_min": 9.729038647970569,
+        "axis_coordinate_radius_max": 10.006598744083336
+      },
+      {
+        "iteration": 1150,
+        "energy": 46.5883931355171,
+        "overlap_relative": 0.7107580618074645,
+        "A2_error": 0.007086695037085543,
+        "A4_error": 0.01201040417811323,
+        "evaluations": 1182,
+        "axis_coordinate_radius_min": 9.729044486217523,
+        "axis_coordinate_radius_max": 10.006636474624743
+      },
+      {
+        "iteration": 1175,
+        "energy": 46.568774518254955,
+        "overlap_relative": 0.7115827720604674,
+        "A2_error": 0.007066797975165716,
+        "A4_error": 0.012007773616355204,
+        "evaluations": 1207,
+        "axis_coordinate_radius_min": 9.729048002365012,
+        "axis_coordinate_radius_max": 10.00666663168849
+      },
+      {
+        "iteration": 1200,
+        "energy": 46.56359599975612,
+        "overlap_relative": 0.7120281173213694,
+        "A2_error": 0.007044009814134081,
+        "A4_error": 0.011982885565843844,
+        "evaluations": 1232,
+        "axis_coordinate_radius_min": 9.72904966254125,
+        "axis_coordinate_radius_max": 10.006678571563306
+      },
+      {
+        "iteration": 1225,
+        "energy": 46.5604271177009,
+        "overlap_relative": 0.7136247072859059,
+        "A2_error": 0.007029192238965509,
+        "A4_error": 0.01197780781621964,
+        "evaluations": 1257,
+        "axis_coordinate_radius_min": 9.72905125208554,
+        "axis_coordinate_radius_max": 10.006685135208347
+      },
+      {
+        "iteration": 1250,
+        "energy": 46.55898008557286,
+        "overlap_relative": 0.7144087748532917,
+        "A2_error": 0.007038166654271801,
+        "A4_error": 0.011998664115138271,
+        "evaluations": 1283,
+        "axis_coordinate_radius_min": 9.729052771094858,
+        "axis_coordinate_radius_max": 10.006689192503828
+      },
+      {
+        "iteration": 1275,
+        "energy": 46.557925530437934,
+        "overlap_relative": 0.7143365968348645,
+        "A2_error": 0.007039787540093746,
+        "A4_error": 0.011999497062279067,
+        "evaluations": 1309,
+        "axis_coordinate_radius_min": 9.729054613055217,
+        "axis_coordinate_radius_max": 10.006692341508563
+      },
+      {
+        "iteration": 1300,
+        "energy": 46.5545034222256,
+        "overlap_relative": 0.7156821111339682,
+        "A2_error": 0.007043073233763883,
+        "A4_error": 0.011991946178288361,
+        "evaluations": 1334,
+        "axis_coordinate_radius_min": 9.729060374168021,
+        "axis_coordinate_radius_max": 10.006706750811391
+      },
+      {
+        "iteration": 1325,
+        "energy": 46.45842196976942,
+        "overlap_relative": 0.7261462449373035,
+        "A2_error": 0.00700942611262876,
+        "A4_error": 0.01193948540010522,
+        "evaluations": 1363,
+        "axis_coordinate_radius_min": 9.729067260598299,
+        "axis_coordinate_radius_max": 10.006798339909613
+      },
+      {
+        "iteration": 1350,
+        "energy": 46.412807863557745,
+        "overlap_relative": 0.7276234016454777,
+        "A2_error": 0.007021803958430584,
+        "A4_error": 0.011873792179095746,
+        "evaluations": 1389,
+        "axis_coordinate_radius_min": 9.729069440226331,
+        "axis_coordinate_radius_max": 10.00681811417906
+      },
+      {
+        "iteration": 1375,
+        "energy": 46.3938232530457,
+        "overlap_relative": 0.7278945453192618,
+        "A2_error": 0.0070731647057774155,
+        "A4_error": 0.011884750761984648,
+        "evaluations": 1414,
+        "axis_coordinate_radius_min": 9.729072676132263,
+        "axis_coordinate_radius_max": 10.006846675579844
+      },
+      {
+        "iteration": 1400,
+        "energy": 46.38608805063836,
+        "overlap_relative": 0.7311162013778503,
+        "A2_error": 0.0070749792941082815,
+        "A4_error": 0.011889336993848434,
+        "evaluations": 1441,
+        "axis_coordinate_radius_min": 9.729074138734166,
+        "axis_coordinate_radius_max": 10.00685402574766
+      },
+      {
+        "iteration": 1425,
+        "energy": 46.383058756272206,
+        "overlap_relative": 0.7322138069697046,
+        "A2_error": 0.007088952618609418,
+        "A4_error": 0.011892453636673439,
+        "evaluations": 1468,
+        "axis_coordinate_radius_min": 9.729075242512161,
+        "axis_coordinate_radius_max": 10.006861319621237
+      },
+      {
+        "iteration": 1450,
+        "energy": 46.37666936207738,
+        "overlap_relative": 0.732274747196444,
+        "A2_error": 0.00710850088265043,
+        "A4_error": 0.011881350634476219,
+        "evaluations": 1495,
+        "axis_coordinate_radius_min": 9.729077843620903,
+        "axis_coordinate_radius_max": 10.006878721973253
+      },
+      {
+        "iteration": 1475,
+        "energy": 46.362561166805925,
+        "overlap_relative": 0.7303345573563971,
+        "A2_error": 0.007062960568670251,
+        "A4_error": 0.011803859341581466,
+        "evaluations": 1520,
+        "axis_coordinate_radius_min": 9.729081104784791,
+        "axis_coordinate_radius_max": 10.006887747585383
+      },
+      {
+        "iteration": 1500,
+        "energy": 46.353912274906925,
+        "overlap_relative": 0.7299385157775639,
+        "A2_error": 0.007020899569588285,
+        "A4_error": 0.011760633823606642,
+        "evaluations": 1545,
+        "axis_coordinate_radius_min": 9.729083550690943,
+        "axis_coordinate_radius_max": 10.00689315738036
+      },
+      {
+        "iteration": 1525,
+        "energy": 46.34568484154503,
+        "overlap_relative": 0.729992101186328,
+        "A2_error": 0.006976439976003937,
+        "A4_error": 0.011710463486853007,
+        "evaluations": 1572,
+        "axis_coordinate_radius_min": 9.72909409240319,
+        "axis_coordinate_radius_max": 10.006900458187253
+      },
+      {
+        "iteration": 1550,
+        "energy": 46.33817377625453,
+        "overlap_relative": 0.7298428786549558,
+        "A2_error": 0.006947891213283729,
+        "A4_error": 0.011675218027661803,
+        "evaluations": 1597,
+        "axis_coordinate_radius_min": 9.729106670213525,
+        "axis_coordinate_radius_max": 10.006906406728524
+      },
+      {
+        "iteration": 1575,
+        "energy": 46.33237192105319,
+        "overlap_relative": 0.7305825545766662,
+        "A2_error": 0.006926449871711856,
+        "A4_error": 0.01164793408236768,
+        "evaluations": 1622,
+        "axis_coordinate_radius_min": 9.729118959147137,
+        "axis_coordinate_radius_max": 10.006913922532892
+      },
+      {
+        "iteration": 1600,
+        "energy": 46.31783010971239,
+        "overlap_relative": 0.7318935148081468,
+        "A2_error": 0.006899376047548446,
+        "A4_error": 0.011581342119949652,
+        "evaluations": 1649,
+        "axis_coordinate_radius_min": 9.729137480258657,
+        "axis_coordinate_radius_max": 10.006922523435613
+      },
+      {
+        "iteration": 1625,
+        "energy": 46.30820680303224,
+        "overlap_relative": 0.728564821541171,
+        "A2_error": 0.006896526860126733,
+        "A4_error": 0.011565803021938102,
+        "evaluations": 1675,
+        "axis_coordinate_radius_min": 9.729147634059165,
+        "axis_coordinate_radius_max": 10.00692507179238
+      },
+      {
+        "iteration": 1650,
+        "energy": 46.29666810168746,
+        "overlap_relative": 0.7318457468196415,
+        "A2_error": 0.0068932688105175525,
+        "A4_error": 0.011572116935338751,
+        "evaluations": 1701,
+        "axis_coordinate_radius_min": 9.729167505077358,
+        "axis_coordinate_radius_max": 10.006929249609573
+      },
+      {
+        "iteration": 1675,
+        "energy": 46.25875415620369,
+        "overlap_relative": 0.7305346716130959,
+        "A2_error": 0.0069804668598376285,
+        "A4_error": 0.011649079286106,
+        "evaluations": 1728,
+        "axis_coordinate_radius_min": 9.7292068500835,
+        "axis_coordinate_radius_max": 10.006932599590654
+      },
+      {
+        "iteration": 1700,
+        "energy": 46.228901285016306,
+        "overlap_relative": 0.7302134714494166,
+        "A2_error": 0.006964538618654253,
+        "A4_error": 0.011612878809365068,
+        "evaluations": 1753,
+        "axis_coordinate_radius_min": 9.729228090671397,
+        "axis_coordinate_radius_max": 10.006938191863258
+      },
+      {
+        "iteration": 1725,
+        "energy": 46.20585218715396,
+        "overlap_relative": 0.7299410712004688,
+        "A2_error": 0.00697383588787294,
+        "A4_error": 0.01163193220850461,
+        "evaluations": 1778,
+        "axis_coordinate_radius_min": 9.729239254112088,
+        "axis_coordinate_radius_max": 10.006941647199735
+      },
+      {
+        "iteration": 1750,
+        "energy": 46.203032639727546,
+        "overlap_relative": 0.7296152190266032,
+        "A2_error": 0.0069763423014694795,
+        "A4_error": 0.011640596152367047,
+        "evaluations": 1805,
+        "axis_coordinate_radius_min": 9.729241805401685,
+        "axis_coordinate_radius_max": 10.006942767100517
+      },
+      {
+        "iteration": 1775,
+        "energy": 46.20120452440347,
+        "overlap_relative": 0.7300027590436877,
+        "A2_error": 0.006966080614210218,
+        "A4_error": 0.011637595801714173,
+        "evaluations": 1830,
+        "axis_coordinate_radius_min": 9.729244313741168,
+        "axis_coordinate_radius_max": 10.006944025657411
+      },
+      {
+        "iteration": 1800,
+        "energy": 46.20014467908031,
+        "overlap_relative": 0.7298159027117122,
+        "A2_error": 0.006972156610147292,
+        "A4_error": 0.011641147649338074,
+        "evaluations": 1857,
+        "axis_coordinate_radius_min": 9.729245257648898,
+        "axis_coordinate_radius_max": 10.006946153048869
+      },
+      {
+        "iteration": 1825,
+        "energy": 46.199737051521886,
+        "overlap_relative": 0.7302736246095727,
+        "A2_error": 0.006977969621396661,
+        "A4_error": 0.011642385434115164,
+        "evaluations": 1884,
+        "axis_coordinate_radius_min": 9.729245770131158,
+        "axis_coordinate_radius_max": 10.006947938686562
+      },
+      {
+        "iteration": 1850,
+        "energy": 46.199326214523175,
+        "overlap_relative": 0.7311308787467681,
+        "A2_error": 0.006978735776082997,
+        "A4_error": 0.011645870295235864,
+        "evaluations": 1910,
+        "axis_coordinate_radius_min": 9.729246419171545,
+        "axis_coordinate_radius_max": 10.006950235107713
+      },
+      {
+        "iteration": 1875,
+        "energy": 46.198714334472434,
+        "overlap_relative": 0.7315543773415096,
+        "A2_error": 0.006976732246912337,
+        "A4_error": 0.011650430715393881,
+        "evaluations": 1936,
+        "axis_coordinate_radius_min": 9.729247320175043,
+        "axis_coordinate_radius_max": 10.006952732263873
+      },
+      {
+        "iteration": 1900,
+        "energy": 46.19821492273263,
+        "overlap_relative": 0.7313505260083542,
+        "A2_error": 0.006976237105091047,
+        "A4_error": 0.011646007418696076,
+        "evaluations": 1962,
+        "axis_coordinate_radius_min": 9.729247874698752,
+        "axis_coordinate_radius_max": 10.006953907182291
+      },
+      {
+        "iteration": 1925,
+        "energy": 46.19772082610017,
+        "overlap_relative": 0.7311331843505771,
+        "A2_error": 0.00697377469373806,
+        "A4_error": 0.011638321633231133,
+        "evaluations": 1989,
+        "axis_coordinate_radius_min": 9.729248726093918,
+        "axis_coordinate_radius_max": 10.006955819317866
+      },
+      {
+        "iteration": 1950,
+        "energy": 46.196575290459414,
+        "overlap_relative": 0.7303983711388242,
+        "A2_error": 0.006974920842813405,
+        "A4_error": 0.011645226873991828,
+        "evaluations": 2015,
+        "axis_coordinate_radius_min": 9.72925119991367,
+        "axis_coordinate_radius_max": 10.006961714298802
+      },
+      {
+        "iteration": 1975,
+        "energy": 46.195177040418166,
+        "overlap_relative": 0.7310427823631171,
+        "A2_error": 0.006978077696646436,
+        "A4_error": 0.011652907976973215,
+        "evaluations": 2042,
+        "axis_coordinate_radius_min": 9.729252897597382,
+        "axis_coordinate_radius_max": 10.00696568185829
+      },
+      {
+        "iteration": 2000,
+        "energy": 46.19460561767528,
+        "overlap_relative": 0.7309569815393533,
+        "A2_error": 0.00697752646243499,
+        "A4_error": 0.0116543601539276,
+        "evaluations": 2068,
+        "axis_coordinate_radius_min": 9.729253189230285,
+        "axis_coordinate_radius_max": 10.006966380273377
+      },
+      {
+        "iteration": 2025,
+        "energy": 46.19430353039441,
+        "overlap_relative": 0.7312493130839475,
+        "A2_error": 0.006980401225734512,
+        "A4_error": 0.011657348396924979,
+        "evaluations": 2093,
+        "axis_coordinate_radius_min": 9.729253467008034,
+        "axis_coordinate_radius_max": 10.006967042414404
+      },
+      {
+        "iteration": 2050,
+        "energy": 46.19387877615429,
+        "overlap_relative": 0.7316391836312521,
+        "A2_error": 0.006976411789079257,
+        "A4_error": 0.011654727699660165,
+        "evaluations": 2118,
+        "axis_coordinate_radius_min": 9.72925376377483,
+        "axis_coordinate_radius_max": 10.006967654036686
+      },
+      {
+        "iteration": 2075,
+        "energy": 46.1934838515033,
+        "overlap_relative": 0.7315012023165856,
+        "A2_error": 0.006976113493501391,
+        "A4_error": 0.01165218435967141,
+        "evaluations": 2147,
+        "axis_coordinate_radius_min": 9.729253880627114,
+        "axis_coordinate_radius_max": 10.006967871838476
+      },
+      {
+        "iteration": 2100,
+        "energy": 46.193434290493926,
+        "overlap_relative": 0.7315282974354349,
+        "A2_error": 0.006976698219319709,
+        "A4_error": 0.01165385912293307,
+        "evaluations": 2174,
+        "axis_coordinate_radius_min": 9.729253874608132,
+        "axis_coordinate_radius_max": 10.006967854493
+      },
+      {
+        "iteration": 2125,
+        "energy": 46.19341922141038,
+        "overlap_relative": 0.7313616253096535,
+        "A2_error": 0.006974737054504859,
+        "A4_error": 0.011651102043562617,
+        "evaluations": 2200,
+        "axis_coordinate_radius_min": 9.729253879088501,
+        "axis_coordinate_radius_max": 10.00696786223785
+      },
+      {
+        "iteration": 2150,
+        "energy": 46.19341514317713,
+        "overlap_relative": 0.7313738553695261,
+        "A2_error": 0.00697469335739572,
+        "A4_error": 0.011651444384432077,
+        "evaluations": 2226,
+        "axis_coordinate_radius_min": 9.729253882175945,
+        "axis_coordinate_radius_max": 10.00696786891986
+      },
+      {
+        "iteration": 2175,
+        "energy": 46.193413948561364,
+        "overlap_relative": 0.7313624441243984,
+        "A2_error": 0.006974572303338722,
+        "A4_error": 0.01165141339328597,
+        "evaluations": 2251,
+        "axis_coordinate_radius_min": 9.729253883905574,
+        "axis_coordinate_radius_max": 10.006967873235224
+      },
+      {
+        "iteration": 2200,
+        "energy": 46.19341312183072,
+        "overlap_relative": 0.7313593337812174,
+        "A2_error": 0.006974415757504266,
+        "A4_error": 0.011651199450829288,
+        "evaluations": 2277,
+        "axis_coordinate_radius_min": 9.729253886033174,
+        "axis_coordinate_radius_max": 10.00696787638086
+      },
+      {
+        "iteration": 2225,
+        "energy": 46.193412418177935,
+        "overlap_relative": 0.7313639223012938,
+        "A2_error": 0.006973998915631822,
+        "A4_error": 0.011651147070336477,
+        "evaluations": 2304,
+        "axis_coordinate_radius_min": 9.729253889065633,
+        "axis_coordinate_radius_max": 10.006967880625988
+      },
+      {
+        "iteration": 2250,
+        "energy": 46.1934118983604,
+        "overlap_relative": 0.7313649879272546,
+        "A2_error": 0.006973841990752848,
+        "A4_error": 0.011651345719380177,
+        "evaluations": 2329,
+        "axis_coordinate_radius_min": 9.729253891955437,
+        "axis_coordinate_radius_max": 10.006967885511987
+      },
+      {
+        "iteration": 2275,
+        "energy": 46.193411422670984,
+        "overlap_relative": 0.731342981952749,
+        "A2_error": 0.006973835045002498,
+        "A4_error": 0.01165166803770896,
+        "evaluations": 2355,
+        "axis_coordinate_radius_min": 9.729253894920978,
+        "axis_coordinate_radius_max": 10.006967890278558
+      },
+      {
+        "iteration": 2300,
+        "energy": 46.19341101200735,
+        "overlap_relative": 0.7313501501522122,
+        "A2_error": 0.006973784918471286,
+        "A4_error": 0.011651720050303786,
+        "evaluations": 2382,
+        "axis_coordinate_radius_min": 9.729253897990908,
+        "axis_coordinate_radius_max": 10.006967895731684
+      },
+      {
+        "iteration": 2325,
+        "energy": 46.193410642253696,
+        "overlap_relative": 0.7313395563690972,
+        "A2_error": 0.00697375233926433,
+        "A4_error": 0.01165164707679832,
+        "evaluations": 2407,
+        "axis_coordinate_radius_min": 9.729253901091427,
+        "axis_coordinate_radius_max": 10.006967901839023
+      },
+      {
+        "iteration": 2350,
+        "energy": 46.193410252468006,
+        "overlap_relative": 0.7313492221440399,
+        "A2_error": 0.00697380747577383,
+        "A4_error": 0.011651726624250508,
+        "evaluations": 2434,
+        "axis_coordinate_radius_min": 9.729253903528816,
+        "axis_coordinate_radius_max": 10.006967907044885
+      },
+      {
+        "iteration": 2375,
+        "energy": 46.1934098602023,
+        "overlap_relative": 0.7313504812200694,
+        "A2_error": 0.006973966898229107,
+        "A4_error": 0.011651850842799774,
+        "evaluations": 2460,
+        "axis_coordinate_radius_min": 9.729253905396673,
+        "axis_coordinate_radius_max": 10.006967910254126
+      },
+      {
+        "iteration": 2400,
+        "energy": 46.19340933968922,
+        "overlap_relative": 0.7313108767825484,
+        "A2_error": 0.0069744774928332635,
+        "A4_error": 0.011652042929261376,
+        "evaluations": 2486,
+        "axis_coordinate_radius_min": 9.729253910214402,
+        "axis_coordinate_radius_max": 10.006967916932725
+      },
+      {
+        "iteration": 2425,
+        "energy": 46.19340838834478,
+        "overlap_relative": 0.7312899841562368,
+        "A2_error": 0.00697545106108257,
+        "A4_error": 0.011652748220942921,
+        "evaluations": 2512,
+        "axis_coordinate_radius_min": 9.729253920773859,
+        "axis_coordinate_radius_max": 10.006967929777074
+      },
+      {
+        "iteration": 2450,
+        "energy": 46.1934061695564,
+        "overlap_relative": 0.7311970679991293,
+        "A2_error": 0.006977669008768633,
+        "A4_error": 0.011653715335595213,
+        "evaluations": 2538,
+        "axis_coordinate_radius_min": 9.729253946870015,
+        "axis_coordinate_radius_max": 10.006967960270883
+      },
+      {
+        "iteration": 2475,
+        "energy": 46.19339973637575,
+        "overlap_relative": 0.731175805416796,
+        "A2_error": 0.00697974404957411,
+        "A4_error": 0.011654806197657255,
+        "evaluations": 2563,
+        "axis_coordinate_radius_min": 9.729253992628008,
+        "axis_coordinate_radius_max": 10.00696801068827
+      },
+      {
+        "iteration": 2500,
+        "energy": 46.193388566733724,
+        "overlap_relative": 0.7312986309801339,
+        "A2_error": 0.006979367962873447,
+        "A4_error": 0.011655433975089429,
+        "evaluations": 2590,
+        "axis_coordinate_radius_min": 9.72925401999391,
+        "axis_coordinate_radius_max": 10.006968040535453
+      },
+      {
+        "iteration": 2525,
+        "energy": 46.19337898963639,
+        "overlap_relative": 0.7313178789392996,
+        "A2_error": 0.006979512019727015,
+        "A4_error": 0.011656156080925234,
+        "evaluations": 2616,
+        "axis_coordinate_radius_min": 9.729254044784097,
+        "axis_coordinate_radius_max": 10.006968077190772
+      },
+      {
+        "iteration": 2550,
+        "energy": 46.19337162658627,
+        "overlap_relative": 0.7313023366237995,
+        "A2_error": 0.006979391160343384,
+        "A4_error": 0.011655841337149274,
+        "evaluations": 2643,
+        "axis_coordinate_radius_min": 9.729254067448151,
+        "axis_coordinate_radius_max": 10.006968120340325
+      },
+      {
+        "iteration": 2575,
+        "energy": 46.19336418724232,
+        "overlap_relative": 0.731208707063126,
+        "A2_error": 0.006978568249967207,
+        "A4_error": 0.011655461275522198,
+        "evaluations": 2670,
+        "axis_coordinate_radius_min": 9.729254087733779,
+        "axis_coordinate_radius_max": 10.006968193337618
+      },
+      {
+        "iteration": 2600,
+        "energy": 46.19335975125916,
+        "overlap_relative": 0.7312037146399641,
+        "A2_error": 0.00697910520527865,
+        "A4_error": 0.011656190281097732,
+        "evaluations": 2695,
+        "axis_coordinate_radius_min": 9.729254100749296,
+        "axis_coordinate_radius_max": 10.00696824485801
+      },
+      {
+        "iteration": 2625,
+        "energy": 46.1933580363113,
+        "overlap_relative": 0.731202983005575,
+        "A2_error": 0.006978950103495136,
+        "A4_error": 0.011656234054310731,
+        "evaluations": 2722,
+        "axis_coordinate_radius_min": 9.729254104493839,
+        "axis_coordinate_radius_max": 10.006968260814052
+      },
+      {
+        "iteration": 2650,
+        "energy": 46.19335717177673,
+        "overlap_relative": 0.7312186471258705,
+        "A2_error": 0.006978790918602702,
+        "A4_error": 0.011655761234160527,
+        "evaluations": 2747,
+        "axis_coordinate_radius_min": 9.729254106759516,
+        "axis_coordinate_radius_max": 10.006968270139623
+      },
+      {
+        "iteration": 2675,
+        "energy": 46.193356792779305,
+        "overlap_relative": 0.7312112326362994,
+        "A2_error": 0.006978985717628155,
+        "A4_error": 0.011655832350998598,
+        "evaluations": 2774,
+        "axis_coordinate_radius_min": 9.729254108189792,
+        "axis_coordinate_radius_max": 10.00696827579242
+      },
+      {
+        "iteration": 2700,
+        "energy": 46.193356581737845,
+        "overlap_relative": 0.731203152569802,
+        "A2_error": 0.006979186438585426,
+        "A4_error": 0.01165585525237987,
+        "evaluations": 2799,
+        "axis_coordinate_radius_min": 9.729254109349522,
+        "axis_coordinate_radius_max": 10.006968279654505
+      },
+      {
+        "iteration": 2725,
+        "energy": 46.193356485957416,
+        "overlap_relative": 0.7312074737031415,
+        "A2_error": 0.006979188619974208,
+        "A4_error": 0.011655759405128507,
+        "evaluations": 2826,
+        "axis_coordinate_radius_min": 9.729254109900326,
+        "axis_coordinate_radius_max": 10.006968281205012
+      },
+      {
+        "iteration": 2750,
+        "energy": 46.19335644793367,
+        "overlap_relative": 0.7312088657850074,
+        "A2_error": 0.00697913986883819,
+        "A4_error": 0.011655720064079365,
+        "evaluations": 2851,
+        "axis_coordinate_radius_min": 9.72925411017009,
+        "axis_coordinate_radius_max": 10.006968281794054
+      },
+      {
+        "iteration": 2775,
+        "energy": 46.19335642536031,
+        "overlap_relative": 0.7312088546063962,
+        "A2_error": 0.0069791213932405395,
+        "A4_error": 0.011655678469775946,
+        "evaluations": 2879,
+        "axis_coordinate_radius_min": 9.729254110278575,
+        "axis_coordinate_radius_max": 10.00696828203573
+      },
+      {
+        "iteration": 2800,
+        "energy": 46.19335641025605,
+        "overlap_relative": 0.731209001634654,
+        "A2_error": 0.006979051156841572,
+        "A4_error": 0.011655589792040563,
+        "evaluations": 2906,
+        "axis_coordinate_radius_min": 9.729254110412064,
+        "axis_coordinate_radius_max": 10.006968282301896
+      },
+      {
+        "iteration": 2825,
+        "energy": 46.193356399854395,
+        "overlap_relative": 0.7312105757751649,
+        "A2_error": 0.006979002065308873,
+        "A4_error": 0.011655564158811282,
+        "evaluations": 2932,
+        "axis_coordinate_radius_min": 9.729254110486506,
+        "axis_coordinate_radius_max": 10.00696828244206
+      },
+      {
+        "iteration": 2850,
+        "energy": 46.193356391594044,
+        "overlap_relative": 0.7312115351777233,
+        "A2_error": 0.00697897647374759,
+        "A4_error": 0.011655544393877832,
+        "evaluations": 2959,
+        "axis_coordinate_radius_min": 9.729254110573097,
+        "axis_coordinate_radius_max": 10.006968282565214
+      },
+      {
+        "iteration": 2875,
+        "energy": 46.19335638464222,
+        "overlap_relative": 0.7312117734304169,
+        "A2_error": 0.006978973083329816,
+        "A4_error": 0.01165553274153797,
+        "evaluations": 2985,
+        "axis_coordinate_radius_min": 9.729254110664554,
+        "axis_coordinate_radius_max": 10.006968282693048
+      },
+      {
+        "iteration": 2900,
+        "energy": 46.19335638022059,
+        "overlap_relative": 0.7312125760809662,
+        "A2_error": 0.006978956509308553,
+        "A4_error": 0.011655507686540967,
+        "evaluations": 3011,
+        "axis_coordinate_radius_min": 9.729254110744542,
+        "axis_coordinate_radius_max": 10.006968282803093
+      },
+      {
+        "iteration": 2925,
+        "energy": 46.1933563778209,
+        "overlap_relative": 0.7312114332688071,
+        "A2_error": 0.00697894171871039,
+        "A4_error": 0.011655466808989684,
+        "evaluations": 3038,
+        "axis_coordinate_radius_min": 9.72925411080168,
+        "axis_coordinate_radius_max": 10.006968282880486
+      },
+      {
+        "iteration": 2950,
+        "energy": 46.19335637628406,
+        "overlap_relative": 0.7312107499380647,
+        "A2_error": 0.00697892931881152,
+        "A4_error": 0.011655455083593173,
+        "evaluations": 3064,
+        "axis_coordinate_radius_min": 9.729254110827593,
+        "axis_coordinate_radius_max": 10.006968282915908
+      },
+      {
+        "iteration": 2975,
+        "energy": 46.19335637520193,
+        "overlap_relative": 0.7312101059883006,
+        "A2_error": 0.006978927548004772,
+        "A4_error": 0.011655444391984036,
+        "evaluations": 3089,
+        "axis_coordinate_radius_min": 9.72925411084563,
+        "axis_coordinate_radius_max": 10.00696828294095
+      },
+      {
+        "iteration": 3000,
+        "energy": 46.193356374338535,
+        "overlap_relative": 0.7312097948316612,
+        "A2_error": 0.006978919681814281,
+        "A4_error": 0.011655421801769858,
+        "evaluations": 3116,
+        "axis_coordinate_radius_min": 9.729254110866203,
+        "axis_coordinate_radius_max": 10.006968282969696
+      },
+      {
+        "iteration": 3025,
+        "energy": 46.1933563735626,
+        "overlap_relative": 0.7312106629683047,
+        "A2_error": 0.006978918722529206,
+        "A4_error": 0.011655404645017733,
+        "evaluations": 3143,
+        "axis_coordinate_radius_min": 9.729254110882597,
+        "axis_coordinate_radius_max": 10.006968282992618
+      },
+      {
+        "iteration": 3050,
+        "energy": 46.19335637277622,
+        "overlap_relative": 0.7312118385167098,
+        "A2_error": 0.006978933042932668,
+        "A4_error": 0.011655398967075676,
+        "evaluations": 3169,
+        "axis_coordinate_radius_min": 9.72925411090049,
+        "axis_coordinate_radius_max": 10.00696828301687
+      },
+      {
+        "iteration": 3075,
+        "energy": 46.1933563722227,
+        "overlap_relative": 0.7312117204955002,
+        "A2_error": 0.006978927691694417,
+        "A4_error": 0.011655393056966648,
+        "evaluations": 3195,
+        "axis_coordinate_radius_min": 9.729254110911322,
+        "axis_coordinate_radius_max": 10.006968283031465
+      },
+      {
+        "iteration": 3100,
+        "energy": 46.19335637190345,
+        "overlap_relative": 0.731211738227355,
+        "A2_error": 0.006978929233791008,
+        "A4_error": 0.01165539069538053,
+        "evaluations": 3220,
+        "axis_coordinate_radius_min": 9.729254110919058,
+        "axis_coordinate_radius_max": 10.006968283042164
+      },
+      {
+        "iteration": 3125,
+        "energy": 46.19335637168457,
+        "overlap_relative": 0.7312115675672702,
+        "A2_error": 0.006978940238817128,
+        "A4_error": 0.011655399954641403,
+        "evaluations": 3245,
+        "axis_coordinate_radius_min": 9.729254110923332,
+        "axis_coordinate_radius_max": 10.006968283048545
+      },
+      {
+        "iteration": 3150,
+        "energy": 46.193356371525645,
+        "overlap_relative": 0.7312115551421272,
+        "A2_error": 0.006978938260876884,
+        "A4_error": 0.011655402322455972,
+        "evaluations": 3271,
+        "axis_coordinate_radius_min": 9.729254110926925,
+        "axis_coordinate_radius_max": 10.006968283053647
+      },
+      {
+        "iteration": 3175,
+        "energy": 46.19335637141505,
+        "overlap_relative": 0.7312116874595725,
+        "A2_error": 0.006978937541619967,
+        "A4_error": 0.011655404765050979,
+        "evaluations": 3298,
+        "axis_coordinate_radius_min": 9.729254110930043,
+        "axis_coordinate_radius_max": 10.006968283058043
+      },
+      {
+        "iteration": 3200,
+        "energy": 46.193356371347264,
+        "overlap_relative": 0.7312118143419304,
+        "A2_error": 0.006978941592878046,
+        "A4_error": 0.011655409950008126,
+        "evaluations": 3323,
+        "axis_coordinate_radius_min": 9.729254110931928,
+        "axis_coordinate_radius_max": 10.006968283060791
+      },
+      {
+        "iteration": 3225,
+        "energy": 46.19335637131085,
+        "overlap_relative": 0.731211951291804,
+        "A2_error": 0.0069789428213915365,
+        "A4_error": 0.011655410452469405,
+        "evaluations": 3350,
+        "axis_coordinate_radius_min": 9.729254110932622,
+        "axis_coordinate_radius_max": 10.006968283061722
+      },
+      {
+        "iteration": 3250,
+        "energy": 46.19335637129398,
+        "overlap_relative": 0.7312119269931181,
+        "A2_error": 0.006978943731799482,
+        "A4_error": 0.011655412586838538,
+        "evaluations": 3376,
+        "axis_coordinate_radius_min": 9.729254110932972,
+        "axis_coordinate_radius_max": 10.006968283062175
+      },
+      {
+        "iteration": 3273,
+        "energy": 46.193356371285276,
+        "overlap_relative": 0.7312120264924994,
+        "A2_error": 0.006978945681475314,
+        "A4_error": 0.01165541609094603,
+        "evaluations": 3413,
+        "axis_coordinate_radius_min": 9.729254110932764,
+        "axis_coordinate_radius_max": 10.006968283061655
+      }
+    ],
+    "neighbor_rebuilds": 350,
+    "neighbor_mode": "single",
+    "neighbor_level_rebuilds": [],
+    "orientation_norm": "full_tensor_frobenius",
+    "orientation_target": {
+      "source": "explicit_A4",
+      "A2": [
+        [
+          0.3333333333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.3333333333333333,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.33333333333333337
+        ]
+      ],
+      "A4": [
+        [
+          [
+            [
+              0.2,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ],
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ],
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.2,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ],
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.06666666666666667
+            ],
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.06666666666666667,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.06666666666666667,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.2
+            ]
+          ]
+        ]
+      ],
+      "contraction_error": 0.0,
+      "norm": "full_tensor_frobenius",
+      "warning": "A2 does not uniquely determine A4; closure is a distributional assumption"
+    },
+    "rotation_update": "normalized_coordinates",
+    "gap_audit": {
+      "accepted": false,
+      "violating_image_contacts": 9348,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.6949847276356826,
+      "tolerance_relative": 9.99000999000999e-07,
+      "worst": {
+        "i": 1771,
+        "j": 1812,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 0.3053202876366816
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "min_gap": 0.001,
+    "optimizer": "lbfgs",
+    "neighbor_skin": 0.5,
+    "solver": "inertia_A4_LBFGS"
+  },
+  "raw_position_gradient_norm": 0.12160670817938743,
+  "raw_tangent_gradient_norm": 1.472952667651642,
+  "inertia_scaled_gradient_norm": 0.19426674213459683,
+  "probes": [
+    {
+      "direction": "negative_gradient",
+      "analytic_derivative": -0.19426674213459683,
+      "comparisons": [
+        {
+          "h": 0.001,
+          "finite_difference": -0.1942657302933526,
+          "difference": 1.0118412442361446e-06,
+          "forward_slope": -0.1882565537059122,
+          "backward_slope": -0.20027490688079297
+        },
+        {
+          "h": 0.0001,
+          "finite_difference": -0.19426673279809847,
+          "difference": 9.33649835221928e-09,
+          "forward_slope": -0.19366581696544927,
+          "backward_slope": -0.19486764863074768
+        },
+        {
+          "h": 1e-05,
+          "finite_difference": -0.19426674846556577,
+          "difference": -6.330968943535353e-09,
+          "forward_slope": -0.1942066781168705,
+          "backward_slope": -0.19432681881426103
+        },
+        {
+          "h": 1e-06,
+          "finite_difference": -0.1942667893217731,
+          "difference": -4.718717627749669e-08,
+          "forward_slope": -0.19426081365736536,
+          "backward_slope": -0.19427276498618085
+        },
+        {
+          "h": 1e-07,
+          "finite_difference": -0.19426714459314098,
+          "difference": -4.024585441575468e-07,
+          "forward_slope": -0.1942685656786125,
+          "backward_slope": -0.19426572350766946
+        }
+      ]
+    },
+    {
+      "direction": "random_0",
+      "analytic_derivative": -0.0003182281092011828,
+      "comparisons": [
+        {
+          "h": 0.001,
+          "finite_difference": -0.00031771136477232176,
+          "difference": 5.167444288610499e-07,
+          "forward_slope": 0.0019458269235883563,
+          "backward_slope": -0.002581249653133
+        },
+        {
+          "h": 0.0001,
+          "finite_difference": -0.00031822487756016926,
+          "difference": 3.231641013546737e-09,
+          "forward_slope": -9.185640692521702e-05,
+          "backward_slope": -0.0005445933481951215
+        },
+        {
+          "h": 1e-05,
+          "finite_difference": -0.0003182265118084615,
+          "difference": 1.5973927212985066e-09,
+          "forward_slope": -0.0002956049627300672,
+          "backward_slope": -0.00034084806088685577
+        },
+        {
+          "h": 1e-06,
+          "finite_difference": -0.0003182556440606277,
+          "difference": -2.75348594448656e-08,
+          "forward_slope": -0.0003161915174132446,
+          "backward_slope": -0.00032031977070801076
+        },
+        {
+          "h": 1e-07,
+          "finite_difference": -0.00031651126164433663,
+          "difference": 1.7168475568461804e-06,
+          "forward_slope": -0.00031747049433761276,
+          "backward_slope": -0.0003155520289510605
+        }
+      ]
+    },
+    {
+      "direction": "random_1",
+      "analytic_derivative": 0.002757925577734894,
+      "comparisons": [
+        {
+          "h": 0.001,
+          "finite_difference": 0.0027580711048358353,
+          "difference": 1.4552710094145951e-07,
+          "forward_slope": 0.00498379179703079,
+          "backward_slope": 0.0005323504126408807
+        },
+        {
+          "h": 0.0001,
+          "finite_difference": 0.002757926509389108,
+          "difference": 9.316542142791262e-10,
+          "forward_slope": 0.002980481639269783,
+          "backward_slope": 0.002535371379508433
+        },
+        {
+          "h": 1e-05,
+          "finite_difference": 0.0027579353911733047,
+          "difference": 9.813438410846698e-09,
+          "forward_slope": 0.0027801846158581607,
+          "backward_slope": 0.0027356861664884487
+        },
+        {
+          "h": 1e-06,
+          "finite_difference": 0.0027578508365877497,
+          "difference": -7.474114714417154e-08,
+          "forward_slope": 0.002759961148512957,
+          "backward_slope": 0.002755740524662542
+        },
+        {
+          "h": 1e-07,
+          "finite_difference": 0.0027570479232963407,
+          "difference": -8.776544385530848e-07,
+          "forward_slope": 0.0027565505433813087,
+          "backward_slope": 0.002757545303211373
+        }
+      ]
+    },
+    {
+      "direction": "random_2",
+      "analytic_derivative": 0.0026700520227461713,
+      "comparisons": [
+        {
+          "h": 0.001,
+          "finite_difference": 0.0026716040224528115,
+          "difference": 1.551999706640196e-06,
+          "forward_slope": 0.004994765085086783,
+          "backward_slope": 0.0003484429598188399
+        },
+        {
+          "h": 0.0001,
+          "finite_difference": 0.0026700712751903666,
+          "difference": 1.925244419529598e-08,
+          "forward_slope": 0.002902248041891653,
+          "backward_slope": 0.00243789450848908
+        },
+        {
+          "h": 1e-05,
+          "finite_difference": 0.002670053689257656,
+          "difference": 1.6665114847998208e-09,
+          "forward_slope": 0.0026932553964797985,
+          "backward_slope": 0.002646851982035514
+        },
+        {
+          "h": 1e-06,
+          "finite_difference": 0.0026700952560076985,
+          "difference": 4.323326152719936e-08,
+          "forward_slope": 0.0026720741175267904,
+          "backward_slope": 0.0026681163944886066
+        },
+        {
+          "h": 1e-07,
+          "finite_difference": 0.0026702906552600325,
+          "difference": 2.386325138612269e-07,
+          "forward_slope": 0.0026706459266279126,
+          "backward_slope": 0.0026699353838921525
+        }
+      ]
+    }
+  ]
+}

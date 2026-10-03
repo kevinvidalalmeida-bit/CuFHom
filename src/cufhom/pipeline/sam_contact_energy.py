@@ -13,27 +13,39 @@ from .sam_periodic_kernels import _contact_normal
 
 
 @njit(cache=True)
-def _closest(delta, u, v):
-    w = -.5*u + .5*v - delta
-    a, b, c = np.dot(u, u), np.dot(u, v), np.dot(v, v)
-    d, e = np.dot(u, w), np.dot(v, w)
+def _closest_components(dx, dy, dz, ux, uy, uz, vx, vy, vz):
+    """Segment minimizer with scalar temporaries; same five active-set cases."""
+    wx, wy, wz = -.5*ux+.5*vx-dx, -.5*uy+.5*vy-dy, -.5*uz+.5*vz-dz
+    a, b, c = ux*ux+uy*uy+uz*uz, ux*vx+uy*vy+uz*vz, vx*vx+vy*vy+vz*vz
+    d, e = ux*wx+uy*wy+uz*wz, vx*wx+vy*wy+vz*wz
     det = a*c-b*b
-    ss = np.empty(5); tt = np.empty(5)
-    ss[0], tt[0] = 0., min(1., max(0., e/c))
-    ss[1], tt[1] = 1., min(1., max(0., (e+b)/c))
-    ss[2], tt[2] = min(1., max(0., -d/a)), 0.
-    ss[3], tt[3] = min(1., max(0., (b-d)/a)), 1.
-    ss[4], tt[4] = -1., -1.
-    if det > 1e-12*a*c:
-        ss[4], tt[4] = (b*e-c*d)/det, (a*e-b*d)/det
     best, s, t = np.inf, 0., 0.
     for k in range(5):
-        if 0 <= ss[k] <= 1 and 0 <= tt[k] <= 1:
-            r = w+ss[k]*u-tt[k]*v
-            val = np.dot(r, r)
+        if k == 0:
+            sk, tk = 0., min(1., max(0., e/c))
+        elif k == 1:
+            sk, tk = 1., min(1., max(0., (e+b)/c))
+        elif k == 2:
+            sk, tk = min(1., max(0., -d/a)), 0.
+        elif k == 3:
+            sk, tk = min(1., max(0., (b-d)/a)), 1.
+        elif det > 1e-12*a*c:
+            sk, tk = (b*e-c*d)/det, (a*e-b*d)/det
+        else:
+            continue
+        if 0 <= sk <= 1 and 0 <= tk <= 1:
+            rx, ry, rz = wx+sk*ux-tk*vx, wy+sk*uy-tk*vy, wz+sk*uz-tk*vz
+            val = rx*rx+ry*ry+rz*rz
             if val < best:
-                best, s, t = val, ss[k], tt[k]
-    return math.sqrt(max(0., best)), s, t, w+s*u-t*v
+                best, s, t = val, sk, tk
+    return math.sqrt(max(0., best)), s, t, wx+s*ux-t*vx, wy+s*uy-t*vy, wz+s*uz-t*vz
+
+
+@njit(cache=True)
+def _closest(delta, u, v):
+    dist, s, t, x, y, z = _closest_components(delta[0],delta[1],delta[2],
+                                             u[0],u[1],u[2],v[0],v[1],v[2])
+    return dist, s, t, np.array([x,y,z])
 
 
 @njit(cache=True)
@@ -67,44 +79,76 @@ lexicographic half of the lattice, so +/- shifts are not counted twice.
                     distance_lower_sq += gap*gap
                 if distance_lower_sq > (diameter+1e-12*max(1., length, diameter))**2:
                     continue
-            delta = centers[j]-centers[i]
-            delta -= np.rint(delta/box)*box
-            u, v = length*directions[i], length*directions[j]
-            ext = .5*(np.abs(u)+np.abs(v))+diameter+1e-12
-            lo = np.ceil((-ext-delta)/box).astype(np.int64)
-            hi = np.floor((ext-delta)/box).astype(np.int64)
-            for sx in range(lo[0], hi[0]+1):
-                for sy in range(lo[1], hi[1]+1):
-                    for sz in range(lo[2], hi[2]+1):
+            dx,dy,dz = centers[j,0]-centers[i,0],centers[j,1]-centers[i,1],centers[j,2]-centers[i,2]
+            dx-=np.rint(dx/box[0])*box[0]
+            dy-=np.rint(dy/box[1])*box[1]
+            dz-=np.rint(dz/box[2])*box[2]
+            ux,uy,uz = length*directions[i,0],length*directions[i,1],length*directions[i,2]
+            vx,vy,vz = length*directions[j,0],length*directions[j,1],length*directions[j,2]
+            ex,ey,ez = .5*(abs(ux)+abs(vx)),.5*(abs(uy)+abs(vy)),.5*(abs(uz)+abs(vz))
+            reach=diameter+1e-12
+            for sx in range(int(np.ceil((-ex-reach-dx)/box[0])),int(np.floor((ex+reach-dx)/box[0]))+1):
+                for sy in range(int(np.ceil((-ey-reach-dy)/box[1])),int(np.floor((ey+reach-dy)/box[1]))+1):
+                    for sz in range(int(np.ceil((-ez-reach-dz)/box[2])),int(np.floor((ez+reach-dz)/box[2]))+1):
                         if i == j and not (sx > 0 or (sx == 0 and sy > 0)
                                            or (sx == 0 and sy == 0 and sz > 0)):
                             continue
-                        other = delta + box*np.array([sx, sy, sz])
+                        ox,oy,oz = dx+box[0]*sx,dy+box[1]*sy,dz+box[2]*sz
                         # Connected neighbors naturally share their end cap in
                         # a polygonal fiber. Exempt ONLY the original image;
                         # periodic copies and nonadjacent self contacts remain.
                         if (segments_per_fiber > 1 and i//segments_per_fiber == j//segments_per_fiber
-                                and j-i <= 1 and np.max(np.abs(other-(centers[j]-centers[i]))) < 1e-9):
+                                and j-i <= 1
+                                and max(abs(ox-(centers[j,0]-centers[i,0])),
+                                        abs(oy-(centers[j,1]-centers[i,1])),
+                                        abs(oz-(centers[j,2]-centers[i,2]))) < 1e-9):
                             continue
-                        gap = np.maximum(0., np.abs(other)-.5*(np.abs(u)+np.abs(v)))
-                        if np.dot(gap, gap) > diameter**2:
+                        gx,gy,gz = max(0.,abs(ox)-ex),max(0.,abs(oy)-ey),max(0.,abs(oz)-ez)
+                        if gx*gx+gy*gy+gz*gz > diameter**2:
                             continue
-                        dist, s, t, diff = _closest(other, u, v)
+                        dist,s,t,rx,ry,rz = _closest_components(ox,oy,oz,ux,uy,uz,vx,vy,vz)
                         penetration = diameter-dist
                         if penetration <= 0:
                             continue
                         maximum = max(maximum, penetration/diameter)
                         energy += .5*(penetration/diameter)**2
                         if dist > 1e-10:
-                            g = -penetration/diameter**2 * diff/dist
+                            scale=-penetration/diameter**2/dist
+                            gx,gy,gz=scale*rx,scale*ry,scale*rz
                         else:
-                            normal = _contact_normal(diff[0], diff[1], diff[2], dist, directions, i, j)
-                            g = penetration/diameter**2 * np.array(normal)
-                        gc[i] += g
-                        gc[j] -= g
-                        gu[i] += (s-.5)*length*g
-                        gu[j] -= (t-.5)*length*g
+                            nx,ny,nz = _contact_normal(rx,ry,rz,dist,directions,i,j)
+                            scale=penetration/diameter**2
+                            gx,gy,gz=scale*nx,scale*ny,scale*nz
+                        for axis in range(3):
+                            g=gx if axis==0 else gy if axis==1 else gz
+                            gc[i,axis]+=g
+                            gc[j,axis]-=g
+                            gu[i,axis]+=(s-.5)*length*g
+                            gu[j,axis]-=(t-.5)*length*g
     return energy, gc, gu, maximum
+
+
+@njit(cache=True)
+def candidate_contact_energies(centers, directions, candidate_centers, candidate_directions,
+                               length, diameter, box):
+    """Score independent straight-fiber additions with one reusable geometry.
+
+    Reuse the exact contact kernel, including all periodic and self images.
+    Candidates are alternatives, so they must never interact with one another.
+    Existing fibers are copied once rather than once per candidate.
+    """
+    n = len(centers)
+    trial_c = np.empty((n+1, 3), dtype=np.float64)
+    trial_u = np.empty((n+1, 3), dtype=np.float64)
+    trial_c[:n] = centers
+    trial_u[:n] = directions
+    energies = np.empty(len(candidate_centers), dtype=np.float64)
+    for at in range(len(candidate_centers)):
+        trial_c[n] = candidate_centers[at]
+        trial_u[n] = candidate_directions[at]
+        energies[at] = contact_energy(trial_c, trial_u, length, diameter, box,
+                                      first_new=n)[0]
+    return energies
 
 
 def objective(x, length, box, target, weight):
@@ -146,9 +190,16 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
     x0 = np.column_stack((f[:, :3]/diameter, .5*length*f[:, 3:6])).ravel()
     history = []
     best = [np.inf, x0.copy()]
+    last_x = last_value = None
+    objective_evaluations = 0
 
     def evaluate(x):
-        return objective(x, length, domain, target, orientation_weight)
+        nonlocal last_x, last_value, objective_evaluations
+        if last_x is None or not np.array_equal(x, last_x):
+            last_value = objective(x, length, domain, target, orientation_weight)
+            last_x = x.copy()
+            objective_evaluations += 1
+        return last_value
 
     def record(x):
         energy, _, overlap, a2 = evaluate(x)
@@ -174,4 +225,5 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
                    contact_and_A2_accepted=bool(after['accepted'] and a2 <= a2_tolerance),
                    vf_not_certified=True, optimizer_success=bool(result.success),
                    optimizer_message=str(result.message), iterations=int(result.nit),
-                   evaluations=int(result.nfev), history=history)
+                   evaluations=int(result.nfev), objective_evaluations=objective_evaluations,
+                   history=history)

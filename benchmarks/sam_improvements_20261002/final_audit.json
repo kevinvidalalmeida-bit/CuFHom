@@ -1,0 +1,58 @@
+{
+  "checkpoint": "benchmarks/results/sam_dense_cylinder_ar30_candidates128_20261002/last_geometrically_valid.npz",
+  "checkpoint_sha256": "359e850c0d51ed814e619a069c16137cbb33f1226d9baaf8545a414e75302634",
+  "fiber_count": 1559,
+  "certificate": {
+    "accepted": true,
+    "A2_error": 1.0653471806482074e-08,
+    "audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 0.0,
+      "tolerance_relative": 1e-06,
+      "worst": null,
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "A4_error": 2.1729395622709416e-08,
+    "A4_tolerance": 0.0001,
+    "gap_audit": {
+      "accepted": true,
+      "violating_image_contacts": 0,
+      "nonnearest_violating_image_contacts": 0,
+      "maximum_relative_overlap": 9.9892801367792e-07,
+      "tolerance_relative": 9.99000999000999e-07,
+      "worst": {
+        "i": 697,
+        "j": 1470,
+        "image_shift": [
+          0,
+          0,
+          0
+        ],
+        "distance": 1.0009990000730582
+      },
+      "model": "periodic finite segments minus radii, same capsule criterion as SAM; self images included"
+    },
+    "min_gap": 0.001
+  },
+  "tests": "88 passed, 7 subtests passed",
+  "source_sha256": {
+    "src/cufhom/cli/geometry.py": "5455745a7eba63f8677c5d78400c4704fe01d5a5fb50f9a37ce70c270987c4f8",
+    "src/cufhom/pipeline/sam_generator.py": "e227d00f66ef5614dead86b686b19a40596323b02265a7fe7b632e1487e4c464",
+    "src/cufhom/pipeline/sam_neighbor_cache.py": "ad3e5fa1692e4838e22b9a19f488f14d00a3c5e1095b6643e1ab3fdef7f11deb",
+    "src/cufhom/pipeline/sam_periodic_kernels.py": "5183a874a4cdf963786141aee1f168145daf4afb05079d805019bc0bd8bd6db8",
+    "src/cufhom/pipeline/sam_flexible.py": "9cffd8fbb8a1cf23a7110192c29f8c402d81fd1e7d1f4b553e6fc31120b02072",
+    "src/cufhom/pipeline/sam_periodic_audit.py": "7c665c835c3f4d57886b35acdcc0c0c2c01e8251820ef794e66f875d4c146e36",
+    "src/cufhom/pipeline/sam_orientation.py": "e4f90a80ffc756b70e94b20ca97137b86178f191ab450389772547b9ed515f0e",
+    "src/cufhom/pipeline/sam_contact_energy.py": "9b35be105b0edf6feb6bda46e7daea6139f3b7f9c2a1f1541561fada52159082",
+    "src/cufhom/pipeline/sam_shapes.py": "dca0b9309d3ab9223a56fecec221c5ee07c345b38d9e534d6ef58d92943be1af",
+    "src/cufhom/pipeline/sam_acceleration_kernels.py": "6e5a9abf0076f5738a901e989fcda63f496bca5718e2a52666f7b12ea7efb5bf",
+    "src/cufhom/pipeline/sam_voxel_moments.py": "1a1fd9e5e114f2c0740193c2ccfa9f497d0c6c41a8ce661cd37c7ecb8f88ba0c",
+    "src/cufhom/pipeline/sam_paper_reference.py": "658cda1269fdb1513c327c6edba75311e42ea8f8c242469a5abe9895eb2d0754",
+    "src/cufhom/pipeline/sam_staged_insertion.py": "a5d8f6ef9803b6d67ed173a66f3e1394ebf08bfb2fc38c0f69ff36390623f9e1",
+    "src/cufhom/pipeline/sam_lbfgs_a4.py": "23ed5d2dfe01c5d79835dc4e6c23bfaecf556e0edc252229aba851ff7deb95c5",
+    "src/cufhom/pipeline/sam_acceleration.py": "e956631eeef4968a33a8c87420c982769480a7d3de72a799a134d8c943ecd796",
+    "tests/test_sam_dense_generation.py": "49615432852f080f31b541a4f328be71fdb269240d0a7967135cdbc2c405c2ef"
+  }
+}
