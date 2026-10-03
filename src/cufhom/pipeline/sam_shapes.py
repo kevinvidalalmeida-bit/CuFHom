@@ -1,4 +1,4 @@
-"""Physical volumes and periodic point sampling of straight flat cylinders."""
+"""Physical volumes and periodic point sampling of straight cylinders and capsules."""
 import numpy as np
 from numba import njit
 
@@ -13,13 +13,13 @@ def fiber_volume(length, diameter, shape='capsule'):
 
 
 @njit(cache=True)
-def _paint_cylinders(centers, directions, length, radius, phase, ori):
+def _paint_fibers(centers, directions, length, radius, phase, ori, capsule):
     """Slice along the dominant axis: O(length * radius²) samples per fiber.
 
     Intersect each grid plane with a bounding rectangle of the infinite-cylinder
     ellipse, then apply the exact axial and radial tests. Enumerate unwrapped
     points before applying periodic indices, including multiple cell crossings.
-    Sample the strict interior, excluding the lateral surface and both end faces.
+    Cylinders sample the strict interior; capsules include their boundary.
     """
     n = len(phase)
     count = 0
@@ -29,6 +29,8 @@ def _paint_cylinders(centers, directions, length, radius, phase, ori):
         i, j = (k+1) % 3, (k+2) % 3
         half = length/2
         extent = half*abs(u[k])+radius*np.sqrt(max(0., 1-u[k]*u[k]))
+        if capsule:
+            extent = half*abs(u[k])+radius
         ri = radius*np.sqrt(1+(u[i]/u[k])**2)
         rj = radius*np.sqrt(1+(u[j]/u[k])**2)
         for xk in range(int(np.floor(c[k]-extent)), int(np.ceil(c[k]+extent))+1):
@@ -39,10 +41,12 @@ def _paint_cylinders(centers, directions, length, radius, phase, ori):
                 for xj in range(int(np.floor(cj-rj)), int(np.ceil(cj+rj))+1):
                     dj = xj-c[j]
                     axial = dk*u[k]+di*u[i]+dj*u[j]
-                    if abs(axial) >= half:
+                    if not capsule and abs(axial) >= half:
                         continue
+                    if capsule:
+                        axial = max(-half, min(half, axial))
                     radial = (dk-axial*u[k])**2+(di-axial*u[i])**2+(dj-axial*u[j])**2
-                    if radial >= radius*radius:
+                    if (radial > radius*radius if capsule else radial >= radius*radius):
                         continue
                     if k == 0:
                         x, y, z = xk % n, xi % n, xj % n
@@ -57,7 +61,7 @@ def _paint_cylinders(centers, directions, length, radius, phase, ori):
     return count
 
 
-def rasterize_cylinders(centers, directions, length, radius, grid):
+def rasterize_fibers(centers, directions, length, radius, grid, shape='capsule'):
     """Rasterize every fiber; coordinates and dimensions are in voxel units."""
     c = np.ascontiguousarray(centers, dtype=float)
     u = np.ascontiguousarray(directions, dtype=float)
@@ -66,10 +70,18 @@ def rasterize_cylinders(centers, directions, length, radius, grid):
     if (not np.isfinite(c).all() or not np.isfinite(u).all()
             or not np.allclose(np.linalg.norm(u, axis=1), 1., rtol=0, atol=1e-10)):
         raise ValueError('Finite centers and unit directions required')
-    fiber_volume(length, 2*radius, 'cylinder')
+    fiber_volume(length, 2*radius, shape)
     if isinstance(grid, bool) or not isinstance(grid, (int, np.integer)) or grid < 2:
         raise ValueError('Integer grid >= 2 required')
     phase = np.zeros((grid, grid, grid), dtype=np.uint8)
     ori = np.zeros((grid, grid, grid, 3), dtype=np.float32)
-    count = _paint_cylinders(c, u, float(length), float(radius), phase, ori)
+    count = _paint_fibers(c, u, float(length), float(radius), phase, ori, shape == 'capsule')
     return phase, ori, count, len(c)
+
+
+def rasterize_cylinders(centers, directions, length, radius, grid):
+    return rasterize_fibers(centers, directions, length, radius, grid, 'cylinder')
+
+
+def rasterize_capsules(centers, directions, length, radius, grid):
+    return rasterize_fibers(centers, directions, length, radius, grid, 'capsule')

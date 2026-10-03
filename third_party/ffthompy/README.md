@@ -1,12 +1,10 @@
-# Núcleo FFTHomPy modificado
+# FFTHomPy
 
-El código se instala desde `src/ffthompy`, conservando su aviso MIT y los avisos
-individuales. Corresponde a la copia local modificada usada por el solver, no
-a una descarga nueva ni a una versión upstream sin cambios.
+`src/cufhom_core` contains a modified copy of FFTHomPy, originally authored by
+Jaroslav Vondřejc. Its MIT notice is preserved in
+[`src/cufhom_core/LICENSE`](../../src/cufhom_core/LICENSE) and in the installed
+package. Individual source notices are retained.
 
-Procedencia y hashes de cada archivo: `docs/import_manifest.json`.
-Entre los cambios heredados se encuentran FFT/CuPy, representaciones de Cfield,
-proyecciones, CG y kernels GPU. La separación de carpetas no los reemplazó.
-No se debe instalar otro paquete que exporte `ffthompy` en el mismo entorno.
-
-La licencia del código propio de SAM/FFT se decide por separado antes de publicar.
+The internal namespace is `cufhom_core`. Local modifications include CuPy FFTs,
+constitutive fields, projections, CG and GPU kernels. CuFHom's own code has no
+project license assigned; the MIT notice applies to the incorporated code.

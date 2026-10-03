@@ -3,14 +3,12 @@
 import gc
 import json
 import os
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import numpy as np
 
-from cufhom_core.general.base import get_base_dir
 from cufhom_core.mechanics.matcoef import ElasticTensor
 from cufhom_core.tensors.fft import (
     set_cupy_plan_mode,
@@ -51,7 +49,6 @@ SOLVER_PROFILES: Dict[str, Dict[str, Any]] = {
 
 AFFINE_ORIENTATION_QUANTIZATION = 1.0e4
 
-base_dir = get_base_dir()
 
 _CFIELD_ASSIGN_CHUNK_VOXELS = 2_000_000
 _SYM21_PAIRS = (
@@ -1201,7 +1198,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
     cupy_unscaled_fft_pair = bool(p.get('cupy_unscaled_fft_pair', True))
     cupy_reuse_inverse_input = bool(p.get('cupy_reuse_inverse_input', False))
     if p.get('cupy_matrix_reference', False) or float(p.get('cupy_reference_eta', 1.0)) != 1.0:
-        raise ValueError('Reference-energy CG was retired to descartados/metrica_referencia; '
+        raise ValueError('Reference-energy CG was retired; '
                          'use linear_formulation=auto with symmetric_fused preconditioning.')
     cupy_lazy_scalars = bool(p.get('cupy_lazy_scalars', True))
     cupy_fused_cg_updates = bool(p.get('cupy_fused_cg_updates', True))

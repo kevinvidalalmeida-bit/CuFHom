@@ -31,7 +31,6 @@ WORKSPACE_DIR = Path.cwd()
 
 from cufhom.pipeline.rve_generator import generate_rve_main as generate_rve_main_sam
 from cufhom.pipeline.fft_solver import solve_homogenization
-from cufhom.pipeline.sam_generator import warmup_numba_geometry_kernels
 from cufhom.engineering import engineering_constants_from_Cmandel
 
 
@@ -161,71 +160,13 @@ MAX_PARALLEL_GEOMETRIES = env_int("MAX_PARALLEL_GEOMETRIES", 15)
 GENERATOR_NUM_CORES = env_int("GENERATOR_NUM_CORES", 2)
 GEOMETRY_CPU_BUDGET = env_int("GEOMETRY_CPU_BUDGET", 30)
 GENERATOR_VERBOSE = env_bool("GENERATOR_VERBOSE", False)
-COMPUTE_RVE_METRICS = False
-SAM_BATCH_VF = env_float("SAM_BATCH_VF", 0.025)
-SAM_USE_VOXEL_STOP_CALLBACK = env_bool("SAM_USE_VOXEL_STOP_CALLBACK", False)
-SAM_VOXEL_STOP_START = env_float("SAM_VOXEL_STOP_START", 0.60)
-SAM_INFLATION_SAMPLES = env_int("SAM_INFLATION_SAMPLES", 2)
-SAM_TARGET_SAFETY = env_float("SAM_TARGET_SAFETY", 1.03)
-SAM_MAX_TOPUPS = env_int("SAM_MAX_TOPUPS", 6)
-SAM_TOPUP_GAIN = env_float("SAM_TOPUP_GAIN", 1.35)
-SAM_CONTINUOUS_VF_CAP_FACTOR = env_float("SAM_CONTINUOUS_VF_CAP_FACTOR", 1.25)
+SAM_BATCH_VF = env_float("SAM_BATCH_VF", 0.01)
 SAM_VF_TOLERANCE = env_float("SAM_VF_TOLERANCE", 0.005)
-SAM_REJECT_VF_MISS = env_bool("SAM_REJECT_VF_MISS", True)
 SAM_A2_TOLERANCE = env_float("SAM_A2_TOLERANCE", 0.01)
 SAM_VOXEL_A2_TOLERANCE = env_float("SAM_VOXEL_A2_TOLERANCE", 0.01)
-SAM_REJECT_A2_MISS = env_bool("SAM_REJECT_A2_MISS", True)
-SAM_ORIENTATION_MAX_ITER = env_int("SAM_ORIENTATION_MAX_ITER", 160)
-SAM_GEOMETRY_BACKEND = os.environ.get(
-    "SAM_GEOMETRY_BACKEND",
-    "numba",
-).strip().lower()
-SAM_CUPY_MIN_CANDIDATE_PAIRS = env_int(
-    "SAM_CUPY_MIN_CANDIDATE_PAIRS",
-    50_000,
-)
-SAM_COMPACTION = env_bool("SAM_COMPACTION", True)
-SAM_COMPACTION_START_SCALE = env_float("SAM_COMPACTION_START_SCALE", 0.50)
-SAM_COMPACTION_TOPUP_SCALE = env_float("SAM_COMPACTION_TOPUP_SCALE", 0.50)
-SAM_COMPACTION_STAGES = env_int("SAM_COMPACTION_STAGES", 6)
-SAM_COMPACTION_MAX_ITER = env_int("SAM_COMPACTION_MAX_ITER", 120)
-SAM_COMPACTION_PASSES = env_int("SAM_COMPACTION_PASSES", 2)
-SAM_COLLECTIVE_FIRE = env_bool("SAM_COLLECTIVE_FIRE", True)
-SAM_COLLECTIVE_FIRE_MAX_ITER = env_int(
-    "SAM_COLLECTIVE_FIRE_MAX_ITER",
-    2500,
-)
-SAM_COLLECTIVE_FIRE_MAX_RESTARTS = env_int(
-    "SAM_COLLECTIVE_FIRE_MAX_RESTARTS",
-    3,
-)
-SAM_COLLECTIVE_FIRE_RESTART_PATIENCE = env_int(
-    "SAM_COLLECTIVE_FIRE_RESTART_PATIENCE",
-    250,
-)
-SAM_COLLECTIVE_FIRE_PAIR_REBUILD_INTERVAL = env_int(
-    "SAM_COLLECTIVE_FIRE_PAIR_REBUILD_INTERVAL",
-    4,
-)
-SAM_COLLECTIVE_FIRE_RESCUE_PASSES = env_int(
-    "SAM_COLLECTIVE_FIRE_RESCUE_PASSES",
-    3,
-)
-SAM_COLLECTIVE_FIRE_REMOVAL_BATCH = env_int(
-    "SAM_COLLECTIVE_FIRE_REMOVAL_BATCH",
-    8,
-)
 SAM_OVERLAP_TOLERANCE_RELATIVE = env_float(
     "SAM_OVERLAP_TOLERANCE_RELATIVE",
-    1.0 / 120.0,
-)
-SAM_REJECT_OVERLAP_MISS = env_bool("SAM_REJECT_OVERLAP_MISS", True)
-SAM_OVERLAP_RESCUE = env_bool("SAM_OVERLAP_RESCUE", True)
-SAM_OVERLAP_RESCUE_PASSES = env_int("SAM_OVERLAP_RESCUE_PASSES", 2)
-SAM_OVERLAP_RESCUE_MAX_ITER = env_int("SAM_OVERLAP_RESCUE_MAX_ITER", 160)
-SAM_OVERLAP_RESCUE_MAX_FIBERS = env_int(
-    "SAM_OVERLAP_RESCUE_MAX_FIBERS",
-    48,
+    1e-6,
 )
 MAX_CONSECUTIVE_INVALID_GEOMETRIES = env_int(
     "MAX_CONSECUTIVE_INVALID_GEOMETRIES",
@@ -550,6 +491,8 @@ def completed_design_matches_config(
     config: Dict[str, Any],
 ) -> bool:
     """Accept resume data only when statistical and geometry criteria match."""
+    if completed_row.get('geometry_engine') != config['geometry_engine']:
+        return False
     integer_fields = (
         ("n_min", "n_min"),
         ("n_seeds_max", "max_seeds"),
@@ -589,20 +532,6 @@ def completed_design_matches_config(
             ):
                 return False
         except (TypeError, ValueError):
-            return False
-
-    bool_fields = (
-        ("sam_reject_vf_miss", "sam_reject_vf_miss"),
-        ("sam_reject_A2_miss", "sam_reject_A2_miss"),
-        ("sam_reject_overlap_miss", "sam_reject_overlap_miss"),
-    )
-    for row_key, config_key in bool_fields:
-        value = completed_row.get(row_key)
-        if value is None or pd.isna(value):
-            return False
-        if isinstance(value, str):
-            value = value.strip().lower() in {"1", "true", "yes", "on"}
-        if bool(value) != bool(config[config_key]):
             return False
 
     return True
@@ -646,62 +575,16 @@ def resolve_run_dir() -> Path:
 
 def make_run_config() -> Dict[str, Any]:
     return {
+        "geometry_engine": "sam_a4_v1",
         "generator_num_cores": int(GENERATOR_NUM_CORES),
         "geometry_cpu_budget": int(GEOMETRY_CPU_BUDGET),
         "generator_verbose": bool(GENERATOR_VERBOSE),
-        "compute_rve_metrics": bool(COMPUTE_RVE_METRICS),
         "sam_batch_vf": float(SAM_BATCH_VF),
-        "sam_use_voxel_stop_callback": bool(SAM_USE_VOXEL_STOP_CALLBACK),
-        "sam_voxel_stop_start": float(SAM_VOXEL_STOP_START),
-        "sam_inflation_samples": int(SAM_INFLATION_SAMPLES),
-        "sam_target_safety": float(SAM_TARGET_SAFETY),
-        "sam_max_topups": int(SAM_MAX_TOPUPS),
-        "sam_topup_gain": float(SAM_TOPUP_GAIN),
-        "sam_continuous_vf_cap_factor": float(SAM_CONTINUOUS_VF_CAP_FACTOR),
         "sam_vf_tolerance": float(SAM_VF_TOLERANCE),
-        "sam_reject_vf_miss": bool(SAM_REJECT_VF_MISS),
         "sam_A2_tolerance": float(SAM_A2_TOLERANCE),
         "sam_voxel_A2_tolerance": float(SAM_VOXEL_A2_TOLERANCE),
-        "sam_reject_A2_miss": bool(SAM_REJECT_A2_MISS),
-        "sam_orientation_max_iter": int(SAM_ORIENTATION_MAX_ITER),
-        "sam_geometry_backend": str(SAM_GEOMETRY_BACKEND),
-        "sam_cupy_min_candidate_pairs": int(
-            SAM_CUPY_MIN_CANDIDATE_PAIRS
-        ),
-        "sam_compaction": bool(SAM_COMPACTION),
-        "sam_compaction_start_scale": float(SAM_COMPACTION_START_SCALE),
-        "sam_compaction_topup_scale": float(SAM_COMPACTION_TOPUP_SCALE),
-        "sam_compaction_stages": int(SAM_COMPACTION_STAGES),
-        "sam_compaction_max_iter": int(SAM_COMPACTION_MAX_ITER),
-        "sam_compaction_passes": int(SAM_COMPACTION_PASSES),
-        "sam_collective_fire": bool(SAM_COLLECTIVE_FIRE),
-        "sam_collective_fire_max_iter": int(
-            SAM_COLLECTIVE_FIRE_MAX_ITER
-        ),
-        "sam_collective_fire_max_restarts": int(
-            SAM_COLLECTIVE_FIRE_MAX_RESTARTS
-        ),
-        "sam_collective_fire_restart_patience": int(
-            SAM_COLLECTIVE_FIRE_RESTART_PATIENCE
-        ),
-        "sam_collective_fire_pair_rebuild_interval": int(
-            SAM_COLLECTIVE_FIRE_PAIR_REBUILD_INTERVAL
-        ),
-        "sam_collective_fire_rescue_passes": int(
-            SAM_COLLECTIVE_FIRE_RESCUE_PASSES
-        ),
-        "sam_collective_fire_removal_batch": int(
-            SAM_COLLECTIVE_FIRE_REMOVAL_BATCH
-        ),
         "sam_overlap_tolerance_relative": float(
             SAM_OVERLAP_TOLERANCE_RELATIVE
-        ),
-        "sam_reject_overlap_miss": bool(SAM_REJECT_OVERLAP_MISS),
-        "sam_overlap_rescue": bool(SAM_OVERLAP_RESCUE),
-        "sam_overlap_rescue_passes": int(SAM_OVERLAP_RESCUE_PASSES),
-        "sam_overlap_rescue_max_iter": int(SAM_OVERLAP_RESCUE_MAX_ITER),
-        "sam_overlap_rescue_max_fibers": int(
-            SAM_OVERLAP_RESCUE_MAX_FIBERS
         ),
         "max_consecutive_invalid_geometries": int(
             MAX_CONSECUTIVE_INVALID_GEOMETRIES
@@ -806,99 +689,17 @@ def remove_empty_seed_work_root(run_dir: Path) -> bool:
 # PARAMETROS
 # ============================================================================
 
-def build_generation_params(
-    mc_id: int,
-    seed: int,
-    design_row: Dict[str, Any],
-    seed_dir: Path,
-    config: Dict[str, Any],
-) -> Dict[str, Any]:
-    vf_target = float(design_row["Vf_target"])
-    compaction_start_scale = float(
-        config.get("sam_compaction_start_scale", 0.50)
-    )
+def build_generation_params(mc_id, seed, design_row, seed_dir, config):
     return {
-        "gap_um": 0,
-        "resol": float(design_row["res"]),
-        "seed": int(seed),
-        "output_dir": str(seed_dir),
-
-        "num_cores": int(config["generator_num_cores"]),
-        "sam_num_threads": int(config["generator_num_cores"]),
-
-        "caja_um": float(design_row["caja_um"]),
-        "L_um": float(design_row["L_um"]),
-        "d_um": float(design_row["d_um"]),
-        "Vf_target": vf_target,
-
-        "a11": float(design_row["a11"]),
-        "a22": float(design_row["a22"]),
-
-        "compute_metrics": bool(config["compute_rve_metrics"]),
-        "sam_batch_vf": float(config["sam_batch_vf"]),
-        "sam_use_voxel_stop_callback": bool(
-            config["sam_use_voxel_stop_callback"]
-        ),
-        "sam_inflation_samples": int(config["sam_inflation_samples"]),
-        "sam_target_safety": float(config["sam_target_safety"]),
-        "sam_max_topups": int(config["sam_max_topups"]),
-        "sam_topup_gain": float(config["sam_topup_gain"]),
-        "sam_continuous_vf_cap_factor": float(
-            config["sam_continuous_vf_cap_factor"]
-        ),
-        "sam_vf_tolerance": float(config["sam_vf_tolerance"]),
-        "sam_A2_tolerance": float(config.get("sam_A2_tolerance", 0.01)),
-        "sam_voxel_A2_tolerance": float(
-            config.get("sam_voxel_A2_tolerance", 0.01)
-        ),
-        "sam_orientation_max_iter": int(
-            config.get("sam_orientation_max_iter", 160)
-        ),
-        "sam_geometry_backend": str(
-            config.get("sam_geometry_backend", "numba")
-        ),
-        "sam_cupy_min_candidate_pairs": int(
-            config.get("sam_cupy_min_candidate_pairs", 50_000)
-        ),
-        "sam_compaction": bool(config.get("sam_compaction", True)),
-        "sam_compaction_start_scale": compaction_start_scale,
-        "sam_compaction_topup_scale": float(compaction_start_scale),
-        "sam_compaction_stages": int(config["sam_compaction_stages"]),
-        "sam_compaction_max_iter": int(config["sam_compaction_max_iter"]),
-        "sam_compaction_passes": int(config["sam_compaction_passes"]),
-        "sam_collective_fire": bool(
-            config.get("sam_collective_fire", True)
-        ),
-        "sam_collective_fire_max_iter": int(
-            config.get("sam_collective_fire_max_iter", 2500)
-        ),
-        "sam_collective_fire_max_restarts": int(
-            config.get("sam_collective_fire_max_restarts", 3)
-        ),
-        "sam_collective_fire_restart_patience": int(
-            config.get("sam_collective_fire_restart_patience", 250)
-        ),
-        "sam_collective_fire_pair_rebuild_interval": int(
-            config.get("sam_collective_fire_pair_rebuild_interval", 4)
-        ),
-        "sam_collective_fire_rescue_passes": int(
-            config.get("sam_collective_fire_rescue_passes", 3)
-        ),
-        "sam_collective_fire_removal_batch": int(
-            config.get("sam_collective_fire_removal_batch", 8)
-        ),
-        "sam_overlap_tolerance_relative": float(
-            config["sam_overlap_tolerance_relative"]
-        ),
-        "sam_overlap_rescue": bool(config["sam_overlap_rescue"]),
-        "sam_overlap_rescue_passes": int(config["sam_overlap_rescue_passes"]),
-        "sam_overlap_rescue_max_iter": int(
-            config["sam_overlap_rescue_max_iter"]
-        ),
-        "sam_overlap_rescue_max_fibers": int(
-            config["sam_overlap_rescue_max_fibers"]
-        ),
-        "sam_verbose": bool(config.get("generator_verbose", False)),
+        'resol': float(design_row['res']), 'seed': int(seed), 'output_dir': str(seed_dir),
+        'caja_um': float(design_row['caja_um']), 'L_um': float(design_row['L_um']),
+        'd_um': float(design_row['d_um']), 'Vf_target': float(design_row['Vf_target']),
+        'a11': float(design_row['a11']), 'a22': float(design_row['a22']),
+        'sam_batch_vf': float(config['sam_batch_vf']),
+        'sam_vf_tolerance': float(config['sam_vf_tolerance']),
+        'sam_A2_tolerance': float(config['sam_A2_tolerance']),
+        'sam_voxel_A2_tolerance': float(config['sam_voxel_A2_tolerance']),
+        'sam_overlap_tolerance_relative': float(config['sam_overlap_tolerance_relative']),
     }
 
 
@@ -967,455 +768,33 @@ def build_solver_params(
 # FASE A
 # ============================================================================
 
-def generate_single_seed_geometry(
-    mc_id: int,
-    seed: int,
-    design_row: Dict[str, Any],
-    work_root: Path,
-    config: Dict[str, Any],
-) -> Dict[str, Any]:
-    design_id = int(design_row.get("design_id", -1))
-    seed_dir = seed_directory(work_root, design_id, mc_id, seed)
+def generate_single_seed_geometry(mc_id, seed, design_row, work_root, config):
+    seed_dir = seed_directory(work_root, int(design_row.get('design_id', -1)), mc_id, seed)
     seed_dir.mkdir(parents=True, exist_ok=True)
-
-    t0 = time.perf_counter()
-    started_epoch_s = time.time()
-
+    started = time.perf_counter()
+    result = {key: design_row.get(key, np.nan) for key in
+              ('config_id', 'design_id', 'sobol_index', 'AR', 'Vf_target', 'a11', 'a22', 'a33', 'nvox')}
+    result.update(mc_id=int(mc_id), seed=int(seed), seed_dir=str(seed_dir),
+                  phase_path=str(seed_dir/'phase.npy'), ori_path=str(seed_dir/'ori.npy'),
+                  generator_num_cores=int(config['generator_num_cores']),
+                  t_gen_started_epoch_s=time.time(), status='geometry_error', error='')
     try:
-        p_gen = build_generation_params(
-            mc_id=mc_id,
-            seed=seed,
-            design_row=design_row,
-            seed_dir=seed_dir,
-            config=config,
-        )
-
-        gen_info = generate_rve_main_sam(p_gen)
-        t_gen_s = time.perf_counter() - t0
-
-        phase_path = seed_dir / "phase.npy"
-        ori_path = seed_dir / "ori.npy"
-
-        if not phase_path.exists() or not ori_path.exists():
-            raise FileNotFoundError(
-                f"No se generaron archivos esperados: {phase_path.name}, {ori_path.name}"
-            )
-
-        result: Dict[str, Any] = {
-            "config_id": str(design_row.get("config_id", "")),
-            "design_id": int(design_row.get("design_id", -1)),
-            "sobol_index": int(design_row.get("sobol_index", -1)),
-            "mc_id": int(mc_id),
-            "seed": int(seed),
-            "status": "geometry_ok",
-            "error": "",
-            "AR": float(design_row.get("AR", np.nan)),
-            "Vf_target": float(design_row.get("Vf_target", np.nan)),
-            "a11": float(design_row.get("a11", np.nan)),
-            "a22": float(design_row.get("a22", np.nan)),
-            "a33": float(design_row.get("a33", np.nan)),
-            "nvox": int(design_row.get("nvox", -1)),
-            "seed_dir": str(seed_dir),
-            "phase_path": str(phase_path),
-            "ori_path": str(ori_path),
-            "t_gen_s": float(t_gen_s),
-            "t_gen_started_epoch_s": float(started_epoch_s),
-            "t_gen_completed_epoch_s": float(time.time()),
-            "generator_num_cores": int(config["generator_num_cores"]),
-        }
-
-        if isinstance(gen_info, dict):
-            result.update(
-                {
-                    "sam_t_gen_reported_s": float(gen_info.get("t_gen", np.nan)),
-                    "sam_t_construct_s": float(gen_info.get("t_construct", np.nan)),
-                    "sam_t_raster_s": float(gen_info.get("t_raster", np.nan)),
-                    "sam_t_raster_total_s": float(
-                        gen_info.get("sam_raster_total_s", np.nan)
-                    ),
-                    "sam_t_calibration_s": float(
-                        gen_info.get("sam_calibration_s", np.nan)
-                    ),
-                    "sam_t_run_s": float(gen_info.get("sam_run_s", np.nan)),
-                    "sam_t_voxel_callback_s": float(
-                        gen_info.get("sam_voxel_callback_s", np.nan)
-                    ),
-                    "sam_t_save_s": float(gen_info.get("sam_save_s", np.nan)),
-                    "sam_t_metrics_s": float(gen_info.get("t_metrics", np.nan)),
-                    "sam_n_fibers": int(gen_info.get("n_fibers", -1)),
-                    "sam_vf": float(gen_info.get("Vf", np.nan)),
-                    "sam_vf_target": float(
-                        gen_info.get("sam_vf_target", design_row.get("Vf_target", np.nan))
-                    ),
-                    "sam_vf_error": float(gen_info.get("sam_vf_error", np.nan)),
-                    "sam_vf_error_percent_points": float(
-                        gen_info.get("sam_vf_error_percent_points", np.nan)
-                    ),
-                    "sam_vf_deficit": float(gen_info.get("sam_vf_deficit", np.nan)),
-                    "sam_vf_tolerance": float(gen_info.get("sam_vf_tolerance", np.nan)),
-                    "sam_vf_tolerance_configured": float(
-                        gen_info.get("sam_vf_tolerance_configured", np.nan)
-                    ),
-                    "sam_single_fiber_vf_quantum": float(
-                        gen_info.get("sam_single_fiber_vf_quantum", np.nan)
-                    ),
-                    "sam_vf_ok": bool(gen_info.get("sam_vf_ok", True)),
-                    "sam_overlap_tolerance": float(
-                        gen_info.get("sam_overlap_tolerance", np.nan)
-                    ),
-                    "sam_overlap_tolerance_relative": float(
-                        gen_info.get(
-                            "sam_overlap_tolerance_relative",
-                            np.nan,
-                        )
-                    ),
-                    "sam_final_overlap_relative": float(
-                        gen_info.get("sam_final_overlap_relative", np.nan)
-                    ),
-                    "sam_overlap_ok": bool(gen_info.get("sam_overlap_ok", True)),
-                    "sam_A2_tolerance": float(
-                        gen_info.get("sam_A2_tolerance", np.nan)
-                    ),
-                    "sam_voxel_A2_tolerance": float(
-                        gen_info.get("sam_voxel_A2_tolerance", np.nan)
-                    ),
-                    "sam_A2_ok": bool(gen_info.get("sam_A2_ok", True)),
-                    "sam_inflation_factor": float(
-                        gen_info.get("sam_inflation_factor", np.nan)
-                    ),
-                    "sam_effective_vf_target": float(
-                        gen_info.get("sam_effective_vf_target", np.nan)
-                    ),
-                    "sam_generator_target_vf": float(
-                        gen_info.get("sam_generator_target_vf", np.nan)
-                    ),
-                    "sam_generator_target_n_fibers": int(
-                        gen_info.get("sam_generator_target_n_fibers", -1)
-                    ),
-                    "sam_geometry_backend_requested": str(
-                        gen_info.get(
-                            "sam_geometry_backend_requested",
-                            "numba",
-                        )
-                    ),
-                    "sam_geometry_backend_effective": str(
-                        gen_info.get(
-                            "sam_geometry_backend_effective",
-                            "numba",
-                        )
-                    ),
-                    "sam_cupy_min_candidate_pairs": int(
-                        gen_info.get("sam_cupy_min_candidate_pairs", 0)
-                    ),
-                    "sam_cupy_candidate_calls": int(
-                        gen_info.get("sam_cupy_candidate_calls", 0)
-                    ),
-                    "sam_cupy_candidate_pairs": int(
-                        gen_info.get("sam_cupy_candidate_pairs", 0)
-                    ),
-                    "sam_cupy_candidate_s": float(
-                        gen_info.get("sam_cupy_candidate_s", 0.0)
-                    ),
-                    "sam_cupy_candidate_fallbacks": int(
-                        gen_info.get("sam_cupy_candidate_fallbacks", 0)
-                    ),
-                    "sam_cupy_force_calls": int(
-                        gen_info.get("sam_cupy_force_calls", 0)
-                    ),
-                    "sam_cupy_force_pairs": int(
-                        gen_info.get("sam_cupy_force_pairs", 0)
-                    ),
-                    "sam_cupy_force_s": float(
-                        gen_info.get("sam_cupy_force_s", 0.0)
-                    ),
-                    "sam_cupy_force_fallbacks": int(
-                        gen_info.get("sam_cupy_force_fallbacks", 0)
-                    ),
-                    "sam_final_continuous_vf": float(
-                        gen_info.get("sam_final_continuous_vf", np.nan)
-                    ),
-                    "sam_used_continuous_vf": float(
-                        gen_info.get("sam_used_continuous_vf", np.nan)
-                    ),
-                    "sam_periodic_boundary_mode": str(
-                        gen_info.get("sam_periodic_boundary_mode", "")
-                    ),
-                    "sam_periodic_crossing_fibers": int(
-                        gen_info.get("sam_periodic_crossing_fibers", 0)
-                    ),
-                    "sam_periodic_crossing_fraction": float(
-                        gen_info.get("sam_periodic_crossing_fraction", np.nan)
-                    ),
-                    "sam_soft_insert": bool(gen_info.get("sam_soft_insert", False)),
-                    "sam_soft_insert_start": float(
-                        gen_info.get("sam_soft_insert_start", np.nan)
-                    ),
-                    "sam_soft_inserted_batches": int(
-                        gen_info.get("sam_soft_inserted_batches", 0)
-                    ),
-                    "sam_use_local_relax": bool(
-                        gen_info.get("sam_use_local_relax", True)
-                    ),
-                    "sam_compaction": bool(gen_info.get("sam_compaction", False)),
-                    "sam_collective_fire_configured": bool(
-                        gen_info.get(
-                            "sam_collective_fire_configured",
-                            False,
-                        )
-                    ),
-                    "sam_collective_fire_used": bool(
-                        gen_info.get("sam_collective_fire_used", False)
-                    ),
-                    "sam_collective_fire_mode": str(
-                        gen_info.get(
-                            "sam_collective_fire_mode",
-                            "disabled",
-                        )
-                    ),
-                    "sam_collective_fire_calls": int(
-                        gen_info.get("sam_collective_fire_calls", 0)
-                    ),
-                    "sam_collective_fire_mode": str(
-                        gen_info.get("sam_collective_fire_mode", "disabled")
-                    ),
-                    "sam_collective_fire_s": float(
-                        gen_info.get("sam_collective_fire_s", 0.0)
-                    ),
-                    "sam_collective_fire_iters": int(
-                        gen_info.get("sam_collective_fire_iters", 0)
-                    ),
-                    "sam_collective_fire_restarts": int(
-                        gen_info.get("sam_collective_fire_restarts", 0)
-                    ),
-                    "sam_collective_fire_force_evaluations": int(
-                        gen_info.get(
-                            "sam_collective_fire_force_evaluations",
-                            0,
-                        )
-                    ),
-                    "sam_collective_fire_pair_build_s": float(
-                        gen_info.get(
-                            "sam_collective_fire_pair_build_s",
-                            0.0,
-                        )
-                    ),
-                    "sam_collective_fire_pair_forces_s": float(
-                        gen_info.get(
-                            "sam_collective_fire_pair_forces_s",
-                            0.0,
-                        )
-                    ),
-                    "sam_collective_fire_apply_updates_s": float(
-                        gen_info.get(
-                            "sam_collective_fire_apply_updates_s",
-                            0.0,
-                        )
-                    ),
-                    "sam_collective_fire_successful_batches": int(
-                        gen_info.get(
-                            "sam_collective_fire_successful_batches",
-                            0,
-                        )
-                    ),
-                    "sam_collective_fire_failed_batches": int(
-                        gen_info.get(
-                            "sam_collective_fire_failed_batches",
-                            0,
-                        )
-                    ),
-                    "sam_collective_fire_smallest_batch": int(
-                        gen_info.get(
-                            "sam_collective_fire_smallest_batch",
-                            0,
-                        )
-                    ),
-                    "sam_compaction_start_scale": float(
-                        gen_info.get("sam_compaction_start_scale", np.nan)
-                    ),
-                    "sam_compaction_topup_scale": float(
-                        gen_info.get("sam_compaction_topup_scale", np.nan)
-                    ),
-                    "sam_compaction_stages": int(
-                        gen_info.get("sam_compaction_stages", 0)
-                    ),
-                    "sam_compaction_subdivisions": int(
-                        gen_info.get("sam_compaction_subdivisions", 0)
-                    ),
-                    "sam_compaction_relax_iters": int(
-                        gen_info.get("sam_compaction_relax_iters", 0)
-                    ),
-                    "sam_compaction_relax_s": float(
-                        gen_info.get("sam_compaction_relax_s", np.nan)
-                    ),
-                    "sam_compaction_pair_build_s": float(
-                        gen_info.get("sam_compaction_pair_build_s", np.nan)
-                    ),
-                    "sam_compaction_pair_forces_s": float(
-                        gen_info.get("sam_compaction_pair_forces_s", np.nan)
-                    ),
-                    "sam_compaction_converged": bool(
-                        gen_info.get("sam_compaction_converged", True)
-                    ),
-                    "sam_compaction_removed_fibers": int(
-                        gen_info.get("sam_compaction_removed_fibers", 0)
-                    ),
-                    "sam_compaction_max_fiber_removals": int(
-                        gen_info.get("sam_compaction_max_fiber_removals", 0)
-                    ),
-                    "sam_post_raster_compaction_retries": int(
-                        gen_info.get("sam_post_raster_compaction_retries", 0)
-                    ),
-                    "sam_post_raster_orientation_retries": int(
-                        gen_info.get("sam_post_raster_orientation_retries", 0)
-                    ),
-                    "sam_orientation_optimizer_accepted_steps": int(
-                        gen_info.get(
-                            "sam_orientation_optimizer_accepted_steps",
-                            0,
-                        )
-                    ),
-                    "sam_orientation_optimizer_line_search_evaluations": int(
-                        gen_info.get(
-                            "sam_orientation_optimizer_line_search_evaluations",
-                            0,
-                        )
-                    ),
-                    "sam_orientation_optimizer_contact_projections": int(
-                        gen_info.get(
-                            "sam_orientation_optimizer_contact_projections",
-                            0,
-                        )
-                    ),
-                    "sam_orientation_optimizer_s": float(
-                        gen_info.get("sam_orientation_optimizer_s", 0.0)
-                    ),
-                    "sam_long_fiber_vf_fallback": bool(
-                        gen_info.get("sam_long_fiber_vf_fallback", False)
-                    ),
-                    "sam_generation_strategy": str(
-                        gen_info.get("sam_generation_strategy", "sam_lite")
-                    ),
-                    "sam_t_compaction_s": float(
-                        gen_info.get("sam_compaction_s", np.nan)
-                    ),
-                    "sam_overlap_rescue": bool(
-                        gen_info.get("sam_overlap_rescue", False)
-                    ),
-                    "sam_overlap_rescue_s": float(
-                        gen_info.get("sam_overlap_rescue_s", np.nan)
-                    ),
-                    "sam_overlap_rescue_attempts": int(
-                        gen_info.get("sam_overlap_rescue_attempts", 0)
-                    ),
-                    "sam_overlap_rescue_reinserted": int(
-                        gen_info.get("sam_overlap_rescue_reinserted", 0)
-                    ),
-                    "sam_overlap_rescue_shaken": int(
-                        gen_info.get("sam_overlap_rescue_shaken", 0)
-                    ),
-                    "sam_overlap_rescue_iters": int(
-                        gen_info.get("sam_overlap_rescue_iters", 0)
-                    ),
-                    "sam_overlap_rescue_removed": int(
-                        gen_info.get("sam_overlap_rescue_removed", 0)
-                    ),
-                    "sam_final_A_err": float(gen_info.get("sam_final_A_err", np.nan)),
-                    "sam_A2_error_rel": float(gen_info.get("sam_A2_error_rel", np.nan)),
-                    "sam_voxel_A2_error_rel": float(
-                        gen_info.get("sam_voxel_A2_error_rel", np.nan)
-                    ),
-                    "sam_batches": int(gen_info.get("sam_batches", 0)),
-                    "sam_attempts": int(gen_info.get("sam_attempts", 0)),
-                    "sam_relax_iters": int(gen_info.get("sam_relax_iters", 0)),
-                    "sam_topup_count": int(gen_info.get("sam_topup_count", 0)),
-                    "sam_voxel_stop_checks": int(
-                        gen_info.get("sam_voxel_stop_checks", 0)
-                    ),
-                    "sam_final_overlap": float(
-                        gen_info.get("sam_final_overlap", np.nan)
-                    ),
-                    "sam_relax_s": float(
-                        gen_info.get("sam_relax_s_time", np.nan)
-                    ),
-                    "sam_pair_build_s": float(
-                        gen_info.get("sam_pair_build_s", np.nan)
-                    ),
-                    "sam_pair_forces_s": float(
-                        gen_info.get("sam_pair_forces_s", np.nan)
-                    ),
-                }
-            )
-            vf_miss = (
-                bool(config.get("sam_reject_vf_miss", True))
-                and not bool(gen_info.get("sam_vf_ok", True))
-            )
-            overlap_miss = (
-                bool(config.get("sam_reject_overlap_miss", True))
-                and not bool(gen_info.get("sam_overlap_ok", True))
-            )
-            orientation_miss = (
-                bool(config.get("sam_reject_A2_miss", True))
-                and not bool(gen_info.get("sam_A2_ok", True))
-            )
-            if vf_miss:
-                result["status"] = "geometry_vf_miss"
-                result["error"] = (
-                    "SAM no alcanzo Vf_target: "
-                    f"target={float(gen_info.get('sam_vf_target', np.nan)):.6f}, "
-                    f"actual={float(gen_info.get('Vf', np.nan)):.6f}, "
-                    f"deficit={float(gen_info.get('sam_vf_deficit', np.nan)):.6f}, "
-                    f"tol={float(gen_info.get('sam_vf_tolerance', np.nan)):.6f}"
-                )
-            elif overlap_miss:
-                result["status"] = "geometry_overlap_miss"
-                result["error"] = (
-                    "SAM no elimino los solapes: "
-                    f"max_overlap={float(gen_info.get('sam_final_overlap', np.nan)):.6f}, "
-                    f"tol={float(gen_info.get('sam_overlap_tolerance', np.nan)):.6f}"
-                )
-            elif orientation_miss:
-                result["status"] = "geometry_orientation_miss"
-                result["error"] = (
-                    "SAM no alcanzo A2_target: "
-                    f"continuous_error={float(gen_info.get('sam_A2_error_rel', np.nan)):.6f}, "
-                    f"voxel_error={float(gen_info.get('sam_voxel_A2_error_rel', np.nan)):.6f}, "
-                    f"continuous_tol={float(gen_info.get('sam_A2_tolerance', np.nan)):.6f}, "
-                    f"voxel_tol={float(gen_info.get('sam_voxel_A2_tolerance', np.nan)):.6f}"
-                )
-
-        return result
-
+        info = generate_rve_main_sam(build_generation_params(mc_id, seed, design_row, seed_dir, config))
+        result.update(info)
+        if info['accepted']:
+            if not (seed_dir/'phase.npy').exists() or not (seed_dir/'ori.npy').exists():
+                raise FileNotFoundError('Certified geometry fields are missing')
+            result['status'] = 'geometry_ok'
+        else:
+            result['status'] = ('geometry_vf_miss' if not info['sam_vf_ok'] else
+                                'geometry_overlap_miss' if not info['sam_overlap_ok'] else
+                                'geometry_orientation_miss')
+            result['error'] = 'Geometry failed certification: '+info['geometry_status']
     except Exception as exc:
-        t_gen_s = time.perf_counter() - t0
-
-        print(
-            f"[ERROR][FASE A] design={design_row.get('design_id')} "
-            f"seed={seed}: {exc}",
-            flush=True,
-        )
-
-        return {
-            "config_id": str(design_row.get("config_id", "")),
-            "design_id": int(design_row.get("design_id", -1)),
-            "sobol_index": int(design_row.get("sobol_index", -1)),
-            "mc_id": int(mc_id),
-            "seed": int(seed),
-            "status": "geometry_error",
-            "error": str(exc),
-            "AR": float(design_row.get("AR", np.nan)),
-            "Vf_target": float(design_row.get("Vf_target", np.nan)),
-            "a11": float(design_row.get("a11", np.nan)),
-            "a22": float(design_row.get("a22", np.nan)),
-            "a33": float(design_row.get("a33", np.nan)),
-            "nvox": int(design_row.get("nvox", -1)),
-            "seed_dir": str(seed_dir),
-            "phase_path": str(seed_dir / "phase.npy"),
-            "ori_path": str(seed_dir / "ori.npy"),
-            "t_gen_s": float(t_gen_s),
-            "t_gen_started_epoch_s": float(started_epoch_s),
-            "t_gen_completed_epoch_s": float(time.time()),
-            "generator_num_cores": int(config["generator_num_cores"]),
-        }
+        result.update(status='geometry_error', error=str(exc))
+        print(f"[ERROR][FASE A] design={result['design_id']} seed={seed}: {exc}", flush=True)
+    result.update(t_gen_s=time.perf_counter()-started, t_gen_completed_epoch_s=time.time())
+    return result
 
 
 def generate_geometry_batch(
@@ -1512,7 +891,6 @@ def resolve_geometry_worker_count(
             workers_by_budget,
         ),
     )
-
 
 
 class GlobalGeometryManager:
@@ -2377,231 +1755,15 @@ def build_seed_row(
         "t_total_after_geometry_s": result.get("t_total_after_geometry_s", np.nan),
         "t_total_seed_s": t_total_seed,
 
-        "sam_t_gen_reported_s": result.get("sam_t_gen_reported_s", np.nan),
-        "sam_t_construct_s": result.get("sam_t_construct_s", np.nan),
-        "sam_t_raster_s": result.get("sam_t_raster_s", np.nan),
-        "sam_t_metrics_s": result.get("sam_t_metrics_s", np.nan),
-        "sam_n_fibers": result.get("sam_n_fibers", np.nan),
-        "sam_vf": result.get("sam_vf", np.nan),
         "Vf_target": result.get("Vf_target", np.nan),
-        "sam_vf_target": result.get("sam_vf_target", np.nan),
-        "sam_vf_error": result.get("sam_vf_error", np.nan),
-        "sam_vf_error_percent_points": result.get(
-            "sam_vf_error_percent_points",
-            np.nan,
-        ),
-        "sam_vf_deficit": result.get("sam_vf_deficit", np.nan),
         "sam_vf_tolerance": result.get("sam_vf_tolerance", np.nan),
-        "sam_vf_ok": result.get("sam_vf_ok", np.nan),
-        "sam_overlap_tolerance": result.get("sam_overlap_tolerance", np.nan),
         "sam_overlap_tolerance_relative": result.get(
             "sam_overlap_tolerance_relative",
             np.nan,
         ),
-        "sam_final_overlap_relative": result.get(
-            "sam_final_overlap_relative",
-            np.nan,
-        ),
-        "sam_overlap_ok": result.get("sam_overlap_ok", np.nan),
         "sam_A2_tolerance": result.get("sam_A2_tolerance", np.nan),
         "sam_voxel_A2_tolerance": result.get(
             "sam_voxel_A2_tolerance",
-            np.nan,
-        ),
-        "sam_A2_ok": result.get("sam_A2_ok", np.nan),
-        "sam_inflation_factor": result.get("sam_inflation_factor", np.nan),
-        "sam_effective_vf_target": result.get("sam_effective_vf_target", np.nan),
-        "sam_generator_target_vf": result.get("sam_generator_target_vf", np.nan),
-        "sam_generator_target_n_fibers": result.get(
-            "sam_generator_target_n_fibers",
-            np.nan,
-        ),
-        "sam_geometry_backend_requested": result.get(
-            "sam_geometry_backend_requested",
-            "",
-        ),
-        "sam_geometry_backend_effective": result.get(
-            "sam_geometry_backend_effective",
-            "",
-        ),
-        "sam_cupy_min_candidate_pairs": result.get(
-            "sam_cupy_min_candidate_pairs",
-            np.nan,
-        ),
-        "sam_cupy_candidate_calls": result.get(
-            "sam_cupy_candidate_calls",
-            np.nan,
-        ),
-        "sam_cupy_candidate_pairs": result.get(
-            "sam_cupy_candidate_pairs",
-            np.nan,
-        ),
-        "sam_cupy_candidate_s": result.get(
-            "sam_cupy_candidate_s",
-            np.nan,
-        ),
-        "sam_cupy_candidate_fallbacks": result.get(
-            "sam_cupy_candidate_fallbacks",
-            np.nan,
-        ),
-        "sam_cupy_force_calls": result.get(
-            "sam_cupy_force_calls",
-            np.nan,
-        ),
-        "sam_cupy_force_pairs": result.get(
-            "sam_cupy_force_pairs",
-            np.nan,
-        ),
-        "sam_cupy_force_s": result.get(
-            "sam_cupy_force_s",
-            np.nan,
-        ),
-        "sam_cupy_force_fallbacks": result.get(
-            "sam_cupy_force_fallbacks",
-            np.nan,
-        ),
-        "sam_final_continuous_vf": result.get("sam_final_continuous_vf", np.nan),
-        "sam_used_continuous_vf": result.get("sam_used_continuous_vf", np.nan),
-        "sam_soft_insert": result.get("sam_soft_insert", np.nan),
-        "sam_soft_insert_start": result.get("sam_soft_insert_start", np.nan),
-        "sam_soft_inserted_batches": result.get("sam_soft_inserted_batches", np.nan),
-        "sam_compaction": result.get("sam_compaction", np.nan),
-        "sam_collective_fire_configured": result.get(
-            "sam_collective_fire_configured",
-            np.nan,
-        ),
-        "sam_collective_fire_used": result.get(
-            "sam_collective_fire_used",
-            np.nan,
-        ),
-        "sam_collective_fire_calls": result.get(
-            "sam_collective_fire_calls",
-            np.nan,
-        ),
-        "sam_collective_fire_mode": result.get(
-            "sam_collective_fire_mode",
-            "",
-        ),
-        "sam_collective_fire_successful_batches": result.get(
-            "sam_collective_fire_successful_batches",
-            np.nan,
-        ),
-        "sam_collective_fire_failed_batches": result.get(
-            "sam_collective_fire_failed_batches",
-            np.nan,
-        ),
-        "sam_collective_fire_smallest_batch": result.get(
-            "sam_collective_fire_smallest_batch",
-            np.nan,
-        ),
-        "sam_collective_fire_s": result.get(
-            "sam_collective_fire_s",
-            np.nan,
-        ),
-        "sam_collective_fire_iters": result.get(
-            "sam_collective_fire_iters",
-            np.nan,
-        ),
-        "sam_collective_fire_restarts": result.get(
-            "sam_collective_fire_restarts",
-            np.nan,
-        ),
-        "sam_collective_fire_force_evaluations": result.get(
-            "sam_collective_fire_force_evaluations",
-            np.nan,
-        ),
-        "sam_collective_fire_pair_build_s": result.get(
-            "sam_collective_fire_pair_build_s",
-            np.nan,
-        ),
-        "sam_collective_fire_pair_forces_s": result.get(
-            "sam_collective_fire_pair_forces_s",
-            np.nan,
-        ),
-        "sam_collective_fire_apply_updates_s": result.get(
-            "sam_collective_fire_apply_updates_s",
-            np.nan,
-        ),
-        "sam_compaction_start_scale": result.get(
-            "sam_compaction_start_scale",
-            np.nan,
-        ),
-        "sam_compaction_topup_scale": result.get(
-            "sam_compaction_topup_scale",
-            np.nan,
-        ),
-        "sam_compaction_stages": result.get("sam_compaction_stages", np.nan),
-        "sam_compaction_subdivisions": result.get(
-            "sam_compaction_subdivisions",
-            np.nan,
-        ),
-        "sam_compaction_relax_iters": result.get(
-            "sam_compaction_relax_iters",
-            np.nan,
-        ),
-        "sam_compaction_relax_s": result.get(
-            "sam_compaction_relax_s",
-            np.nan,
-        ),
-        "sam_compaction_pair_build_s": result.get(
-            "sam_compaction_pair_build_s",
-            np.nan,
-        ),
-        "sam_compaction_pair_forces_s": result.get(
-            "sam_compaction_pair_forces_s",
-            np.nan,
-        ),
-        "sam_compaction_converged": result.get(
-            "sam_compaction_converged",
-            np.nan,
-        ),
-        "sam_compaction_removed_fibers": result.get(
-            "sam_compaction_removed_fibers",
-            np.nan,
-        ),
-        "sam_compaction_max_fiber_removals": result.get(
-            "sam_compaction_max_fiber_removals",
-            np.nan,
-        ),
-        "sam_post_raster_compaction_retries": result.get(
-            "sam_post_raster_compaction_retries",
-            np.nan,
-        ),
-        "sam_post_raster_orientation_retries": result.get(
-            "sam_post_raster_orientation_retries",
-            np.nan,
-        ),
-        "sam_orientation_optimizer_accepted_steps": result.get(
-            "sam_orientation_optimizer_accepted_steps",
-            np.nan,
-        ),
-        "sam_orientation_optimizer_line_search_evaluations": result.get(
-            "sam_orientation_optimizer_line_search_evaluations",
-            np.nan,
-        ),
-        "sam_orientation_optimizer_contact_projections": result.get(
-            "sam_orientation_optimizer_contact_projections",
-            np.nan,
-        ),
-        "sam_orientation_optimizer_s": result.get(
-            "sam_orientation_optimizer_s",
-            np.nan,
-        ),
-        "sam_long_fiber_vf_fallback": result.get(
-            "sam_long_fiber_vf_fallback",
-            np.nan,
-        ),
-        "sam_generation_strategy": result.get(
-            "sam_generation_strategy",
-            "",
-        ),
-        "sam_t_compaction_s": result.get("sam_t_compaction_s", np.nan),
-        "sam_topup_count": result.get("sam_topup_count", np.nan),
-        "sam_final_overlap": result.get("sam_final_overlap", np.nan),
-        "sam_final_A_err": result.get("sam_final_A_err", np.nan),
-        "sam_A2_error_rel": result.get("sam_A2_error_rel", np.nan),
-        "sam_voxel_A2_error_rel": result.get(
-            "sam_voxel_A2_error_rel",
             np.nan,
         ),
 
@@ -3207,10 +2369,6 @@ def run_single_design_two_phase_online_stop(
         )
         or str(row.get("status", "")) == "geometry_overlap_miss"
     ]
-    long_fiber_fallback_rows = [
-        row for row in all_geometry_rows
-        if bool(row.get("sam_long_fiber_vf_fallback", False))
-    ]
     sam_vf_values = [
         float(row.get("sam_vf"))
         for row in all_geometry_rows
@@ -3223,19 +2381,9 @@ def run_single_design_two_phase_online_stop(
     ]
     final_row["n_geometry_vf_miss"] = int(len(vf_miss_rows))
     final_row["n_geometry_overlap_miss"] = int(len(overlap_miss_rows))
-    final_row["n_long_fiber_vf_fallback"] = int(len(long_fiber_fallback_rows))
-    final_row["sam_vf_min_generated"] = (
-        float(np.nanmin(sam_vf_values)) if sam_vf_values else np.nan
-    )
-    final_row["sam_vf_mean_generated"] = (
-        float(np.nanmean(sam_vf_values)) if sam_vf_values else np.nan
-    )
-    final_row["sam_vf_error_min_generated"] = (
-        float(np.nanmin(sam_vf_errors)) if sam_vf_errors else np.nan
-    )
-    final_row["sam_vf_error_mean_generated"] = (
-        float(np.nanmean(sam_vf_errors)) if sam_vf_errors else np.nan
-    )
+    final_row['sam_vf_min_generated'] = float(np.nanmin(sam_vf_values)) if sam_vf_values else np.nan
+    final_row['sam_vf_mean_generated'] = float(np.nanmean(sam_vf_values)) if sam_vf_values else np.nan
+    final_row['sam_vf_error_mean_generated'] = float(np.nanmean(sam_vf_errors)) if sam_vf_errors else np.nan
     final_row["n_unsolved_geometry_cleaned"] = int(n_unsolved_geometry_cleaned)
     final_row["unsolved_geometry_deleted_bytes"] = int(unsolved_geometry_deleted_bytes)
     final_row["unsolved_geometry_deleted_mib"] = float(
@@ -3291,18 +2439,14 @@ def run_single_design_two_phase_online_stop(
     final_row["generator_num_cores"] = int(config["generator_num_cores"])
     final_row["geometry_cpu_budget"] = int(config["geometry_cpu_budget"])
     final_row["generator_verbose"] = bool(config["generator_verbose"])
+    final_row["geometry_engine"] = config["geometry_engine"]
     final_row["sam_vf_tolerance"] = float(config["sam_vf_tolerance"])
-    final_row["sam_reject_vf_miss"] = bool(config["sam_reject_vf_miss"])
     final_row["sam_A2_tolerance"] = float(config["sam_A2_tolerance"])
     final_row["sam_voxel_A2_tolerance"] = float(
         config["sam_voxel_A2_tolerance"]
     )
-    final_row["sam_reject_A2_miss"] = bool(config["sam_reject_A2_miss"])
     final_row["sam_overlap_tolerance_relative"] = float(
         config["sam_overlap_tolerance_relative"]
-    )
-    final_row["sam_reject_overlap_miss"] = bool(
-        config["sam_reject_overlap_miss"]
     )
     final_row["pipeline_overlap_generation"] = bool(
         config["pipeline_overlap_generation"]
@@ -3508,22 +2652,6 @@ def main() -> int:
     )
 
     run_config = make_run_config()
-    sam_numba_warmup_s = 0.0
-    if str(run_config["sam_geometry_backend"]).lower() == "numba":
-        try:
-            sam_numba_warmup_s = warmup_numba_geometry_kernels()
-            print(
-                f"[SAM NUMBA] kernels listos/cacheados en "
-                f"{sam_numba_warmup_s:.2f}s",
-                flush=True,
-            )
-        except Exception as exc:
-            print(
-                f"[WARN] No se pudo precalentar Numba; los workers "
-                f"compilaran al iniciar: {exc}",
-                flush=True,
-            )
-    run_config["sam_numba_warmup_s"] = float(sam_numba_warmup_s)
     try:
         campaign_settings = json.loads(
             os.environ.get("CAMPAIGN_SETTINGS_JSON", "{}")

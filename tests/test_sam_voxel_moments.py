@@ -1,9 +1,8 @@
 """Fused A2 must preserve the original normalization and filtering semantics."""
-import sys
-from pathlib import Path
 import unittest
 import numpy as np
-from cufhom.pipeline.rve_generator import _voxelized_a2,_voxelized_a2_reference
+from cufhom.pipeline.sam_voxel_moments import voxel_a2 as _voxelized_a2
+from tests.helpers.voxel_reference import _voxelized_a2_reference
 from numba import set_num_threads
 
 

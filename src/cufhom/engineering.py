@@ -28,32 +28,3 @@ def engineering_constants_from_Cmandel(Cm):
     nu23 = -S[1,2] / S[1,1]
 
     return dict(E1=E1,E2=E2,E3=E3, G12=G12,G13=G13,G23=G23, nu12=nu12,nu13=nu13,nu23=nu23)
-def extract_properties(Ceff_path):
-    """
-    Loads Ceff from Ceff_path (.npy) and returns engineering constants dict.
-    """
-    import numpy as np
-    import os
-
-    if not os.path.exists(Ceff_path):
-        print(f"  [RESU] ERROR: No se encontró {Ceff_path}")
-        return None
-
-    Ceff = np.load(Ceff_path)
-    props = engineering_constants_from_Cmandel(Ceff)
-    return props
-
-if __name__ == "__main__":
-    # Test con matriz hardcoded si se corre directo (mantener compatibilidad)
-    Ceff_example = np.array([
-        [ 6.00808661e+00,  2.93692094e+00,  2.93748210e+00,  5.73412981e-04,  5.03638681e-03, -2.84305523e-02],
-        [ 2.93692094e+00,  5.97282211e+00,  2.93170646e+00, -4.08168810e-03,  1.16911482e-02, -5.45862412e-02],
-        [ 2.93748210e+00,  2.93170646e+00,  5.95424009e+00,  7.30107456e-03,  1.08936121e-02, -6.43114167e-03],
-        [ 5.73412981e-04, -4.08168810e-03,  7.30107456e-03,  3.06419603e+00, -1.11178883e-02,  1.67095732e-02],
-        [ 5.03638681e-03,  1.16911482e-02,  1.08936121e-02, -1.11178883e-02,  3.08097122e+00,  3.68122534e-03],
-        [-2.84305523e-02, -5.45862412e-02, -6.43114167e-03,  1.67095732e-02,  3.68122534e-03,  3.08125030e+00]
-    ], dtype=float)
-
-    props = engineering_constants_from_Cmandel(Ceff_example)
-    for k,v in props.items():
-        print(f"{k:5s} = {v:.6f}")

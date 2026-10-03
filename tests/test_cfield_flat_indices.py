@@ -1,6 +1,4 @@
 """Indexed GPU construction must preserve material IDs and constitutive tables."""
-from pathlib import Path
-import sys
 import numpy as np
 import pytest
 

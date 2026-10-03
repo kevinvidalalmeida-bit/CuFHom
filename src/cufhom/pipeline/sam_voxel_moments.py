@@ -48,7 +48,7 @@ def voxel_a4(phase, orientations):
 
 
 @njit(cache=True, parallel=True)
-def voxel_a2(phase, orientations):
+def _voxel_a2(phase, orientations):
     block_size=16384
     blocks=(len(phase)+block_size-1)//block_size
     partial=np.zeros((blocks,7),dtype=np.float64)
@@ -76,3 +76,8 @@ def voxel_a2(phase, orientations):
         result[0,2]=result[2,0]=totals[4]/totals[6]
         result[1,2]=result[2,1]=totals[5]/totals[6]
     return result
+
+
+def voxel_a2(phase, orientations):
+    """Second moment of occupied voxels, normalizing each valid direction."""
+    return _voxel_a2(np.asarray(phase).reshape(-1), np.asarray(orientations).reshape(-1, 3))

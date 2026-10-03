@@ -1,6 +1,4 @@
 """Material, mixed-control, restart and CPU/GPU verification of nonlinear FFT."""
-from pathlib import Path
-import sys
 import numpy as np
 import pytest
 

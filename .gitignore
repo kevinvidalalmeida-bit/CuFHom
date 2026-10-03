@@ -1,31 +1,26 @@
+# Local environments and editor settings
 .venv*/
 .vscode/
+# Python and Numba caches
 __pycache__/
 *.py[cod]
 *.nbc
 *.nbi
 .pytest_cache/
 *.egg-info/
+.coverage
+# Build products, geometries and numerical results
 build/
 dist/
 results/
 runs/
 *.log
-.coverage
+# Local solver reference installations
+external/
+# Local configuration and credentials
 .env
 .env.*
 !.env.example
-.vscode/
 .DS_Store
 *.pem
 *.key
-
-# Local reference installations, historical snapshots, and generated benchmark I/O.
-external/
-archive/
-docs/history/
-docs/import_manifest.json
-tools/import_snapshot.py
-benchmarks/reference_solvers/**/reference_inputs/
-benchmarks/reference_solvers/**/results/
-benchmarks/reference_solvers/**/sam_generate.log

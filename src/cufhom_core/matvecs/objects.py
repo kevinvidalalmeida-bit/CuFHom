@@ -9,7 +9,6 @@ import itertools
 from cufhom_core.trigpol import Grid, enlarge, get_inverse, decrease, mean_index
 import numpy as np
 import numpy.fft as fft
-import numpy.matlib as npmatlib
 from warnings import warn
 
 
@@ -766,6 +765,7 @@ class DFT(FieldFun):
                 DTM[ii, jj]=DFTcoef(np.array(kk, dtype=float),
                                       np.array(ll), N)
 
+        import numpy.matlib as npmatlib  # explicit DFT matrix reference
         DTMd=npmatlib.zeros([proddN, proddN], dtype=np.complex128)
         for ii in range(self.d):
             DTMd[prodN*ii:prodN*(ii+1), prodN*ii:prodN*(ii+1)]=DTM
@@ -1210,7 +1210,7 @@ def curl_norm(e, Y):
         Fe.append(np.zeros(N))
         xiM.append(np.zeros(N))
 
-    ind_mean=tuple(np.fix(N/2))
+    ind_mean=tuple(np.trunc(N/2))
     curl=[]
     e0=[]
     for m in np.arange(3):
@@ -1244,7 +1244,7 @@ def div_norm(j, Y):
     """
     N=np.array(np.shape(j[0]))
     d=np.size(N)
-    ind_mean=tuple(np.fix(N/2))
+    ind_mean=tuple(np.trunc(N/2))
     xil=VecTri.get_xil(N, Y)
     R=0
     j0=np.zeros(d)
@@ -1262,7 +1262,3 @@ def div_norm(j, Y):
     if norm_j0>1e-10:
         divnorm=divnorm/norm_j0
     return divnorm
-
-
-if __name__=='__main__':
-    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

@@ -4,7 +4,7 @@ import json
 import numpy as np
 import pytest
 
-from test_linear_coordinates import case, cp, gpu, solve_homogenization
+from tests.test_linear_coordinates import case, cp, gpu, solve_homogenization
 
 
 def solve_fields(parameters, timing):

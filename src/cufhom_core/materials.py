@@ -477,6 +477,3 @@ def get_weights_circ(r, Nbar, Y):
     Wphi[ind] = np.pi*r**2
     Wphi = Wphi / meas_puc
     return Wphi
-
-if __name__ == '__main__':
-    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

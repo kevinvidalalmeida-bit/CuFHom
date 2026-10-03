@@ -1,6 +1,5 @@
 import numpy as np
 import cufhom_core.projections as proj
-from cufhom_core.tensors.objects import SYM21_PAIRS
 from cufhom_core.materials import Material
 from cufhom_core.postprocess import postprocess, add_macro2minimizer
 from cufhom_core.general.solver import linear_solver
@@ -163,16 +162,6 @@ def _projection_storage(pb):
 
 def _projection_backend(pb):
     return str(pb.solve.get("projection_backend", "auto")).strip().lower()
-
-
-def _pack_tensor_sym21(tensor):
-    val = np.stack([tensor.val[ii, jj] for ii, jj in SYM21_PAIRS], axis=0)
-    return tensor.copy(
-        name=tensor.name + '_sym21',
-        val=val,
-        order=1,
-        multype='sym21',
-    )
 
 
 def _load_batch_size(pb, nloads):
@@ -875,9 +864,8 @@ def stream_primal_equilibrated_stresses(D, Nbar, pb, solutions, A, GN, load_ids)
     ``GN`` is the same zero-mean compatible-strain projector used by the
     primal Galerkin solve.  Thus ``(I-GN)sigma`` preserves the average stress
     and is orthogonal to every compatible fluctuation in this discrete
-    formulation.  The operation is deliberately opt-in: it is intended for
-    experimental complementary reduced spaces and does not affect the primal
-    homogenized tensor.
+    formulation. A user-supplied consumer receives one stress field per load
+    without retaining all fields in memory.
     """
     consumer = pb.solve.get('stress_field_consumer', None)
     if not callable(consumer):
@@ -1329,8 +1317,3 @@ def elasticity(problem):
             ),
             'affine_sensitivity_summary': affine_sensitivity_summary,
         }
-
-
-if __name__ == '__main__':
-    # Este bloque solo se usa para tests directos del módulo cufhom_core.applications
-    pass

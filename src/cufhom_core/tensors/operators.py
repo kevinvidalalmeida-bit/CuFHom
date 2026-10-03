@@ -5,7 +5,6 @@ This module contains operators working with Tensor from cufhom_core.tensors.obje
 import itertools
 import time
 import numpy as np
-import numpy.matlib as npmatlib
 from cufhom_core.trigpol import Grid, fft_form_default
 from cufhom_core.tensors.objects import (
     SYM21_PAIRS,
@@ -700,6 +699,7 @@ class DFT(TensorFuns):
                 DTM[ii, jj]=DFTcoef(np.array(kk, dtype=float),
                                       np.array(ll), N)
 
+        import numpy.matlib as npmatlib  # only needed by the explicit DFT matrix
         DTMd=npmatlib.zeros([proddN, proddN], dtype=np.complex128)
         for ii in range(dim):
             DTMd[prodN*ii:prodN*(ii+1), prodN*ii:prodN*(ii+1)]=DTM

@@ -8,6 +8,7 @@ one-dimensional quadrature. Singular planar/aligned limits are analytic.
 from functools import lru_cache
 from itertools import permutations
 import numpy as np
+from numba import njit
 from scipy.integrate import quad_vec
 from scipy.optimize import least_squares
 
@@ -117,3 +118,45 @@ def resolve_orientation(a2=None, a4=None):
         contraction_error=float(np.linalg.norm(np.einsum('ijkk->ij', fourth)-second)),
         norm='full_tensor_frobenius',
         warning='A2 does not uniquely determine A4; closure is a distributional assumption')
+
+
+@lru_cache(maxsize=1)
+def _probes():
+    rng = np.random.default_rng(104729)
+    probes = rng.standard_normal((8192, 3))
+    probes /= np.maximum(np.linalg.norm(probes, axis=1)[:, None], 1e-12)
+    return probes
+
+
+@njit(cache=True)
+def _angular_moments(probes, shape):
+    # Fused quadrature: same 8192 directions, no fastmath or weaker tolerance.
+    scale = np.sqrt(shape)
+    sums = np.zeros(3)
+    for i in range(len(probes)):
+        x, y, z = probes[i, 0]*scale[0], probes[i, 1]*scale[1], probes[i, 2]*scale[2]
+        norm = max(np.sqrt(x*x+y*y+z*z), 1e-12)
+        x /= norm; y /= norm; z /= norm
+        sums[0] += x*x; sums[1] += y*y; sums[2] += z*z
+    return sums/len(probes)
+
+
+@njit(cache=True)
+def _calibrate_principal_scale(vals, probes):
+    log_shape=np.log(vals); log_shape-=np.mean(log_shape)
+    for _ in range(40):
+        moment=_angular_moments(probes,np.exp(np.clip(log_shape,-30.,30.)))
+        if np.max(np.abs(moment-vals))<=2e-7:
+            break
+        log_shape+=1.5*(np.log(vals)-np.log(np.maximum(moment,1e-12)))
+        log_shape-=np.mean(log_shape)
+    return np.sqrt(np.exp(np.clip(log_shape,-30.,30.)))
+
+
+@lru_cache(maxsize=512)
+def angular_transform(a2_key):
+    a2=np.asarray(a2_key,dtype=float).reshape(3,3)
+    vals,vecs=np.linalg.eigh(.5*(a2+a2.T))
+    vals=np.clip(vals,1e-8,None);vals/=np.sum(vals)
+    scale=_calibrate_principal_scale(vals,_probes())
+    return np.ascontiguousarray(vecs@np.diag(scale),dtype=float)

@@ -117,7 +117,7 @@ class TensorFuns(Representation):
     @staticmethod
     def get_N_real(N):
         N_rfft=np.copy(N)
-        N_rfft[-1]=int(np.fix(N[-1]/2)+1) # N[-1]//2+1
+        N_rfft[-1]=int(np.trunc(N[-1]/2)+1) # N[-1]//2+1
         return tuple(N_rfft)
 
     @staticmethod
@@ -1267,20 +1267,3 @@ def scalar_product(y, x):
         else:
             scal=xp.sum(yval[:]*xval[:])/np.prod(y.N)
     return _scalar_to_float(scal)
-
-if __name__=='__main__':
-    N=np.array([4,4], dtype=int)
-    M=2*N
-    u=Tensor(name='test', shape=(), N=N, Fourier=False, fft_form='r')
-    u.randomize()
-
-    Fur=u.fourier(copy=True)
-    Fuc2=Fur.set_fft_form(fft_form='c', copy=True)
-    uc=u.set_fft_form(fft_form='c', copy=True)
-    Fuc=uc.fourier(copy=True)
-    print(u)
-    print(Fur)
-    print(uc)
-    print(Fuc)
-
-    print('end')

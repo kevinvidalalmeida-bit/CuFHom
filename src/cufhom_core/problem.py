@@ -1,9 +1,7 @@
 import numpy as np
 import cufhom_core.applications
-from cufhom_core.general.base import get_base_dir, Timer
+from cufhom_core.general.base import Timer
 import os
-import sys
-from copy import deepcopy
 
 
 class Problem(object):
@@ -79,7 +77,7 @@ class Problem(object):
         print('\n==============================')
         tim = Timer(name='application')
         if hasattr(cufhom_core.applications, self.physics):
-            eval('cufhom_core.applications.{}(self)'.format(self.physics))
+            getattr(cufhom_core.applications, self.physics)(self)
         else:
             msg = 'Not implemented physics ({0}).\n' \
                 'Hint: Implement function ({1}) into module' \
@@ -119,16 +117,8 @@ class Problem(object):
                 os.makedirs(dirs)
 
             import pickle
-            py_version = sys.version_info[0]
-            if py_version == 2:
-                with open(filename, 'w') as fop:
-                    data = deepcopy(self.output)
-                    pickle.dump(data, fop, protocol=None)
-            elif py_version == 3:
-                with open(filename, 'wb') as fop:
-                    pickle.dump(self.output, fop, protocol=3)
-            else:
-                raise NotImplementedError('Python version!')
+            with open(filename, 'wb') as fop:
+                pickle.dump(self.output, fop, protocol=3)
 
     def __repr__(self):
         def format_value(val):
@@ -153,26 +143,3 @@ class Problem(object):
         for key, val in list(self.solve.items()):
             ss += '        {0} : {1}\n'.format(key, format_value(val))
         return ss
-
-
-def import_file(file_name):
-    base_dir = get_base_dir()
-    module_path = os.path.dirname(os.path.join(base_dir, file_name))
-
-    if module_path not in sys.path:
-        sys.path.insert(0, module_path)
-        remove_path = True
-    else:
-        remove_path = False
-
-    module_name = os.path.splitext(os.path.basename(file_name))[0]
-
-    conf = __import__(module_name)
-
-    if remove_path:
-        sys.path.pop(0)
-
-    return conf
-
-if __name__ == '__main__':
-    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

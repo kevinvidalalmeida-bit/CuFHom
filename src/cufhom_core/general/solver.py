@@ -1053,7 +1053,3 @@ def get_norm(B, par):
     scal = get_scal(B, par)
     norm = lambda X: scal(X, X)**0.5
     return norm
-
-
-if __name__ == '__main__':
-    exec(compile(open('../main_test.py').read(), '../main_test.py', 'exec'))

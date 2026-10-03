@@ -1,6 +1,4 @@
 """Fused PCG must preserve free means, the PTC shift, and true residuals."""
-from pathlib import Path
-import sys
 
 import numpy as np
 import pytest

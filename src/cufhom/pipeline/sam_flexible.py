@@ -1,8 +1,7 @@
-"""Experimental inextensible polygonal capsule fibers, separate from FFT data.
+"""Inextensible polygonal fibers represented by connected capsules.
 
-Connectivity and contour length hold by construction. This coordinate-based
-L-BFGS prototype is inspired by fSAM but does not implement its metric/geodesics
-or mechanical bending dynamics. Flexibility here is geometric, not constitutive.
+Connectivity and contour length hold by construction. Bending is a geometric
+regularizer; this model does not supply a mechanical bending constitutive law.
 """
 import itertools
 from dataclasses import dataclass
@@ -11,7 +10,7 @@ from numba import njit
 from scipy.optimize import minimize
 from .sam_contact_energy import contact_energy
 from .sam_periodic_audit import segment_distance
-from .sam_staged_insertion import Settings, draw_directions
+from .sam_generator import Settings, draw_directions
 
 
 @dataclass(frozen=True)
@@ -196,12 +195,10 @@ def relax_chains(q, s, target, progress=None):
 def generate_flexible(s, target, *, progress=None, checkpoint=None):
     # Base validation excluding the straight rank-one precheck: a curved fiber
     # needs its own full audit. Exact rank-one A2 would also force straightness.
-    from .sam_staged_insertion import validate_settings
+    from .sam_generator import validate_settings
     target = validate_settings(s, target)
-    if s.solver != 'lbfgs-a2' or s.min_gap:
-        raise ValueError('Flexible generator currently supports lbfgs-a2 without explicit minimum gap only')
-    if s.insertion_policy != 'ranked' or s.batch_reduction != 'halve':
-        raise ValueError('Insertion policy and batch reduction controls currently require straight fibers')
+    if s.solver != 'a2' or s.min_gap:
+        raise ValueError('Flexible generator currently supports a2 without explicit minimum gap only')
     if (s.segments < 2 or int(s.segments) != s.segments or not np.isfinite(s.bending_weight)
             or s.bending_weight < 0 or not 0 < s.max_turn_degrees < 90):
         raise ValueError('Flexible mode requires >=2 segments, nonnegative bending and turn in (0,90)')

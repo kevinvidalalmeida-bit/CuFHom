@@ -3,9 +3,7 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-import sys
 
 
 # ============================================================================
@@ -124,9 +122,9 @@ def user_settings(
         if geometry_backend is None
         else str(geometry_backend).strip().lower()
     )
-    if selected_geometry_backend not in {"numba", "cupy", "auto"}:
+    if selected_geometry_backend not in {"numba"}:
         raise ValueError(
-            "geometry_backend debe ser 'numba', 'cupy' o 'auto'."
+            "geometry_backend debe ser numba."
         )
     selected_pipeline_overlap = (
         PIPELINE_OVERLAP
@@ -175,7 +173,6 @@ def user_settings(
         "pipeline_overlap": selected_pipeline_overlap,
         "persistent_geometry_pool": True,
 
-        # nuevos: requieren el parche en workflow._set_environment
         "geometry_refill_low_watermark": 4,
         "geometry_prefetch_disk_budget_gib": 8.0,
         "geometry_min_free_disk_gib": 2.0,
@@ -201,7 +198,7 @@ def user_settings(
                 "generator_num_cores": 1,
                 "geometry_prefetch": 1,
                 "geometry_batch_size": 1,
-                "pipeline_overlap": False,           # ← nombre correcto
+                "pipeline_overlap": False,
                 "persistent_geometry_pool": False,
                 "ranges": smoke_ranges,
             }
@@ -213,7 +210,7 @@ def main() -> int:
     from cufhom.pipeline.workflow import run_campaign
 
     parser = argparse.ArgumentParser(
-        description="Ejecuta la campana Sobol GPU configurada al inicio de main.py."
+        description="Ejecuta la campana Sobol GPU configurada en cufhom.cli.sobol."
     )
     parser.add_argument(
         "--smoke",
@@ -242,19 +239,19 @@ def main() -> int:
     )
     parser.add_argument(
         "--geometry-backend",
-        choices=("numba", "cupy", "auto"),
+        choices=("numba",),
         default=None,
         help=(
-            "Backend temporal para SAM. Produccion solapada: numba; "
-            "generacion dedicada: cupy."
+            "SAM usa CPU/Numba; "
+            "FFT usa GPU/CuPy."
         ),
     )
     parser.add_argument(
         "--no-overlap",
         action="store_true",
         help=(
-            "Desactiva el solapamiento geometria/FFT. Recomendado al usar "
-            "--geometry-backend cupy."
+            "Desactiva el solapamiento geometria/FFT. "
+            ""
         ),
     )
     args = parser.parse_args()

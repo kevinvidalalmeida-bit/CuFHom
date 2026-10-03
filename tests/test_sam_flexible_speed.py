@@ -1,11 +1,9 @@
 """Conservative spatial rejection must retain the exhaustive reference result."""
-import sys
-from pathlib import Path
 import unittest
 from dataclasses import replace
 import numpy as np
 from cufhom.pipeline.sam_contact_energy import contact_energy
-from cufhom.pipeline.sam_flexible import FlexibleSettings, chain_audit, decode, relax_chains
+from cufhom.pipeline.sam_flexible import FlexibleSettings, chain_audit, relax_chains
 
 
 class FlexibleSpeedTests(unittest.TestCase):

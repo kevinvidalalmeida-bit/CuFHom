@@ -1,6 +1,5 @@
 """Independent geometry, optimizer and checkpoint checks for dense straight SAM."""
 from dataclasses import replace
-import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -11,11 +10,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from cufhom.pipeline.sam_lbfgs_a4 import normalized_coordinates, coordinate_gradient, minimize_a4
-from cufhom.pipeline.sam_paper_reference import objective, relax_paper_reference
+from cufhom.pipeline.sam_a4 import normalized_coordinates, coordinate_gradient, minimize_a4
+from cufhom.pipeline.sam_a4 import objective, relax_a4
 from cufhom.pipeline.sam_periodic_audit import audit_periodic_fibers
 from cufhom.pipeline.sam_shapes import fiber_volume, rasterize_cylinders
-from cufhom.pipeline.sam_staged_insertion import Settings, generate_staged, perturb_trial
+from cufhom.pipeline.sam_generator import Settings, generate_staged, perturb_trial
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,7 +35,7 @@ def test_failed_relaxation_preserves_energy_progress_when_worst_contact_grows():
         fun(x)
         kwargs['callback'](x)
         return SimpleNamespace(x=x,message='CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH')
-    with patch('cufhom.pipeline.sam_lbfgs_a4.minimize',numerical_stop):
+    with patch('cufhom.pipeline.sam_a4.minimize',numerical_stop):
         result,_,info = minimize_a4(c,u,evaluate,1.,np.eye(3)/3,maxiter=19,
             overlap_tolerance=1e-6,a2_tolerance=.035,a4_tolerance=1e-7)
     assert np.all(result[:,0] > .5)
@@ -61,7 +60,7 @@ def test_center_fallback_can_descend_at_an_angular_contact_ridge():
         fun(x0)
         kwargs['callback'](x0)
         return SimpleNamespace(x=x0,message='CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH')
-    with patch('cufhom.pipeline.sam_lbfgs_a4.minimize',stopped):
+    with patch('cufhom.pipeline.sam_a4.minimize',stopped):
         result,axes,info=minimize_a4(c,u,evaluate,1.,np.eye(3)/3,maxiter=19,
             overlap_tolerance=1e-6,a2_tolerance=.035,a4_tolerance=1e-7)
     assert info['fallback_step']=='centers' and info['recoverable_stop']
@@ -81,8 +80,8 @@ def test_numerical_stop_reuses_remaining_budget_and_current_trial():
                               recoverable_stop=len(calls)==1,optimizer_success=len(calls)==2,
                               history=[dict(overlap_relative=1.,A2_error=0.,energy=e)
                                        for e in (1.,.9999)])
-    with patch('cufhom.pipeline.sam_staged_insertion.relax_contact_energy',relax), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',return_value={'accepted':True}):
+    with patch('cufhom.pipeline.sam_generator.relax_contact_energy',relax), \
+         patch('cufhom.pipeline.sam_generator.certificate',return_value={'accepted':True}):
         _,info=generate_staged(settings,np.eye(3)/3)
     assert [budget for budget,_ in calls]==[19,16]
     np.testing.assert_allclose(calls[1][1][:,0],calls[0][1][:,0]+.1)
@@ -90,9 +89,7 @@ def test_numerical_stop_reuses_remaining_budget_and_current_trial():
 
 
 def test_block_audit_matches_exhaustive_images_and_ties():
-    spec = importlib.util.spec_from_file_location('audit_reference', ROOT/'benchmarks/sam_improvements_20261002/audit_reference.py')
-    reference = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(reference)
+    from tests.helpers import geometry_reference as reference
     rng = np.random.default_rng(492)
     for box in (np.array([4., 5., 6.]), np.full(3, 16.)):
         u = rng.normal(size=(19, 3)); u /= np.linalg.norm(u, axis=1)[:, None]
@@ -125,7 +122,7 @@ def test_lbfgs_feasibility_and_input_preservation():
     u = rng.normal(size=(24,3)); u /= np.linalg.norm(u,axis=1)[:,None]
     f = np.c_[rng.uniform(0, 10, (24,3)),u,np.full(24,3.),np.ones(24)]
     original = f.copy()
-    result, info = relax_paper_reference(f,10,np.eye(3)/3,optimizer='lbfgs',maxiter=1000,
+    result, info = relax_a4(f,10,np.eye(3)/3,maxiter=1000,
                                         overlap_tolerance=1e-6,min_gap=.02)
     assert info['contact_A2_A4_accepted']
     assert info['gap_audit']['accepted']
@@ -136,7 +133,7 @@ def test_lbfgs_feasibility_and_input_preservation():
 
 
 def test_cylinder_raster_matches_independent_periodic_membership():
-    from cufhom.cli.contacts import flat_cylinder_interior
+    from tests.helpers.raster_reference import flat_cylinder_interior
     rng = np.random.default_rng(992)
     grid = 16
     points = np.indices((grid,)*3).reshape(3,-1).T
@@ -165,7 +162,7 @@ def test_cylinder_volume_and_removed_end_caps():
 
 def test_resumed_generation_is_identical_to_uninterrupted():
     s=Settings(box=12,length=3,target_count=36,initial_count=12,batch_size=8,
-               candidates=4,solver='paper-a4',optimizer='lbfgs',orientation_weight=1,
+               candidates=4,solver='a4',orientation_weight=1,
                overlap_tolerance=1e-6,relax_iterations=1000,adaptive_batches=True,max_stages=20)
     full,full_info=generate_staged(s,np.eye(3)/3)
     partial,info=generate_staged(replace(s,max_stages=2),np.eye(3)/3)
@@ -186,8 +183,8 @@ def test_adaptive_budget_reuses_trial_without_resampling():
                              optimizer_success=len(calls)==2,
                              history=[dict(overlap_relative=v,A2_error=0.)
                                       for v in (1.,.1,.0999,.0998,.0997,.0996)])
-    with patch('cufhom.pipeline.sam_staged_insertion.relax_contact_energy',relax), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',return_value={'accepted':True}):
+    with patch('cufhom.pipeline.sam_generator.relax_contact_energy',relax), \
+         patch('cufhom.pipeline.sam_generator.certificate',return_value={'accepted':True}):
         _,info=generate_staged(s,np.eye(3)/3)
     assert len(calls)==2
     np.testing.assert_allclose(calls[1][:,0],calls[0][:,0]+.1)
@@ -197,7 +194,7 @@ def test_adaptive_budget_reuses_trial_without_resampling():
 
 def test_collective_retry_preserves_axes_dimensions_and_accepted_state():
     s = Settings(box=12,length=2,target_count=8,initial_count=8,candidates=2,
-                 solver='paper-a4',optimizer='lbfgs',retry_shake=.05,
+                 solver='a4',retry_shake=.05,
                  relax_iterations=10,attempts=2,max_stages=1)
     calls = []
     def relax(f,*args,**kwargs):
@@ -208,8 +205,8 @@ def test_collective_retry_preserves_axes_dimensions_and_accepted_state():
         return candidate,dict(iterations=1,evaluations=1)
     def certify(f,*args,**kwargs):
         return dict(accepted=bool(np.all(f[:,0] >= 0)))
-    with patch('cufhom.pipeline.sam_paper_reference.relax_paper_reference',relax), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',certify):
+    with patch('cufhom.pipeline.sam_a4.relax_a4',relax), \
+         patch('cufhom.pipeline.sam_generator.certificate',certify):
         final,info = generate_staged(s,np.eye(3)/3)
     assert info['status'] == 'target_count_reached'
     assert [e['attempt'] for e in info['events'] if e['event'] == 'shake_trial'] == [1]
@@ -234,8 +231,8 @@ def test_resume_after_failed_batch_keeps_reduced_schedule_and_rng():
         return candidate,dict(iterations=1,evaluations=1)
     def certify(f,*args,**kwargs):
         return dict(accepted=bool(np.all(f[:,0] >= 0)))
-    with patch('cufhom.pipeline.sam_staged_insertion.relax_contact_energy',relax), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',certify):
+    with patch('cufhom.pipeline.sam_generator.relax_contact_energy',relax), \
+         patch('cufhom.pipeline.sam_generator.certificate',certify):
         full,end = generate_staged(s,np.diag([1.,0.,0.]),initial=initial)
         partial,info = generate_staged(replace(s,max_stages=1),np.diag([1.,0.,0.]),initial=initial)
         assert info['resume_state']['batch_size'] == 2
@@ -266,9 +263,9 @@ def test_wall_budget_preserves_next_trial_and_rng(interrupt_at):
     def report(event):
         if event['event'] == 'rollback':
             clock[0] = 2.
-    with patch('cufhom.pipeline.sam_staged_insertion.relax_contact_energy',relax), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',certify), \
-         patch('cufhom.pipeline.sam_staged_insertion.time.perf_counter',lambda: clock[0]):
+    with patch('cufhom.pipeline.sam_generator.relax_contact_energy',relax), \
+         patch('cufhom.pipeline.sam_generator.certificate',certify), \
+         patch('cufhom.pipeline.sam_generator.time.perf_counter',lambda: clock[0]):
         partial,info = generate_staged(s,np.diag([1.,0.,0.]),initial=initial,
                                        progress=report,wall_seconds=1.)
     assert info['status'] == 'wall_budget_exhausted'
@@ -276,8 +273,8 @@ def test_wall_budget_preserves_next_trial_and_rng(interrupt_at):
     assert info['resume_state']['next_attempt'] == (interrupt_at == 'rollback')
     def succeed(f,*args,**kwargs):
         return f.copy(),dict(iterations=1,evaluations=1)
-    with patch('cufhom.pipeline.sam_staged_insertion.relax_contact_energy',succeed), \
-         patch('cufhom.pipeline.sam_staged_insertion.certificate',certify):
+    with patch('cufhom.pipeline.sam_generator.relax_contact_energy',succeed), \
+         patch('cufhom.pipeline.sam_generator.certificate',certify):
         final,_ = generate_staged(s,np.diag([1.,0.,0.]),initial=partial,
                                   resume_state=info['resume_state'])
     if interrupt_at == 'relax':
@@ -289,11 +286,7 @@ def test_wall_budget_preserves_next_trial_and_rng(interrupt_at):
 
 def test_scalar_contacts_match_frozen_reference():
     from cufhom.pipeline.sam_contact_energy import contact_energy
-    name = 'cufhom.pipeline._sam_contact_reference'
-    spec = importlib.util.spec_from_file_location(name, ROOT/'benchmarks/sam_improvements_20261002/contact_reference.py')
-    reference = importlib.util.module_from_spec(spec)
-    sys.modules[name] = reference
-    spec.loader.exec_module(reference)
+    from tests.helpers import contact_reference as reference
     rng = np.random.default_rng(419)
     c = rng.uniform(-4,8,(17,3))
     u = rng.normal(size=c.shape); u /= np.linalg.norm(u,axis=1)[:,None]

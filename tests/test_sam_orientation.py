@@ -1,14 +1,11 @@
 """General A2/A4, gap and nested-neighbor tests. No dense packing campaign."""
 import unittest
-from pathlib import Path
-import sys
 from unittest.mock import patch
 import numpy as np
 from cufhom.pipeline.sam_orientation import (acg_closure, resolve_orientation, validate_a2,
                                       validate_a4, _principal_moments)
-from cufhom.pipeline.sam_paper_reference import (fourth_moment, isotropic_a4, objective,
-    sphere_retract, MultilevelContactNeighbors, relax_paper_reference)
-from cufhom.pipeline.sam_staged_insertion import Settings, generate_staged, certificate
+from cufhom.pipeline.sam_a4 import fourth_moment, isotropic_a4, objective, sphere_exp
+from cufhom.pipeline.sam_generator import Settings, generate_staged, certificate
 
 
 class OrientationTests(unittest.TestCase):
@@ -70,8 +67,8 @@ class OrientationTests(unittest.TestCase):
         kwargs = dict(target_a4=acg_closure(np.diag([.6,.3,.1])),contact_diameter=1.2)
         _, gc, gu, _, _ = objective(c,u,3.,np.full(3,5.),**kwargs)
         h=1e-6
-        fd = (objective(c+h*dc,sphere_retract(u,h*du),3.,np.full(3,5.),**kwargs)[0]
-              -objective(c-h*dc,sphere_retract(u,-h*du),3.,np.full(3,5.),**kwargs)[0])/(2*h)
+        fd = (objective(c+h*dc,sphere_exp(u,h*du),3.,np.full(3,5.),**kwargs)[0]
+              -objective(c-h*dc,sphere_exp(u,-h*du),3.,np.full(3,5.),**kwargs)[0])/(2*h)
         self.assertAlmostEqual(fd,float(np.sum(gc*dc)+np.sum(gu*du)),places=7)
 
     def test_gap_audit_is_not_physical_overlap_tolerance(self):
@@ -83,31 +80,6 @@ class OrientationTests(unittest.TestCase):
         self.assertTrue(result['audit']['accepted'])
         self.assertFalse(result['gap_audit']['accepted'])
 
-    def test_multilevel_equals_dense_after_rotations_rejected_steps_and_return(self):
-        rng=np.random.default_rng(634)
-        c=rng.uniform(0,9,(30,3)); u=rng.normal(size=(30,3)); u/=np.linalg.norm(u,axis=1)[:,None]
-        target=acg_closure(np.diag([.5,.3,.2]))
-        for length in (3.,12.):
-            cache=MultilevelContactNeighbors(length,np.full(3,9.),contact_diameter=1.2)
-            for motion in (0.,.03,.09,.2,.3,2.,0.,.01):
-                cc=np.ascontiguousarray(c+motion*rng.normal(size=c.shape))
-                uu=sphere_retract(u,motion*rng.normal(size=u.shape))
-                args=dict(target_a4=target,contact_diameter=1.2)
-                dense=objective(cc,uu,length,np.full(3,9.),**args)
-                cached=objective(cc,uu,length,np.full(3,9.),neighbors=cache,**args)
-                for a,b in zip(dense,cached):
-                    np.testing.assert_array_equal(a,b)
-            self.assertGreater(len(cache.level_rebuilds),1)
-
-    def test_multilevel_solver_equivalence(self):
-        rng=np.random.default_rng(987)
-        u=rng.normal(size=(16,3)); u/=np.linalg.norm(u,axis=1)[:,None]
-        f=np.c_[rng.uniform(0,12,(16,3)),u,np.full(16,4.),np.ones(16)]
-        kwargs=dict(maxiter=45,min_gap=.1)
-        a, ai=relax_paper_reference(f,12.,np.diag([.5,.3,.2]),**kwargs)
-        b, bi=relax_paper_reference(f,12.,np.diag([.5,.3,.2]),neighbor_mode='multilevel',**kwargs)
-        np.testing.assert_array_equal(a,b)
-        self.assertEqual(ai['evaluations'],bi['evaluations'])
 
     def test_explicit_target_requires_a4_solver(self):
         with self.assertRaisesRegex(ValueError,'cannot be ignored'):
@@ -130,9 +102,9 @@ class OrientationTests(unittest.TestCase):
             f[:,:3]=np.c_[np.arange(len(f))*2+1,np.ones(len(f)),np.ones(len(f))]
             f[:,3:6]=np.array([1.,0.,0.])
             return f,dict(iterations=1,evaluations=1)
-        s=Settings(box=100,length=.5,diameter=.1,solver='paper-a4',target_count=30,
+        s=Settings(box=100,length=.5,diameter=.1,solver='a4',target_count=30,
                    initial_count=6,bootstrap_max_count=12,attempts=1,candidates=1,max_stages=10)
-        with patch('cufhom.pipeline.sam_paper_reference.relax_paper_reference',failed_fit):
+        with patch('cufhom.pipeline.sam_a4.relax_a4',failed_fit):
             f, summary=generate_staged(s,np.eye(3)/3)
         self.assertEqual(len(f),0)
         self.assertEqual([e['addition'] for e in summary['events'] if e['event']=='trial_start'],[6,12])

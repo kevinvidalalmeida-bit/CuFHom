@@ -1,9 +1,4 @@
 """Gradient, periodic geometry, and raster consistency checks; no FFT."""
-import contextlib
-import io
-from pathlib import Path
-import sys
-import tempfile
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -11,7 +6,8 @@ import numpy as np
 from cufhom.pipeline.sam_contact_energy import (objective, contact_energy, relax_contact_energy,
                                                candidate_contact_energies)
 from cufhom.pipeline.sam_periodic_audit import audit_periodic_fibers
-from cufhom.pipeline import rve_generator as raster
+from tests.helpers import raster_reference as raster
+from cufhom.pipeline.sam_shapes import rasterize_capsules
 
 
 class ContactEnergyTests(unittest.TestCase):
@@ -132,19 +128,9 @@ class ContactEnergyTests(unittest.TestCase):
         np.testing.assert_allclose(actual[1], gc[order], atol=1e-11)
         np.testing.assert_allclose(actual[2], -gu[order], atol=1e-11)
 
-    def test_full_buffer_falls_back_without_truncation(self):
-        c = np.array([[4., 4., 4.]])
-        u = np.array([[1., 0., 0.]])
-        expected = raster._rasterize_fibers_python(c, u, 2., 1., 8, 513)
-        def simulate_overflow(*args):
-            args[-1][:] = args[5]+1  # actual_counts > per-fiber capacity
-        with patch.object(raster, '_count_and_fill_fiber_indices_parallel', simulate_overflow):
-            actual = raster._rasterize_fibers_numba(c, u, 2., 1., 8, 513)
-        for a, b in zip(actual, expected):
-            np.testing.assert_array_equal(a, b)
 
     def test_voxel_neighbors_do_not_imply_geometric_overlap(self):
-        from cufhom.cli.contacts import voxel_diagnostic
+        from tests.helpers.raster_reference import voxel_diagnostic
         f = np.array([[2., 2., 2., 1., 0., 0., 2., .8],
                       [2., 3., 2., 1., 0., 0., 2., .8]])
         self.assertTrue(audit_periodic_fibers(f, 8., 0.)['accepted'])
@@ -153,7 +139,7 @@ class ContactEnergyTests(unittest.TestCase):
         self.assertGreater(result['unlike_fiber_neighbor_faces'], 0)
 
     def test_flat_cylinder_membership_excludes_caps_and_boundaries(self):
-        from cufhom.cli.contacts import flat_cylinder_interior
+        from tests.helpers.raster_reference import flat_cylinder_interior
         f = np.array([2., 2., 2., 1., 0., 0., 2., 1.])
         points = np.array([[2., 2., 2.], [3.2, 2., 2.], [3., 2., 2.],
                            [2., 2.5, 2.], [10., 2., 2.]])
@@ -162,7 +148,7 @@ class ContactEnergyTests(unittest.TestCase):
                                       [True, False, False, False, True])
 
     def test_flat_cylinder_vs_cap_only_intersection(self):
-        from cufhom.cli.contacts import voxel_diagnostic
+        from tests.helpers.raster_reference import voxel_diagnostic
         f = np.array([[2., 2., 2., 1., 0., 0., 2., 1.],
                       [4.5, 2., 2., 1., 0., 0., 2., 1.]])
         caps = voxel_diagnostic(f, 8., 32)
@@ -175,7 +161,7 @@ class ContactEnergyTests(unittest.TestCase):
     def test_periodic_duplicate_voxels_counted_once(self):
         c = np.array([[4., 4., 4.]])
         u = np.array([[1., 0., 0.]])
-        for fn in (raster._rasterize_fibers_python, raster._rasterize_fibers_numba):
+        for fn in (raster._rasterize_fibers_python, lambda c,u,L,r,n,unused: rasterize_capsules(c,u,L,r,n)):
             phase, _, count, used = fn(c, u, 10., 1., 8, 8**3+1)
             self.assertEqual(count, np.count_nonzero(phase))
             self.assertEqual(used, 1)
@@ -183,13 +169,10 @@ class ContactEnergyTests(unittest.TestCase):
     def test_zero_voxel_fiber_still_in_retained_prefix(self):
         c = np.array([[.5, .5, .5], [2., 2., 2.]])
         u = np.array([[1., 0., 0.], [1., 0., 0.]])
-        for fn in (raster._rasterize_fibers_python, raster._rasterize_fibers_numba):
+        for fn in (raster._rasterize_fibers_python, lambda c,u,L,r,n,unused: rasterize_capsules(c,u,L,r,n)):
             phase, _, count, used = fn(c, u, .1, .05, 8, 8**3+1)
             self.assertEqual(count, 1)
             self.assertEqual(used, 2)
-
-    # Campaign-specific AR16/Vf40 top-up test is intentionally not a standalone
-    # unit test: it needs the original CNN campaign inputs and is not run here.
 
 
 if __name__ == '__main__':

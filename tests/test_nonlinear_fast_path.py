@@ -1,6 +1,4 @@
 """The retained nonlinear FFT fast path preserves the constrained problem."""
-from pathlib import Path
-import sys
 import numpy as np
 import pytest
 

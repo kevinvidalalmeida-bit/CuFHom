@@ -1,11 +1,7 @@
 """Conservative skin cache versus full periodic force graph."""
-import sys
-from pathlib import Path
 import unittest
 import numpy as np
-from cufhom.pipeline.sam_neighbor_cache import build_aabb_pairs, endpoint_motion_bound
-from cufhom.pipeline import sam_generator as sam
-from cufhom.pipeline import sam_periodic_kernels as periodic
+from cufhom.pipeline.sam_a4 import build_aabb_pairs, endpoint_motion_bound, ContactNeighbors, objective
 
 
 class NeighborTests(unittest.TestCase):
@@ -20,15 +16,12 @@ class NeighborTests(unittest.TestCase):
             nc=(c+rng.uniform(-.03,.03,c.shape))%16
             nu=u+rng.uniform(-.001,.001,u.shape);nu/=np.linalg.norm(nu,axis=1)[:,None]
             self.assertLess(endpoint_motion_bound(nc,nu,c,u,box,length),skin/2)
-            ii,jj=np.triu_indices(len(c),1); complete=np.c_[ii,jj].astype(np.int32)
-            outputs=[]
-            for graph in [pairs,complete]:
-                offsets,neighbors=sam._pairs_to_csr_numba(graph,len(c))
-                f=np.zeros_like(c);t=np.zeros_like(c);m=np.zeros(len(c))
-                periodic._apply_forces_per_fiber_numba(nc,nu,offsets,neighbors,f,t,m,
-                    16.,16.,16.,length,1.,(length+1.25)**2,.3,.001,.03,1.)
-                outputs.append((f,t,m))
-            for a,b in zip(*outputs): np.testing.assert_allclose(a,b,atol=1e-12,rtol=1e-12)
+            cache = ContactNeighbors(length, box, skin=skin)
+            objective(c,u,length,box,neighbors=cache)
+            cached = objective(nc,nu,length,box,neighbors=cache)
+            dense = objective(nc,nu,length,box)
+            for actual,expected in zip(cached,dense):
+                np.testing.assert_allclose(actual,expected,atol=1e-11,rtol=1e-12)
 
     def test_rotation_alone_requires_rebuild(self):
         c=np.zeros((2,3));u=np.array([[1.,0,0],[0,1.,0]])

@@ -43,16 +43,16 @@ class A4CommandTests(unittest.TestCase):
             self.assertIn('inconsistent', result.stderr)
             self.assertFalse((folder/'out').exists())
 
-    def test_legacy_a2_and_flexible_defaults_are_preserved(self):
+    def test_a2_and_flexible_defaults(self):
         with tempfile.TemporaryDirectory() as temp:
             for model in ('straight', 'flexible'):
-                extra = ['--solver', 'lbfgs-a2'] if model == 'straight' else ['--segments', '2']
+                extra = ['--solver', 'a2'] if model == 'straight' else ['--segments', '2']
                 output = Path(temp)/model
                 result = self.invoke(output, '--fiber-model', model, '--a2', '1', '0',
                                      '--geometry-only', *extra)
                 self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
                 request = json.loads((output/'request.json').read_text())
-                self.assertEqual(request['settings']['solver'], 'lbfgs-a2')
+                self.assertEqual(request['settings']['solver'], 'a2')
                 summary = json.loads((output/'summary.json').read_text())
                 self.assertFalse(summary['accepted'])
                 self.assertTrue(summary['vf_not_certified'])
@@ -70,7 +70,7 @@ class A4CommandTests(unittest.TestCase):
 
     def test_a2_only_export_and_default_a4_closure_are_distinct(self):
         with tempfile.TemporaryDirectory() as temp:
-            for solver in ('lbfgs-a2', 'auto'):
+            for solver in ('a2', 'auto'):
                 output = Path(temp)/solver
                 result = self.invoke(output, '--shape', 'cylinder', '--a2', '.6', '.3',
                                      '--solver', solver, '--overlap-tolerance', '1e-6')
@@ -79,7 +79,7 @@ class A4CommandTests(unittest.TestCase):
                 self.assertTrue(summary['accepted'])
                 with np.load(output/'geometry.npz', allow_pickle=False) as data:
                     np.testing.assert_allclose(data['A2_target'], np.diag([.6, .3, .1]))
-                    if solver == 'lbfgs-a2':
+                    if solver == 'a2':
                         self.assertEqual(data['A4_target'].size, 0)
                         self.assertNotIn('voxel_A4_error', summary)
                         self.assertIn('checking A2 only', result.stdout)

@@ -1,4 +1,4 @@
-"""Experimental, continuous capsule relaxation; never enabled implicitly.
+"""Continuous capsule contacts and A2 relaxation.
 
 Exact periodic pair/self-image energy, analytic position/orientation gradients,
 and L-BFGS line search. No voxels, fiber removal, diameter changes or FFT solves.
@@ -9,7 +9,29 @@ import numpy as np
 from numba import njit
 from scipy.optimize import minimize
 from .sam_periodic_audit import audit_periodic_fibers
-from .sam_periodic_kernels import _contact_normal
+@njit(inline='always')
+def _contact_normal(diffx, diffy, diffz, dist, directions, i, j):
+    if dist > 1e-10:
+        return -diffx/dist, -diffy/dist, -diffz/dist
+    # The closest-point direction is undefined for intersecting axes. Select
+    # one normal in canonical pair order so the two CSR rows are antisymmetric.
+    ii, jj = np.int64(i), np.int64(j)
+    lo, hi = min(ii, jj), max(ii, jj)
+    x, y, z = directions[lo, 0], directions[lo, 1], directions[lo, 2]
+    vx, vy, vz = directions[hi, 0], directions[hi, 1], directions[hi, 2]
+    nx, ny, nz = y*vz-z*vy, z*vx-x*vz, x*vy-y*vx
+    norm = math.sqrt(nx*nx+ny*ny+nz*nz)
+    if norm < 1e-10:
+        if abs(x) <= abs(y) and abs(x) <= abs(z):
+            nx, ny, nz = 0., -z, y
+        elif abs(y) <= abs(z):
+            nx, ny, nz = -z, 0., x
+        else:
+            nx, ny, nz = -y, x, 0.
+        norm = math.sqrt(nx*nx+ny*ny+nz*nz)
+    if i > j:
+        norm = -norm
+    return nx/norm, ny/norm, nz/norm
 
 
 @njit(cache=True)
@@ -177,7 +199,7 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
     # Validation, including unit orientations, also checks the initial state.
     before = audit_periodic_fibers(f, box, overlap_tolerance)
     if not (np.allclose(f[:, 6], f[0, 6]) and np.allclose(f[:, 7], f[0, 7])):
-        raise ValueError('This prototype requires equal lengths and diameters')
+        raise ValueError('Equal lengths and diameters required')
     target = np.asarray(target, dtype=float)
     if (target.shape != (3, 3) or not np.isfinite(target).all()
             or not np.allclose(target, target.T) or not np.isclose(np.trace(target), 1.)

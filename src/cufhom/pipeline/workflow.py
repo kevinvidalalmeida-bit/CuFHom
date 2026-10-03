@@ -1,4 +1,4 @@
-"""Orquestacion del flujo principal definido desde ``main.py``."""
+"""Orquestación de diseños Sobol, generación certificada y FFT GPU."""
 
 from __future__ import annotations
 
@@ -48,29 +48,10 @@ OFFICIAL_GPU_PROFILE = {
     "GEOMETRY_PREFETCH_DISK_BUDGET_GIB": "4.0",
     "GEOMETRY_MIN_FREE_DISK_GIB": "4.0",
     "GEOMETRY_PROCESS_START_METHOD": "spawn",
-    "SAM_COMPACTION": "1",
-    "SAM_COMPACTION_START_SCALE": "0.5",
-    "SAM_COMPACTION_TOPUP_SCALE": "0.5",
-    "SAM_COMPACTION_STAGES": "6",
-    "SAM_COMPACTION_MAX_ITER": "120",
-    "SAM_COMPACTION_PASSES": "2",
-    "SAM_COLLECTIVE_FIRE": "1",
-    "SAM_COLLECTIVE_FIRE_MAX_ITER": "2500",
-    "SAM_COLLECTIVE_FIRE_MAX_RESTARTS": "3",
-    "SAM_COLLECTIVE_FIRE_RESTART_PATIENCE": "250",
-    "SAM_COLLECTIVE_FIRE_PAIR_REBUILD_INTERVAL": "4",
-    "SAM_COLLECTIVE_FIRE_RESCUE_PASSES": "3",
-    "SAM_COLLECTIVE_FIRE_REMOVAL_BATCH": "8",
     "SAM_A2_TOLERANCE": "0.01",
     "SAM_VOXEL_A2_TOLERANCE": "0.01",
-    "SAM_REJECT_A2_MISS": "1",
-    "SAM_ORIENTATION_MAX_ITER": "160",
-    "SAM_GEOMETRY_BACKEND": "numba",
-    "SAM_CUPY_MIN_CANDIDATE_PAIRS": "50000",
     "SAM_VF_TOLERANCE": "0.005",
-    "SAM_OVERLAP_TOLERANCE_RELATIVE": "0.008333333333333333",
-    "SAM_REJECT_OVERLAP_MISS": "1",
-    "SAM_OVERLAP_RESCUE": "1",
+    "SAM_OVERLAP_TOLERANCE_RELATIVE": "1e-6",
     "KANIT_CONFIDENCE_MODE": "student_t",
     "CUPY_LOADCASE_PARALLEL": "0",
     "CUPY_LOADCASE_WORKERS": "1",
@@ -120,10 +101,8 @@ def validate_settings(settings: dict[str, Any]) -> None:
         )
     if str(settings.get("geometry_backend", "numba")) not in {
         "numba",
-        "cupy",
-        "auto",
     }:
-        raise ValueError("geometry_backend debe ser numba, cupy o auto.")
+        raise ValueError("geometry_backend debe ser numba.")
 
     ranges = settings["ranges"]
     if not isinstance(ranges, dict):
@@ -183,11 +162,9 @@ def _set_environment(settings: dict[str, Any]) -> None:
         ),
 
         "GENERATOR_NUM_CORES": settings.get("generator_num_cores", 2),
-        "SAM_GEOMETRY_BACKEND": settings.get("geometry_backend", "numba"),
         "GEOMETRY_REFILL_LOW_WATERMARK": settings.get("geometry_refill_low_watermark", 0),
         "GEOMETRY_PREFETCH_DISK_BUDGET_GIB": settings.get("geometry_prefetch_disk_budget_gib", 4.0),
         "GEOMETRY_MIN_FREE_DISK_GIB": settings.get("geometry_min_free_disk_gib", 2.0),
-
 
 
         "PIPELINE_OVERLAP_GENERATION": int(

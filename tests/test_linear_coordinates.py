@@ -1,7 +1,5 @@
 """Linear displacement PCG: reference accuracy, physical audits and failures."""
-from pathlib import Path
 import json
-import sys
 import numpy as np
 import pytest
 

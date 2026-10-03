@@ -1,6 +1,4 @@
 """Production real-FFT batching: correct scaling, ownership and safe fallback."""
-from pathlib import Path
-import sys
 from types import SimpleNamespace
 import numpy as np
 import pytest

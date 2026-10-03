@@ -1,31 +1,9 @@
 import numpy as np
-import os
-import sys
 import time
 from copy import copy, deepcopy
 import collections
 import collections.abc
 
-
-def get_base_dir():
-    module_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.normpath(os.path.join(module_dir, '../..'))
-    return base_dir
-
-def run_file(filen=''):
-    base_dir = get_base_dir()
-    main = base_dir + '/main.py'
-    sys.argv = [main, filen]
-    exec(compile(open(main).read(), main, 'exec'))
-
-def print_dict(d):
-    print('-- print dictionary -------------------')
-    for key, vals in list(d.items()):
-        print((key + ' =', vals))
-
-def end():
-    print('end')
-    sys.exit()
 
 class Representation():
     def _repr(self, keys, skip=4*' '):
@@ -271,6 +249,3 @@ class Struct(object):
             except:
                 pass
         return log
-
-if __name__ == '__main__':
-    run_file()
