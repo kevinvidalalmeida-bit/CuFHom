@@ -18,8 +18,22 @@ plots = ["matplotlib>=3.8"]
 cufhom-generate = "cufhom.cli.geometry:main"
 cufhom-nonlinear = "cufhom.cli.nonlinear:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+package-dir = { cufhom = "src", cufhom_core = "core" }
+packages = [
+    "cufhom",
+    "cufhom.cli",
+    "cufhom.fft",
+    "cufhom.fft.linear",
+    "cufhom.fft.nonlinear",
+    "cufhom.geometry",
+    "cufhom.materials",
+    "cufhom_core",
+    "cufhom_core.general",
+    "cufhom_core.matvecs",
+    "cufhom_core.mechanics",
+    "cufhom_core.tensors",
+]
 
 [tool.setuptools.package-data]
 cufhom_core = ["LICENSE"]

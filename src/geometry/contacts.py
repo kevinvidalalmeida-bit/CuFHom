@@ -201,7 +201,7 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
     domain = np.broadcast_to(np.asarray(box, dtype=float)/diameter, (3,)).copy()
     x0 = np.column_stack((f[:, :3]/diameter, .5*length*f[:, 3:6])).ravel()
     history = []
-    best = [np.inf, x0.copy()]
+    best_score, best_x = np.inf, x0.copy()
     last_x = last_value = None
     objective_evaluations = 0
 
@@ -214,10 +214,11 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
         return last_value
 
     def record(x):
+        nonlocal best_score, best_x
         energy, _, overlap, a2 = evaluate(x)
         score = max(overlap/overlap_tolerance, a2/a2_tolerance)
-        if score < best[0]:
-            best[:] = [score, x.copy()]
+        if score < best_score:
+            best_score, best_x = score, x.copy()
         history.append(dict(iteration=len(history), energy=float(energy),
                             overlap_relative=float(overlap), A2_error=float(a2)))
         if progress and (len(history) == 1 or (len(history)-1) % 25 == 0):
@@ -228,7 +229,7 @@ def relax_contact_energy(fibers, box, target, *, maxiter=300,
                       callback=record, options=dict(maxiter=maxiter, maxls=30,
                                                    ftol=1e-14, gtol=1e-9))
     record(result.x)
-    chosen = best[1].reshape(-1, 6)
+    chosen = best_x.reshape(-1, 6)
     f[:, :3] = np.mod(chosen[:, :3]*diameter, np.asarray(box))
     f[:, 3:6] = chosen[:, 3:]/np.linalg.norm(chosen[:, 3:], axis=1)[:, None]
     after = audit_periodic_fibers(f, box, overlap_tolerance)

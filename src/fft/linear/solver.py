@@ -80,15 +80,14 @@ def _normalize_cupy_plan_mode(mode: str) -> str:
     return mode
 
 
-def _free_cupy_pools_if_requested(force: bool = False) -> None:
+def _free_cupy_pools() -> None:
     if cp is None:
         return
-    if force:
-        try:
-            cp.get_default_memory_pool().free_all_blocks()
-            cp.get_default_pinned_memory_pool().free_all_blocks()
-        except Exception:
-            pass
+    try:
+        cp.get_default_memory_pool().free_all_blocks()
+        cp.get_default_pinned_memory_pool().free_all_blocks()
+    except Exception:
+        pass
 
 
 def _cupy_memory_snapshot(label: str, enabled: bool) -> Dict[str, Any]:
@@ -612,123 +611,68 @@ def _affine_stiffness_bases() -> tuple[tuple[np.ndarray, np.ndarray], tuple[np.n
     return (lam, mu), (c_tt, c_tt_cross, c_lt, c_ll, g_lt)
 
 
-def _build_affine_sensitivity_cfields_cpu(
+def _rotated_affine_bases(axes, bases, dtype):
+    """One sym21 derivative table per orientation group, with CPU rotation algebra."""
+    tables = np.empty((len(axes), len(bases), 21), dtype=dtype)
+    for group, axis in enumerate(axes):
+        rotation = rotation_matrix_from_vector(axis)
+        for coefficient, basis in enumerate(bases):
+            tables[group, coefficient] = _matrix_sym21_values(
+                rotate_C_mandel(basis, rotation), np, np.dtype(dtype).type)
+    return tables
+
+
+def _build_affine_sensitivity_cfields(
     phase: np.ndarray,
     ori: np.ndarray,
     dtype: np.dtype,
     *,
+    xp=np,
     quantization: float = AFFINE_ORIENTATION_QUANTIZATION,
     assign_chunk_voxels: int = _CFIELD_ASSIGN_CHUNK_VOXELS,
-) -> np.ndarray:
-    """Build full sym21 fields for dA/dgamma_q on CPU."""
-    DTYPE = np.dtype(dtype).type
+) -> Any:
+    """Build full sym21 derivative fields on NumPy or CuPy, in bounded chunks."""
+    use_gpu = xp is not np
+    if use_gpu and cp is None:
+        raise RuntimeError("CuPy no esta disponible para construir sensibilidades GPU.")
+    host_dtype = np.dtype(dtype).type
+    field_dtype = host_dtype if not use_gpu else (cp.float64 if host_dtype == np.float64 else cp.float32)
     phase_arr = np.asarray(phase, dtype=np.uint8)
     ori_arr = np.asarray(ori, dtype=np.float64)
-    Nx, Ny, Nz = phase_arr.shape
-    cfields = np.zeros((len(AFFINE_SENSITIVITY_NAMES), 21, Nx, Ny, Nz), dtype=DTYPE)
+    cfields = xp.zeros((len(AFFINE_SENSITIVITY_NAMES), 21, *phase_arr.shape), dtype=field_dtype)
     matrix_bases, fiber_bases = _affine_stiffness_bases()
 
     matrix_mask = phase_arr == 0
     if np.any(matrix_mask):
-        for q, basis in enumerate(matrix_bases):
-            cfields[q, :, matrix_mask] = _matrix_sym21_values(basis, np, DTYPE)[:, None]
+        if use_gpu:
+            matrix_idx = np.argwhere(matrix_mask).astype(np.int32, copy=False)
+            matrix_idx_gpu = cp.asarray(matrix_idx, dtype=cp.int32)
+            ix, iy, iz = matrix_idx_gpu.T
+            for q, basis in enumerate(matrix_bases):
+                values = cp.asarray(_matrix_sym21_values(basis, np, host_dtype), dtype=field_dtype)
+                cfields[q, :, ix, iy, iz] = values[None, :]
+        else:
+            for q, basis in enumerate(matrix_bases):
+                # A fixed q moves the boolean-indexed voxel axis before sym21.
+                cfields[q, :, matrix_mask] = _matrix_sym21_values(basis, np, host_dtype)[None, :]
 
     fiber_mask = phase_arr != 0
     if not np.any(fiber_mask):
         return cfields
-
-    fiber_idx = np.argwhere(fiber_mask).astype(np.int64, copy=False)
-    inv_idx, means = _group_quantized_orientations(
-        ori_arr[fiber_mask],
-        quantization,
-    )
-    group_bases = np.empty((len(means), len(fiber_bases), 21), dtype=DTYPE)
-    for group_id, axis in enumerate(means):
-        rotation = rotation_matrix_from_vector(axis)
-        for local_q, basis in enumerate(fiber_bases):
-            group_bases[group_id, local_q] = _matrix_sym21_values(
-                rotate_C_mandel(basis, rotation),
-                np,
-                DTYPE,
-            )
+    index_dtype = np.int32 if use_gpu else np.int64
+    fiber_idx = np.argwhere(fiber_mask).astype(index_dtype, copy=False)
+    inverse, means = _group_quantized_orientations(ori_arr[fiber_mask], quantization)
+    group_bases = _rotated_affine_bases(means, fiber_bases, host_dtype)
+    if use_gpu:
+        group_bases = cp.asarray(group_bases, dtype=field_dtype)
+        inverse = cp.asarray(inverse, dtype=cp.int32)
+        fiber_idx = cp.asarray(fiber_idx, dtype=cp.int32)
 
     chunk_size = max(1, int(assign_chunk_voxels))
-    n_fiber = int(fiber_idx.shape[0])
-    for start in range(0, n_fiber, chunk_size):
-        end = min(start + chunk_size, n_fiber)
-        group_fi = fiber_idx[start:end]
-        ix = group_fi[:, 0]
-        iy = group_fi[:, 1]
-        iz = group_fi[:, 2]
-        cfields[2:, :, ix, iy, iz] = np.transpose(
-            group_bases[inv_idx[start:end]],
-            (1, 2, 0),
-        )
-    return cfields
-
-
-def _build_affine_sensitivity_cfields_gpu(
-    phase: np.ndarray,
-    ori: np.ndarray,
-    dtype: np.dtype,
-    *,
-    quantization: float = AFFINE_ORIENTATION_QUANTIZATION,
-    assign_chunk_voxels: int = _CFIELD_ASSIGN_CHUNK_VOXELS,
-) -> Any:
-    """Build full sym21 fields for dA/dgamma_q on GPU."""
-    if cp is None:
-        raise RuntimeError("CuPy no esta disponible para construir sensibilidades GPU.")
-    gpu_dtype = cp.float64 if np.dtype(dtype) == np.dtype(np.float64) else cp.float32
-    phase_arr = np.asarray(phase, dtype=np.uint8)
-    ori_arr = np.asarray(ori, dtype=np.float64)
-    Nx, Ny, Nz = phase_arr.shape
-    cfields = cp.zeros((len(AFFINE_SENSITIVITY_NAMES), 21, Nx, Ny, Nz), dtype=gpu_dtype)
-    matrix_bases, fiber_bases = _affine_stiffness_bases()
-
-    matrix_idx = np.argwhere(phase_arr == 0).astype(np.int32, copy=False)
-    if matrix_idx.size:
-        matrix_idx_gpu = cp.asarray(matrix_idx, dtype=cp.int32)
-        ix = matrix_idx_gpu[:, 0]
-        iy = matrix_idx_gpu[:, 1]
-        iz = matrix_idx_gpu[:, 2]
-        for q, basis in enumerate(matrix_bases):
-            values = cp.asarray(_matrix_sym21_values(basis, np, np.dtype(dtype).type), dtype=gpu_dtype)
-            cfields[q, :, ix, iy, iz] = values[None, :]
-
-    fiber_mask = phase_arr != 0
-    if not np.any(fiber_mask):
-        return cfields
-
-    fiber_idx = np.argwhere(fiber_mask).astype(np.int32, copy=False)
-    inv_idx, means = _group_quantized_orientations(
-        ori_arr[fiber_mask],
-        quantization,
-    )
-    group_bases_cpu = np.empty((len(means), len(fiber_bases), 21), dtype=np.dtype(dtype))
-    for group_id, axis in enumerate(means):
-        rotation = rotation_matrix_from_vector(axis)
-        for local_q, basis in enumerate(fiber_bases):
-            group_bases_cpu[group_id, local_q] = _matrix_sym21_values(
-                rotate_C_mandel(basis, rotation),
-                np,
-                np.dtype(dtype).type,
-            )
-    group_bases_gpu = cp.asarray(group_bases_cpu, dtype=gpu_dtype)
-    inv_idx_gpu = cp.asarray(inv_idx, dtype=cp.int32)
-    fiber_idx_gpu = cp.asarray(fiber_idx, dtype=cp.int32)
-
-    chunk_size = max(1, int(assign_chunk_voxels))
-    n_fiber = int(fiber_idx.shape[0])
-    for start in range(0, n_fiber, chunk_size):
-        end = min(start + chunk_size, n_fiber)
-        group_fi = fiber_idx_gpu[start:end]
-        ix = group_fi[:, 0]
-        iy = group_fi[:, 1]
-        iz = group_fi[:, 2]
-        cfields[2:, :, ix, iy, iz] = cp.transpose(
-            group_bases_gpu[inv_idx_gpu[start:end]],
-            (1, 2, 0),
-        )
+    for start in range(0, len(fiber_idx), chunk_size):
+        end = min(start + chunk_size, len(fiber_idx))
+        ix, iy, iz = fiber_idx[start:end].T
+        cfields[2:, :, ix, iy, iz] = xp.transpose(group_bases[inverse[start:end]], (1, 2, 0))
     return cfields
 
 
@@ -803,15 +747,7 @@ def _build_affine_sensitivity_operator_specs_gpu(
         quantization,
     )
     n_unique = int(len(means))
-    group_bases_cpu = np.empty((n_unique, len(fiber_bases), 21), dtype=np.float32)
-    for group_id, axis in enumerate(means):
-        rotation = rotation_matrix_from_vector(axis)
-        for local_q, basis in enumerate(fiber_bases):
-            group_bases_cpu[group_id, local_q] = _matrix_sym21_values(
-                rotate_C_mandel(basis, rotation),
-                np,
-                np.float32,
-            )
+    group_bases_cpu = _rotated_affine_bases(means, fiber_bases, np.float32)
 
     inv_idx_gpu = cp.asarray(inv_idx, dtype=cp.int32)
     fiber_idx_gpu = cp.asarray(fiber_idx, dtype=cp.int32)
@@ -1346,10 +1282,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
         # while correcting only cells cut by a smooth interface.  It is built
         # on CPU because its 3x3 static condensations are tiny; the resulting
         # packed Cfield is then transferred once to the selected backend.
-        try:
-            from cufhom.materials.composite_voxels import laminate_voxel_stiffness_mandel
-        except ImportError:
-            from cufhom.materials.composite_voxels import laminate_voxel_stiffness_mandel
+        from cufhom.materials.composite_voxels import laminate_voxel_stiffness_mandel
 
         cfield_t0 = time.perf_counter()
         Cfield_cpu = laminate_voxel_stiffness_mandel(
@@ -1473,26 +1406,15 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             affine_sensitivity_storage = "sym21_indexed"
             sync_s = _sync_cupy_for_timing(gpu_timing_sync)
             gpu_timing_sync_s += sync_s
-        elif use_gpu:
-            affine_sensitivity_cfields = _build_affine_sensitivity_cfields_gpu(
-                phase,
-                ori,
-                real_dtype,
-                assign_chunk_voxels=cfield_assign_chunk_voxels,
-            )
-            affine_sensitivity_storage = "sym21_full_gpu"
-            affine_sensitivity_bytes = _estimate_shared_array_bytes(affine_sensitivity_cfields)
-            sync_s = _sync_cupy_for_timing(gpu_timing_sync)
-            gpu_timing_sync_s += sync_s
         else:
-            affine_sensitivity_cfields = _build_affine_sensitivity_cfields_cpu(
-                phase,
-                ori,
-                real_dtype,
+            affine_sensitivity_cfields = _build_affine_sensitivity_cfields(
+                phase, ori, real_dtype, xp=cp if use_gpu else np,
                 assign_chunk_voxels=cfield_assign_chunk_voxels,
             )
-            affine_sensitivity_storage = "sym21_full_cpu"
+            affine_sensitivity_storage = "sym21_full_gpu" if use_gpu else "sym21_full_cpu"
             affine_sensitivity_bytes = _estimate_shared_array_bytes(affine_sensitivity_cfields)
+            if use_gpu:
+                gpu_timing_sync_s += _sync_cupy_for_timing(gpu_timing_sync)
         affine_sensitivity_build_s = time.perf_counter() - sens_t0
         record_gpu_memory("after_affine_sensitivity_cfields")
 
@@ -2001,7 +1923,7 @@ def solve_homogenization(p: Dict[str, Any]) -> np.ndarray:
             json.dump(timing_payload, fh, indent=2)
 
     if bool(p.get("free_gpu_memory_after_solve", False)):
-        _free_cupy_pools_if_requested(True)
+        _free_cupy_pools()
 
     return Ceff_to_save
 

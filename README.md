@@ -153,23 +153,30 @@ solvers. `cufhom-nonlinear --help` muestra los controles de carga y reinicio.
 ## Estructura y distribución
 
 ```text
-src/cufhom/
-    geometry/        # Rectas, flexibles, contactos, orientación y raster
-    fft/
-        linear/      # Ensamblaje elástico y CG optimizado
-        nonlinear/   # Equilibrio incremental y curvas constitutivas
-        operators.py # Espacio admisible, cargas mixtas y precondicionador
-        krylov.py    # CG compartido con auditoría del residuo real
-    materials/       # Elasticidad, rotaciones y plasticidad J2
-    cli/             # Generación y curvas no lineales
-src/cufhom_core/     # Núcleo espectral incorporado, aviso MIT conservado
-tests/
-    geometry/        # Incluye referencias geométricas independientes
-    fft/linear/
-    fft/nonlinear/
-    materials/
-examples/
+cufhom/                  # Una sola raíz de proyecto
+    src/                 # Paquete Python cufhom
+        geometry/        # Rectas, flexibles, contactos, orientación y raster
+        fft/
+            linear/      # Ensamblaje elástico y CG optimizado
+            nonlinear/   # Equilibrio incremental y curvas constitutivas
+            operators.py # Espacio admisible y precondicionador
+            krylov.py    # CG compartido y auditoría del residuo
+        materials/       # Elasticidad, rotaciones y plasticidad J2
+        cli/             # Generación y curvas no lineales
+    core/                # Paquete cufhom_core, aviso MIT conservado
+    tests/
+        geometry/        # Incluye referencias geométricas independientes
+        fft/linear/
+        fft/nonlinear/
+        materials/
+    examples/            # Comprobaciones ejecutables
+    tools/               # Preparación del entorno GPU
+    third_party/         # Licencias y atribuciones
 ```
+
+El empaquetado asigna `src/` a `cufhom` y `core/` a `cufhom_core`;
+los nombres físicos de las carpetas no cambian los imports de Python.
+Instala el proyecto con `pip install -e .` antes de ejecutar sus comandos.
 
 Las APIs públicas son `cufhom.geometry`, `cufhom.fft` y `cufhom.materials`.
 Los antiguos imports `cufhom.pipeline.*` se sustituyen por estas rutas.

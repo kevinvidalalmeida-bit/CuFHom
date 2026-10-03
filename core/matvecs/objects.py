@@ -750,7 +750,6 @@ class DFT(FieldFun):
         """
         centered n-dimensional FFT algorithm
         """
-#         return fft.fftshift(fft.fftn(fft.ifftshift(x), N))/np.prod(N)
         ax=tuple(np.setdiff1d(list(range(x.ndim)), list(range(x.ndim-N.__len__())), assume_unique=True))
         return fft.fftshift(fft.fftn(fft.ifftshift(x, ax), N), ax)/np.prod(N)
 
@@ -759,7 +758,6 @@ class DFT(FieldFun):
         """
         centered n-dimensional inverse FFT algorithm
         """
-#         return fft.fftshift(fft.ifftn(fft.ifftshift(Fx), N))*np.prod(N)
         ax=tuple(np.setdiff1d(list(range(Fx.ndim)), list(range(Fx.ndim-N.__len__())), assume_unique=True))
         return fft.fftshift(fft.ifftn(fft.ifftshift(Fx, ax), N), ax).real*np.prod(N)
 

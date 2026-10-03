@@ -26,16 +26,6 @@ def _scalar_to_float(x):
     return float(x)
 
 
-def _zeros_like_backend(arr):
-    xp = get_array_module(arr)
-    return xp.zeros_like(arr)
-
-
-def _empty_like_backend(arr):
-    xp = get_array_module(arr)
-    return xp.empty_like(arr)
-
-
 SYM21_PAIRS = (
     (0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5),
     (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
@@ -499,12 +489,12 @@ class Tensor(TensorFuns):
     def zeros_like(self, name=None):
         if name is None:
             name='zeros({})'.format(self.name[:10])
-        return self.copy(name=name, val=_zeros_like_backend(self.val))
+        return self.copy(name=name, val=get_array_module(self.val).zeros_like(self.val))
 
     def empty_like(self, name=None):
         if name is None:
             name='empty({})'.format(self.name[:10])
-        return self.copy(name=name, val=_empty_like_backend(self.val))
+        return self.copy(name=name, val=get_array_module(self.val).empty_like(self.val))
 
     def calc_eigs(self, sort=True, symmetric=False, mandel=False):
         if symmetric:

@@ -225,7 +225,6 @@ def elasticity(N, Y, NyqNul=True, tensor=True, fft_form=fft_form_default, dtype=
             num[m][n] = np.tile(np.reshape(xi[m], NshapeM), NrepM) \
                 * np.tile(np.reshape(xi[n], NshapeN), NrepN)
 
-    # G1h = np.zeros([D,D]).tolist()
     G1h = np.zeros(np.hstack([D, D, Nred]), dtype=dtype)
     G1s = np.zeros(np.hstack([D, D, Nred]), dtype=dtype)
     IS0 = np.zeros(np.hstack([D, D, Nred]), dtype=dtype)

@@ -334,7 +334,7 @@ def _solve(p):
         row.setdefault('target_strain', row['strain'][axis])
     annotate_pseudotime(history, pseudo_scale)
 
-    def dot_device(a, b):
+    def dot(a, b):
         with timers.measure('reductions'):
             # float64 accumulation; multiplication is promoted too, without
             # retaining double-sized fields (einsum CPU, ReductionKernel GPU).
@@ -343,10 +343,9 @@ def _solve(p):
             reduction.dot_kernel((reduction.blocks,), (reduction.threads,),
                                  (cp.ascontiguousarray(a), cp.ascontiguousarray(b),
                                   reduction.partial, np.int64(a.size)))
-            return cp.sum(reduction.partial, dtype=cp.float64)
-
-    def dot(a, b):
-        return float(dot_device(a, b))
+            scalar = cp.sum(reduction.partial, dtype=cp.float64)
+        # Keep the host transfer outside the device reduction timing.
+        return float(scalar)
 
     def coordinate_dot(a, b):
         return dot(a.view(dtype), b.view(dtype))
@@ -622,4 +621,3 @@ def _solve(p):
     if p.get('output_dir'):
         export_curve(result, p['output_dir'])
     return result
-

@@ -151,14 +151,6 @@ def _check_macro_mean_enabled(pb):
     return bool(_solver_get(pb.solver, "check_macro_mean", pb.solve.get("check_macro_mean", True)))
 
 
-def _projection_storage(pb):
-    return str(pb.solve.get("projection_storage", "full")).strip().lower()
-
-
-def _projection_backend(pb):
-    return str(pb.solve.get("projection_backend", "auto")).strip().lower()
-
-
 def _load_batch_size(pb, nloads):
     if _profile_enabled(pb):
         return 1
@@ -992,7 +984,6 @@ def scalar(problem):
         solutions = np.zeros(pb.shape).tolist()
         results = np.zeros(pb.shape).tolist()
         load_timings = []
-        load_solver_infos = []
 
         # material coefficients
         mat = Material(pb.material)
@@ -1065,8 +1056,8 @@ def elasticity(problem):
     projection_t0 = _stage_tic()
     fft_form = pb.solve.get('fft_form', 'c')
     real_dtype = _solver_real_dtype(pb)
-    projection_storage = _projection_storage(pb)
-    projection_backend = _projection_backend(pb)
+    projection_storage = str(pb.solve.get("projection_storage", "full")).strip().lower()
+    projection_backend = str(pb.solve.get("projection_backend", "auto")).strip().lower()
     if pb.solve.get('kind') != 'GaNi' and projection_backend in {'auto', 'cupy'}:
         projection_backend = 'numpy'
     projection_cache_enabled = bool(pb.solve.get('cache_projection', False))

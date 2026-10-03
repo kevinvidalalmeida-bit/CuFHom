@@ -12,7 +12,6 @@ class NeighborTests(unittest.TestCase):
         for length in [3.,8.,16.,25.]:
             c=rng.uniform(0,16,(90,3)); u=rng.normal(size=c.shape);u/=np.linalg.norm(u,axis=1)[:,None]
             skin=1.
-            pairs=build_aabb_pairs(c,u,box,length,1.,skin)
             nc=(c+rng.uniform(-.03,.03,c.shape))%16
             nu=u+rng.uniform(-.001,.001,u.shape);nu/=np.linalg.norm(nu,axis=1)[:,None]
             self.assertLess(endpoint_motion_bound(nc,nu,c,u,box,length),skin/2)

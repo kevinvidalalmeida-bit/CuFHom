@@ -38,7 +38,7 @@ def test_geometry_help_outside_checkout(tmp_path):
 
 def test_active_sources_do_not_depend_on_parent():
     root = Path(__file__).resolve().parents[1]
-    for folder in ('src/cufhom', 'tests', 'examples'):
+    for folder in ('src', 'core', 'tests', 'examples'):
         for source in (root/folder).rglob('*.py'):
             if source == Path(__file__).resolve():
                 continue

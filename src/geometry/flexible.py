@@ -164,32 +164,32 @@ def relax_chains(q, s, target, progress=None):
     scaled = q.copy(); scaled[:, 0] /= s.diameter
     # Raw tangent norm preconditions angle vs positional displacements.
     scaled[:, 1:] *= .5*s.length/s.diameter
-    def materialize(x):
-        result = x.reshape(q.shape).copy()
-        result[:, 0] = (result[:, 0]*s.diameter) % s.box
-        result[:, 1:] /= np.linalg.norm(result[:, 1:], axis=2)[:, :, None]
-        return result
-    def audit(table):
-        return chain_audit(table, s.length, s.diameter, s.box, target,
-                           overlap_tolerance=s.overlap_tolerance, a2_tolerance=s.a2_tolerance,
-                           max_turn_degrees=s.max_turn_degrees, conservative_cull=s.conservative_cull)
-    best = [np.inf, q.copy(), None]; iteration = [0]
+    best_score, best_table, best_audit = np.inf, q.copy(), None
+    iteration = 0
+
     def record(x):
-        result = materialize(x); checked = audit(result)
+        nonlocal best_score, best_table, best_audit, iteration
+        table = x.reshape(q.shape).copy()
+        table[:, 0] = (table[:, 0]*s.diameter) % s.box
+        table[:, 1:] /= np.linalg.norm(table[:, 1:], axis=2)[:, :, None]
+        checked = chain_audit(table, s.length, s.diameter, s.box, target,
+                              overlap_tolerance=s.overlap_tolerance, a2_tolerance=s.a2_tolerance,
+                              max_turn_degrees=s.max_turn_degrees, conservative_cull=s.conservative_cull)
         score = max(checked['maximum_relative_overlap']/s.overlap_tolerance,
                     checked['A2_error']/s.a2_tolerance,
                     checked['maximum_turn_degrees']/s.max_turn_degrees)
-        if score < best[0]:
-            best[:] = [score, result, checked]
-        if progress and iteration[0] % 25 == 0:
-            progress(dict(event='relax_progress', iteration=iteration[0], **checked))
-        iteration[0] += 1
+        if score < best_score:
+            best_score, best_table, best_audit = score, table, checked
+        if progress and iteration % 25 == 0:
+            progress(dict(event='relax_progress', iteration=iteration, **checked))
+        iteration += 1
+
     record(scaled.ravel())
     result = minimize(lambda x: chain_objective(x, len(q), s, target), scaled.ravel(), jac=True,
                       method='L-BFGS-B', callback=record,
                       options=dict(maxiter=s.relax_iterations, maxls=30, ftol=1e-13, gtol=1e-9))
     record(result.x)
-    return best[1], best[2], dict(iterations=int(result.nit), evaluations=int(result.nfev))
+    return best_table, best_audit, dict(iterations=int(result.nit), evaluations=int(result.nfev))
 
 
 def generate_flexible(s, target, *, progress=None, checkpoint=None):

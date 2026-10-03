@@ -242,7 +242,7 @@ def rasterize_capsules_composite(
 
 def _rotate_stiffness_mandel(stiffness: np.ndarray, axes: np.ndarray) -> np.ndarray:
     """Rotate one TI stiffness per axis, retaining a compact local dependency."""
-    from cufhom.fft.linear.solver import rotate_C_mandel, rotation_matrix_from_vector
+    from cufhom.materials.elasticity import rotate_C_mandel, rotation_matrix_from_vector
 
     rounded = np.round(np.asarray(axes, dtype=np.float64) * 1.0e8).astype(np.int64)
     _, inverse = np.unique(rounded, axis=0, return_inverse=True)
@@ -268,23 +268,6 @@ def _strain_jump_map(normals: np.ndarray) -> np.ndarray:
     result[:, 4, 2] = n0 * inv_sqrt2
     result[:, 5, 0] = n1 * inv_sqrt2
     result[:, 5, 1] = n0 * inv_sqrt2
-    return result
-
-
-def _traction_map(normals: np.ndarray) -> np.ndarray:
-    """Mandel map ``sigma -> sigma @ n`` for a batch of normals."""
-    n0, n1, n2 = normals.T
-    result = np.zeros((len(normals), 3, 6), dtype=np.float64)
-    inv_sqrt2 = 1.0 / np.sqrt(2.0)
-    result[:, 0, 0] = n0
-    result[:, 0, 4] = n2 * inv_sqrt2
-    result[:, 0, 5] = n1 * inv_sqrt2
-    result[:, 1, 1] = n1
-    result[:, 1, 3] = n2 * inv_sqrt2
-    result[:, 1, 5] = n0 * inv_sqrt2
-    result[:, 2, 2] = n2
-    result[:, 2, 3] = n1 * inv_sqrt2
-    result[:, 2, 4] = n0 * inv_sqrt2
     return result
 
 
@@ -349,7 +332,8 @@ def laminate_voxel_stiffness_mandel(
         normals /= normal_norm[:, None]
 
         jump = _strain_jump_map(normals)
-        traction = _traction_map(normals)
+        # Virtual work in the orthonormal Mandel basis gives traction = jump.T.
+        traction = np.swapaxes(jump, -1, -2)
         c0 = np.broadcast_to(cm, c1.shape)
         t0 = np.einsum("...ik,...kl,...lj->...ij", traction, c0, jump)
         t1 = np.einsum("...ik,...kl,...lj->...ij", traction, c1, jump)

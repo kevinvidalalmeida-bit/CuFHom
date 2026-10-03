@@ -5,7 +5,7 @@ This file does not grant additional permissions for that code. The author's
 copyright name and the project license must be specified before an open-source
 release.
 
-The incorporated and modified FFTHomPy code in src/cufhom_core retains its MIT
-license and copyright notice. See src/cufhom_core/LICENSE and
+The incorporated and modified FFTHomPy code in core retains its MIT
+license and copyright notice. See core/LICENSE and
 third_party/ffthompy/LICENSE. That notice applies to the incorporated code; it
 does not assign a license to the entire cufhom project.

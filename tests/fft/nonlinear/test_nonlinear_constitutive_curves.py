@@ -15,7 +15,7 @@ from cufhom.fft.nonlinear.solver import solve_nonlinear_homogenization
 from cufhom.fft.nonlinear.curves import (MANDEL_COMPONENTS, CONSTITUTIVE_COMPONENTS,
                                        constitutive_values)
 
-RUNNER = ROOT/'src/cufhom/cli/nonlinear.py'
+RUNNER = ROOT/'src/cli/nonlinear.py'
 
 
 def case(n=5, composite=False):

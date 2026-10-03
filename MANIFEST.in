@@ -1,9 +1,11 @@
 include README.md
 include LICENSE
 include requirements-cpu.lock
-include src/cufhom_core/LICENSE
+include core/LICENSE
 recursive-include third_party *.md LICENSE
 recursive-include examples *.py
+recursive-include src *.py
+recursive-include core *.py
 recursive-include tests *.py
 recursive-include tools *.sh
 global-exclude *.pyc *.nbc *.nbi

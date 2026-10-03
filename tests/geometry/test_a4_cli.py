@@ -12,7 +12,7 @@ from cufhom.geometry.orientation import acg_closure
 
 class A4CommandTests(unittest.TestCase):
     def invoke(self, output, *args):
-        return subprocess.run([sys.executable, str(ROOT/'src/cufhom/cli/geometry.py'),
+        return subprocess.run([sys.executable, str(ROOT/'src/cli/geometry.py'),
                                '--output', str(output), '--box', '12', '--ar', '2', '--vf', '.02',
                                '--grid', '36', '--initial-count', '12', '--candidates', '4',
                                '--threads', '1', *args], cwd=ROOT, capture_output=True,
