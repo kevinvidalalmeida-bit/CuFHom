@@ -1,0 +1,27 @@
+{
+  "model": "j2",
+  "calibrated": false,
+  "description": "Demonstration of the FANS-type small-strain J2 laws: linear plus saturating (Voce) isotropic hardening and linear Prager kinematic hardening. Add \"viscosity\" (GPa s) and pass --load-rate for Perzyna viscoplasticity; hardening 0 without saturation is perfect plasticity.",
+  "units": {
+    "stress_and_moduli": "GPa",
+    "strain": "dimensionless",
+    "saturation_exponent": "per unit equivalent plastic strain",
+    "viscosity": "GPa s, overstress q - R = 3/2 viscosity dp/dt"
+  },
+  "matrix": {
+    "E": 3.0,
+    "nu": 0.3,
+    "yield_stress": 0.02,
+    "hardening": 0.02,
+    "saturation_stress": 0.05,
+    "saturation_exponent": 150.0,
+    "kinematic_hardening": 0.4
+  },
+  "fiber": {
+    "E_L": 70.0,
+    "E_T": 8.0,
+    "nu_LT": 0.25,
+    "nu_TT": 0.3,
+    "G_LT": 5.0
+  }
+}

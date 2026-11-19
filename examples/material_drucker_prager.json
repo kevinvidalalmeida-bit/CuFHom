@@ -1,0 +1,25 @@
+{
+  "model": "drucker_prager",
+  "calibrated": false,
+  "description": "Demonstration only: uncalibrated linear Drucker-Prager cone with nonassociated flow; no cap, damage or failure calibration.",
+  "units": {
+    "stress_and_moduli": "GPa",
+    "strain": "dimensionless",
+    "friction_and_dilatancy": "dimensionless coefficients, not angles"
+  },
+  "matrix": {
+    "E": 3.0,
+    "nu": 0.3,
+    "yield_stress": 0.015,
+    "hardening": 0.03,
+    "friction": 0.3,
+    "dilatancy": 0.1
+  },
+  "fiber": {
+    "E_L": 70.0,
+    "E_T": 8.0,
+    "nu_LT": 0.25,
+    "nu_TT": 0.3,
+    "G_LT": 5.0
+  }
+}

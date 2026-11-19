@@ -1,0 +1,17 @@
+{
+  "dataset_key": "dset_1",
+  "index_in_test": 1,
+  "source_shape": [
+    192,
+    192,
+    192
+  ],
+  "source_dtype": "uint8",
+  "test_count": 400,
+  "source_attributes": {},
+  "source": "https://doi.org/10.18419/DARUS-5686",
+  "file_id": 478873,
+  "downloaded_bytes": 113246208,
+  "phase1_fraction": 0.36380894978841144,
+  "raw_phase_sha256": "7e852b07e3d36e5dc58e9cd686ae331b1e6e494f318e485dd1abdb4917c86111"
+}

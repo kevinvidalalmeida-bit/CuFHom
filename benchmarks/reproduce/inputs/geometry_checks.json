@@ -1,0 +1,130 @@
+{
+  "checks": [
+    {
+      "case": "particles",
+      "n": 21,
+      "index_sha256": "d3c2bd4470df7b3b89ddbf3b5dc78155a381fa677d063d77d23c0223a44b1964",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "polycrystal",
+      "n": 21,
+      "index_sha256": "c14904a2a3b5c365a8e5ee748dca3db2e3c28339e7d725349d7fa2dc5a0d2cc8",
+      "table_sha256": "163028d2df033f82aa775bf7cc07f0254f963b694fd0b59031abc9830b5908ac"
+    },
+    {
+      "case": "gyroid",
+      "n": 21,
+      "index_sha256": "6d545563c9da00976d311c091c2409ec12b2089a7a5f16fb7d5b08522eae70b2",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "random_short_fibres",
+      "n": 21,
+      "index_sha256": "18de212e7052cd02f3f16c6d0570b2510444850e63dd7cb4659559d14cb956ce",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "laminate",
+      "n": 21,
+      "index_sha256": "201894add0f21f01f0a0d14e1bb03a1f8892a49e7b8cdbebfa086ba1a0244184",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "hashin",
+      "n": 21,
+      "index_sha256": "49134388d9b249812859cfd0ba1c9b49199afa04f05d80bcce51c74836fd2976",
+      "table_sha256": "32533f1f3034de998ae6f553f28c13544b9d28c127fbb943d0ffe20e1df8fb95"
+    },
+    {
+      "case": "public",
+      "n": 21,
+      "index_sha256": "8b581b8497f489ce74b21967c57363fe25bf6c8ea8b5edf4e46302f5e8519be6",
+      "table_sha256": "d1df192d9671d50584a370e7fb23a994382bbad38eb6ac6b240026d4e89cf0fe"
+    },
+    {
+      "case": "particles",
+      "n": 189,
+      "index_sha256": "56c3c266d7505ef27af582b2281698840ffd531e185c0bc214572e9171c8e64b",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "polycrystal",
+      "n": 189,
+      "index_sha256": "82c0c8cfc2baea345d403e9dc0750e8fe109c37abdd8b96915ccf2e2a0bdf82a",
+      "table_sha256": "163028d2df033f82aa775bf7cc07f0254f963b694fd0b59031abc9830b5908ac"
+    },
+    {
+      "case": "gyroid",
+      "n": 189,
+      "index_sha256": "d70c28fce806be28051ba6035d8adaafa56bc5c3f1978f6d64e01ae4850d9787",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "random_short_fibres",
+      "n": 189,
+      "index_sha256": "455b495f7c3e7769ac2426d7ee5afc63cd0b49cad896a15bd4092b2a2b10937b",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "laminate",
+      "n": 189,
+      "index_sha256": "01eb128979fb0c7366c7b93e071ac0c3ec63c17d8986948de8f37e0b4a6e21f0",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "hashin",
+      "n": 189,
+      "index_sha256": "7ebc2b314a1576fdb26aa2ae56f08499fa2952b09c95f303c27cd99a89dc7655",
+      "table_sha256": "32533f1f3034de998ae6f553f28c13544b9d28c127fbb943d0ffe20e1df8fb95"
+    },
+    {
+      "case": "public",
+      "n": 189,
+      "index_sha256": "88b774b6081cf67bdd9529b875b72b964ae63c82898a97bf28c9e46cfccd31d0",
+      "table_sha256": "d1df192d9671d50584a370e7fb23a994382bbad38eb6ac6b240026d4e89cf0fe"
+    },
+    {
+      "case": "particles",
+      "n": 192,
+      "index_sha256": "5cf8e91046a4a0768257d54362e723d5c152091605e169acdb8f73bea0a9c579",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "polycrystal",
+      "n": 192,
+      "index_sha256": "f7130555787fa1d27ed564953fa6b6874483c9cdd25b8dfe0a9159f280483063",
+      "table_sha256": "163028d2df033f82aa775bf7cc07f0254f963b694fd0b59031abc9830b5908ac"
+    },
+    {
+      "case": "gyroid",
+      "n": 192,
+      "index_sha256": "0d12abdd030fb21ff327bc4812a3741d109acb84f819ab956584574d2ef288b6",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "random_short_fibres",
+      "n": 192,
+      "index_sha256": "7e47117ad13b7e74177547bb55b4948a3369bdc8045b8943199bf101444fc1e1",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "laminate",
+      "n": 192,
+      "index_sha256": "c85801a32b75fb3fa131789bc9200e9ed3e284401c2e4de5b90aa8e9ce312374",
+      "table_sha256": "d955fcdcf73f018ac118522321dc074297cae5fb997b63a3b8417393b544d04f"
+    },
+    {
+      "case": "hashin",
+      "n": 192,
+      "index_sha256": "d66c83298fdde46c1a9d484846587ad3b3189b8a7491cda3cdc3aefa678996ae",
+      "table_sha256": "32533f1f3034de998ae6f553f28c13544b9d28c127fbb943d0ffe20e1df8fb95"
+    },
+    {
+      "case": "public",
+      "n": 192,
+      "index_sha256": "8c1eee8223659dfb8d9f0eeddddb285ada377a4f02be731977fca8a3a21b62ab",
+      "table_sha256": "d1df192d9671d50584a370e7fb23a994382bbad38eb6ac6b240026d4e89cf0fe"
+    }
+  ]
+}

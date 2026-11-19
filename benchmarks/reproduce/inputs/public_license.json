@@ -1,0 +1,12 @@
+{
+  "source": "https://darus.uni-stuttgart.de/api/datasets/:persistentId/?persistentId=doi:10.18419/DARUS-5686",
+  "license": {
+    "name": "CC BY 4.0",
+    "uri": "http://creativecommons.org/licenses/by/4.0",
+    "iconUri": "https://licensebuttons.net/l/by/4.0/88x31.png"
+  },
+  "termsOfUse": null,
+  "version": 1,
+  "minorVersion": 0,
+  "datasetVersionId": 7764
+}

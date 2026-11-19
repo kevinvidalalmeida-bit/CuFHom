@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="330" viewBox="0 0 330 330" role="img" aria-labelledby="title-dark desc-dark">
+<title id="title-dark">CuFHom</title>
+<desc id="desc-dark">CuFHom: periodic cell, HEX8 lattice and spectral wave. Transparent vector artwork; wordmark outlined from Liberation Sans Bold.</desc>
+<g transform="translate(10 0)"><defs>
+<clipPath id="cell-left-dark"><path d="M25 90 155 165 155 315 25 240Z"/></clipPath>
+<clipPath id="cell-right-dark"><path d="M155 165 285 90 285 240 155 315Z"/></clipPath>
+</defs>
+<g aria-label="Periodic cubic cell with nodal lattice and spectral wave">
+<path fill="#626262" d="M155 15 285 90 155 165 25 90Z"/>
+<path fill="#555555" d="M25 90 155 165 155 315 25 240Z"/>
+<path fill="#7b7b7b" d="M155 165 285 90 285 240 155 315Z"/>
+<path d="M68.333 115v150 M25 140l130 75 M111.667 140v150 M25 190l130 75" clip-path="url(#cell-left-dark)" fill="none" stroke="#fff" stroke-width="5.5"/>
+<path d="M153 220C172 203 183 213 200 237C217 261 229 239 246 206C263 172 274 164 289 177" clip-path="url(#cell-right-dark)" fill="none" stroke="#fff" stroke-width="16"/>
+<path d="M25 90 155 165 285 90M155 165V315" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="miter"/>
+</g></g>
+</svg>

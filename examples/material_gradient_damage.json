@@ -1,0 +1,86 @@
+{
+  "model": "drucker_prager",
+  "calibrated": false,
+  "description": "Uncalibrated effective-stress Drucker-Prager plus irreversible implicit-gradient matrix damage. Project demonstration, not a reproduction or calibration of a named epoxy. Literature values below are references, not the active material parameters.",
+  "units": {
+    "stress_and_moduli": "GPa",
+    "strain": "dimensionless",
+    "friction_and_dilatancy": "dimensionless coefficients, not angles",
+    "length_scale": "same reference length unit as solver domain lengths; no implicit mm or micrometres"
+  },
+  "reference_domain_lengths": [1.0, 1.0, 1.0],
+  "matrix": {
+    "E": 3.0,
+    "nu": 0.3,
+    "yield_stress": 0.015,
+    "hardening": 0.03,
+    "friction": 0.3,
+    "dilatancy": 0.1
+  },
+  "fiber": {
+    "E_L": 70.0,
+    "E_T": 8.0,
+    "nu_LT": 0.25,
+    "nu_TT": 0.3,
+    "G_LT": 5.0
+  },
+  "damage": {
+    "model": "implicit_gradient",
+    "strain_threshold": 0.01,
+    "softening_strain": 0.015,
+    "length_scale": 0.03,
+    "strength_ratio": 2.0,
+    "residual_stiffness": 0.001
+  },
+  "constitutive_hypotheses": {
+    "stress": "sigma = degradation(d) * sigma_effective in the matrix; fibers remain elastic",
+    "degradation": "residual_stiffness + (1 - residual_stiffness) * (1 - d)",
+    "stored_energy": "degradation(d) * (elastic_energy_effective + 0.5 * hardening * plastic_multiplier_accumulated**2)",
+    "damage_source": "de Vree modified-von-Mises norm of total strain, with positive J2 = 0.5 * dev(strain):dev(strain)",
+    "damage_evolution": "zero below strain_threshold; otherwise 1 - strain_threshold/history * exp(-(history - strain_threshold)/softening_strain)",
+    "history": "max of confirmed history and current nonlocal field; no commit during a rejected or unconverged attempt",
+    "damage_increment_diagnostic": "(degradation(confirmed_damage) - degradation(trial_damage)) * effective_stored_energy_end",
+    "fracture_energy_input": false
+  },
+  "parameter_provenance": {
+    "matrix": "Existing project demonstration; no experimental epoxy fit",
+    "fiber": "Existing project demonstration; no identified fiber grade",
+    "damage": "Project demonstration; thresholds, ratio, length and residual stiffness are not literature-calibrated values",
+    "reference_domain_lengths": "Reference domain used to interpret length_scale; pass consistent domain lengths to the solver"
+  },
+  "literature_reference_not_active_parameters": {
+    "material": "Resin L / GL 1, Roetsch, Stommel and Horst (2025)",
+    "doi": "10.1061/JENMDT.EMENG-7905",
+    "full_text": "https://libdoc.whz.de/opus4/files/17883/Roetsch_2025_Investigation_of_Epoxy_Resin.pdf",
+    "locations": "Tables 1 and 2, p. 5; Table 6, p. 11",
+    "tensile_E_GPa": 3.1,
+    "elastic_nu": 0.41,
+    "tensile_reported_proof_yield_GPa": 0.039,
+    "compressive_reported_yield_GPa": 0.081,
+    "converted_linear_DP_friction": 1.05,
+    "converted_linear_DP_yield_stress_GPa": 0.05265,
+    "plastic_nu": 0.5,
+    "volume_preserving_DP_dilatancy_inference": 0.0,
+    "limits": "Two reported yield points do not reproduce the source paraboloidal surface or tabulated hardening. No damage-law calibration or adopted fracture energy. The unchanged 0.01 damage threshold would precede tensile yield if these reference parameters replaced the active demonstration."
+  },
+  "model_sources": [
+    {
+      "purpose": "Equivalent strain definition",
+      "doi": "10.1016/0045-7949(94)00501-S",
+      "full_text": "https://pure.tue.nl/ws/files/1535362/605300.pdf",
+      "location": "p. 582, equations (2)-(3)"
+    },
+    {
+      "purpose": "Exponential law, modified-von-Mises invariant convention and implicit-gradient Helmholtz",
+      "doi": "10.6100/IR520108",
+      "full_text": "https://pure.tue.nl/ws/files/24856047/520108.pdf",
+      "location": "Peerlings thesis (1999), pp. 10, 14, 35; equations (2.12), (2.17)-(2.18), (4.13)"
+    },
+    {
+      "purpose": "Heterogeneous FFT Helmholtz and staggered mechanical/nonlocal solution; different failure laws",
+      "doi": "10.1016/j.cma.2021.113759",
+      "full_text": "https://arxiv.org/html/2103.04770v1",
+      "location": "Section 3.2.3"
+    }
+  ]
+}

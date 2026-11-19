@@ -1,0 +1,89 @@
+name: Python package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    name: CPU / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install library and development tools
+        run: python -m pip install -e '.[dev]'
+      - name: Check code style and public docstrings
+        run: |
+          python -m ruff check src core tests examples benchmarks
+          python -m ruff format --check src tests examples benchmarks
+      - name: Run CPU tests
+        run: python -m pytest -m 'not gpu and not slow'
+      - name: Check reproducible benchmark protocols
+        run: python benchmarks/reproduce/run.py --dry-run --small
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Verify distribution contents
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tarfile
+          import zipfile
+          forbidden = {'research', 'paper', 'external', 'entregables', 'CuFHom_PRISM', 'PAPER_CUFHOM', 'CuFHom-NOLINEAL'}
+          for artifact in Path('dist').iterdir():
+              if artifact.suffix == '.whl':
+                  with zipfile.ZipFile(artifact) as archive:
+                      names = archive.namelist()
+              else:
+                  with tarfile.open(artifact) as archive:
+                      names = archive.getnames()
+              for name in names:
+                  parts = Path(name).parts
+                  if artifact.suffix != '.whl':
+                      parts = parts[1:]
+                  assert not parts or parts[0] not in forbidden, (artifact, name)
+                  assert parts[:3] != ('benchmarks', 'paper', 'data'), (artifact, name)
+                  if artifact.suffix == '.whl':
+                      assert not parts or parts[0] != 'benchmarks', name
+          PY
+      - name: Install wheel outside the checkout
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/cufhom-wheel"
+          "$RUNNER_TEMP/cufhom-wheel/bin/python" -m pip install dist/*.whl pytest matplotlib
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/cufhom-wheel/bin/python" -I -c 'import cufhom, cufhom_core; from cufhom.fft import solve_homogenization; print(cufhom.__version__)'
+          "$RUNNER_TEMP/cufhom-wheel/bin/cufhom-generate" --help
+          "$RUNNER_TEMP/cufhom-wheel/bin/cufhom-nonlinear" --help
+          "$RUNNER_TEMP/cufhom-wheel/bin/python" "$GITHUB_WORKSPACE/examples/smoke_cpu.py"
+          "$RUNNER_TEMP/cufhom-wheel/bin/python" "$GITHUB_WORKSPACE/examples/linear_elasticity.py"
+      - name: Test installed wheel using extracted source distribution
+        shell: bash
+        run: |
+          python - <<'PYCODE'
+          from pathlib import Path
+          import os
+          import tarfile
+          artifact = next(Path('dist').glob('*.tar.gz'))
+          with tarfile.open(artifact) as archive:
+              archive.extractall(Path(os.environ['RUNNER_TEMP']) / 'cufhom-sdist', filter='data')
+          PYCODE
+          cd "$RUNNER_TEMP"/cufhom-sdist/cufhom-*
+          "$RUNNER_TEMP/cufhom-wheel/bin/python" -m pytest -m 'not gpu and not slow'

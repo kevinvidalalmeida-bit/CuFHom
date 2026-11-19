@@ -1,0 +1,70 @@
+{
+  "model": "drucker_prager",
+  "calibrated": false,
+  "description": "Literature-informed local linear DP approximation to Resin L / GL1. Reported proof-yield points and initial tensile hardening only; damage and fibers are project demonstrations. Not a reproduction of the published paraboloid model or full experimental curve.",
+  "units": {
+    "stress_and_moduli": "GPa",
+    "strain": "dimensionless",
+    "friction_and_dilatancy": "dimensionless coefficients, not angles",
+    "length_scale": "same reference length unit as solver domain lengths; no implicit mm or micrometres"
+  },
+  "reference_domain_lengths": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "matrix": {
+    "E": 3.1,
+    "nu": 0.41,
+    "yield_stress": 0.05265,
+    "hardening": 17.591710995687983,
+    "friction": 1.05,
+    "dilatancy": 0.0
+  },
+  "fiber": {
+    "E_L": 70.0,
+    "E_T": 8.0,
+    "nu_LT": 0.25,
+    "nu_TT": 0.3,
+    "G_LT": 5.0
+  },
+  "damage": {
+    "model": "implicit_gradient",
+    "strain_threshold": 0.02,
+    "softening_strain": 0.015,
+    "length_scale": 0.03,
+    "strength_ratio": 2.0,
+    "residual_stiffness": 0.001
+  },
+  "parameter_provenance": {
+    "E_nu": "Roetsch et al. 2025, tables 1/5; tensile modulus, common isotropic elasticity approximation",
+    "friction_yield_stress": "Own linear-cone conversion of reported tensile/compressive yield 39/81 MPa. Tensile reported yield is a 0.1% permanent-strain proof point, not infinitesimal first plasticity.",
+    "dilatancy": "Volume-preserving flow inference from published plastic Poisson ratio 0.5; not independently fitted in this DP model",
+    "hardening": "Own local slope conversion H=(1+alpha/3)*delta_sigma/delta_plastic_strain from first two tensile table-6 points; assumes equivalent plastic strain equals axial plastic strain for uniaxial beta=0 DP. Source law and later hardening differ.",
+    "damage": "Project demonstration, not fitted to this resin: threshold 0.02, softening 0.015, length 0.03 in reference domain units; no adopted fracture energy",
+    "fiber": "Existing project demonstration, not a measured composite constituent"
+  },
+  "source": {
+    "title": "Investigation of Epoxy Resin under Uniaxial, Biaxial, and Triaxial Quasi-Static Loads",
+    "doi": "10.1061/JENMDT.EMENG-7905",
+    "url": "https://libdoc.whz.de/opus4/files/17883/Roetsch_2025_Investigation_of_Epoxy_Resin.pdf",
+    "locations": "Tables 1,2,5,6; pages 5 and 11",
+    "hardening_first_points": {
+      "plastic_strain": [
+        0.0,
+        0.00030612
+      ],
+      "tensile_stress_MPa": [
+        38.0070437,
+        41.9960619
+      ]
+    }
+  },
+  "limits": [
+    "Small-strain, rate-independent idealization of specific published tests",
+    "Two yield points do not reproduce the paraboloid surface or observed torsion yield",
+    "A constant H fits only the initial tabulated segment; source tension and shear evolve differently",
+    "Damage length and law remain uncalibrated; source length statements disagree",
+    "Perfectly bonded elastic fibers; no interface fracture"
+  ]
+}

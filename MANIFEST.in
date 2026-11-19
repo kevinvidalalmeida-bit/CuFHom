@@ -1,0 +1,14 @@
+include README.md CONTRIBUTING.md CHANGELOG.md CITATION.cff LICENSE
+include pyproject.toml
+include core/LICENSE
+recursive-include third_party *.md LICENSE
+recursive-include examples *.py *.json
+recursive-include src *.py
+recursive-include core *.py
+recursive-include tests *.py
+include tools/env_gpu.sh
+recursive-include docs *.md *.png *.svg
+prune external
+global-exclude *.pyc *.nbc *.nbi
+
+recursive-include benchmarks/reproduce *.py *.json *.npz *.md

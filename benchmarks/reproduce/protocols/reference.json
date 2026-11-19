@@ -1,0 +1,51 @@
+{
+  "cases": [
+    "public"
+  ],
+  "discretizations": [
+    "hex8",
+    "gani"
+  ],
+  "precisions": [
+    "fp64",
+    "mixed"
+  ],
+  "etas": [
+    1e-06
+  ],
+  "contrasts": [
+    0.001,
+    0.01,
+    0.1,
+    1,
+    2,
+    null,
+    20,
+    10,
+    100,
+    1000
+  ],
+  "nu0": [
+    -0.2,
+    0,
+    0.1,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.48
+  ],
+  "grids": {
+    "hex8": [
+      192
+    ],
+    "gani": [
+      189
+    ]
+  },
+  "sessions": 1,
+  "warm_calls": 0,
+  "reference_eta": null
+}
