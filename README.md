@@ -56,7 +56,7 @@ example. Python 3.11 or later is required.
 ```bash
 git clone https://github.com/kevinvidalalmeida-bit/CuFHom.git
 cd CuFHom
-git checkout v0.1.0
+git checkout v0.1.1
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
@@ -114,6 +114,8 @@ libraries installed as Python wheels.
 six synthetic microstructures and a separately licensed public image: discrete
 reference comparisons, tolerance sweeps, direct/corrected assembly, contrast,
 reference-operator sensitivity, grid scaling and component ablations.
+[`section41.py`](benchmarks/reproduce/README.md#six-cell-comparison-section-41)
+runs the complete six-cell comparison against FANS and FFTHomPy, resumably.
 
 Start with a small CPU run, then use the documented GPU protocols. Optional
 external adapters pin **FANS from UNO-CG (PyTorch/GPU)** and **FFTHomPy (CPU)**
@@ -123,7 +125,7 @@ inclusions, native norms, material rounding and output definitions.
 
 These protocols generate new measurements. They do not distribute the manuscript
 or archived performance results, and cannot guarantee historical wall times.
-The quick start pins [version 0.1.0](CHANGELOG.md). For a reproducible study,
+The quick start pins [version 0.1.1](CHANGELOG.md). For a reproducible study,
 record `git rev-parse HEAD` and retain the generated
 protocol, environment records and all accepted and failed points.
 

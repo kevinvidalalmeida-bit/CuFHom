@@ -7,8 +7,8 @@ fields, model weights or previous campaign is required.
 
 ## Start with a CPU check
 
-From the repository root at the chosen revision (the initial public version is
-`v0.1.0`), install the library and run:
+From the repository root at the chosen revision (the public release is
+`v0.1.1`), install the library and run:
 
 ```bash
 python -m pip install -e '.[test]'
@@ -158,3 +158,96 @@ processes with new output names to measure independent sessions.
 Read [numerical conventions](../../docs/NUMERICS.md) before interpreting tensor
 errors, precision changes or accepted tolerances. Regenerating a benchmark is a new
 measurement; the original wall times cannot be guaranteed on another system.
+
+## Six-cell comparison (Section 4.1)
+
+[`section41.py`](section41.py) runs the complete six-cell comparison: CuFHom HEX8
+and GaNi in FP64/mixed (η=10⁻⁶) and FP32 (η=10⁻⁵) with their tight FP64 tensor
+references (10⁻¹⁰), FANS (UNOCG, GPU, FP64) and FFTHomPy (CPU, FP64/FP32). Every
+condition and session is a separate process; an interrupted run continues with
+the same command and keeps what has finished.
+
+| Mode | Grids | Sessions | Use |
+| --- | --- | --- | --- |
+| `quick` | HEX8/FANS 192³, GaNi/FFTHomPy 189³ | 1 (+1 warm call) | First look on new hardware |
+| `table1` | Same grids | 3 | Same layout as Table 1 |
+| `full` | 64³/128³/192³ and 63³/125³/189³ | 3 | Six-cell protocols and speed-up versus grid |
+
+`--grids 128 192` replaces the grids of a mode (HEX8/FANS size; GaNi/FFTHomPy use
+125³/189³), `--cells` and `--solvers cufhom fans ffthompy` select subsets and
+`--sessions` overrides the session count.
+
+### Installation
+
+Linux, Python ≥ 3.11, git and a recent NVIDIA driver are assumed. The pins are
+the paper's CuPy and PyTorch releases; choose the CUDA wheel set for your GPU.
+
+```bash
+git clone https://github.com/kevinvidalalmeida-bit/CuFHom.git
+cd CuFHom
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[test]' 'cupy-cuda12x==13.6.0' h5py einops tqdm
+```
+
+Maxwell to Hopper GPUs (compute capability 5.0–9.0, e.g. GTX 10xx, RTX 20xx–40xx):
+
+```bash
+python -m pip install nvidia-cuda-nvrtc-cu12==12.6.77 nvidia-cuda-runtime-cu12==12.6.77 \
+  nvidia-cufft-cu12==11.3.0.4 nvidia-curand-cu12==10.3.7.77 nvidia-cublas-cu12==12.6.4.1
+python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cu126
+```
+
+Blackwell GPUs (RTX 50xx, compute capability ≥ 10):
+
+```bash
+python -m pip install nvidia-cuda-nvrtc-cu12==12.8.93 nvidia-cuda-runtime-cu12==12.8.90 \
+  nvidia-cufft-cu12==11.3.3.83 nvidia-curand-cu12==10.3.9.90 nvidia-cublas-cu12==12.8.4.1
+python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+```
+
+The CUDA 12.8 PyTorch build has no Pascal or Maxwell kernels, and NVRTC 12.6
+cannot compile for Blackwell. NVRTC and the CUDA runtime wheel must share the
+same 12.x release, or CuPy 13 cannot find the CUDA headers. CuPy 14 is not
+supported: its NumPy-2 type promotion fails part of the GPU suite.
+
+### Running
+
+```bash
+python benchmarks/reproduce/section41.py fetch    # pinned UNOCG and FFTHomPy
+python benchmarks/reproduce/section41.py check    # GPU, CUDA wheels, PyTorch, RAM
+python benchmarks/reproduce/section41.py run --mode quick
+python benchmarks/reproduce/section41.py table --output results/section41_quick
+```
+
+`check` compiles and runs a kernel, solves small HEX8 and GaNi cells in all three
+precisions, checks that PyTorch has kernels for the GPU and reports every
+problem. The runner sets `CUFHOM_FUSED_COMPILE=sync` and the library path of
+the CUDA wheels for its child processes. Results go to `results/section41_<mode>/`.
+
+Before each measured CuFHom condition, an untabulated priming run (one call, no
+reference, saved under `prime/`) fills the CuPy and CuFHom kernel caches. First
+calls are then timed as in repeated sessions on a prepared machine; on a fresh
+machine they would otherwise include NVRTC compilation. `--no-prime` measures
+cold first calls. `table` writes `section41_table.csv` and `.md`: median first-call
+and warm times, corrected and direct tensor errors, comparator time and speed-up
+(mixed rows use the FP64 comparator; FANS FP32 is excluded). Failed and rejected
+records are listed, not dropped. The FFTHomPy clock of this adapter includes its
+fresh audit, which the published timings excluded.
+
+### Small GPUs
+
+Kernels size their shared-memory tiles from the device limits, and CuFHom moves
+solution storage to the host when the fields do not fit (the residency is
+recorded). In an emulation of a 4 GiB Pascal card on a larger GPU (48 KiB
+shared memory per block, 3.8 GiB free, every generated kernel also compiled for
+sm_61), all 36 CuFHom conditions at 192³/189³ were accepted; the largest sampled
+device increment was 2.0 GiB (GaNi FP64, 189³). Under the same memory limit FANS,
+which keeps all fields on the GPU, failed at 192³, and at 128³ only the
+polycrystal (36 coefficient fields) did not fit. On such a card, use
+`--grids 128 192`; FANS failures are recorded and the campaign continues.
+FFTHomPy needs about 18 GiB of host RAM at 189³ in FP64 (5 GiB at 125³). Consumer
+GPUs have low FP64 throughput, so FP64 runs and reference solves take much longer
+than mixed and FP32 runs. Times measured on other hardware are new measurements,
+not a check of the published wall times.

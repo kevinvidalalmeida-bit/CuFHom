@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- `benchmarks/reproduce/section41.py`: resumable driver for the six-cell comparison
+  of Section 4.1 (CuFHom, FANS, FFTHomPy) with environment check, pinned source
+  fetch, kernel-cache priming and a Table 1-style summary.
+- Installation notes for the paper's CuPy/PyTorch pins on Pascal-to-Blackwell
+  GPUs and for small-memory cards; quick start now points to the `v0.1.1` tag.
+
 ## 0.1.0 — 2026-11-17
 
 Initial public research-software release.
