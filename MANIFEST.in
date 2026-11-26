@@ -1,0 +1,19 @@
+include README.md CONTRIBUTING.md CITATION.cff LICENSE
+include pyproject.toml
+include .gitattributes .gitignore
+include core/LICENSE
+recursive-include third_party *.md LICENSE
+recursive-include examples *.py *.json
+recursive-include src *.py
+recursive-include core *.py
+recursive-include tests *.py
+recursive-include tools *.py *.sh
+recursive-include docs *.md *.bib
+recursive-include docs/assets *.svg
+recursive-include benchmarks *.py
+recursive-include benchmarks/paper/inputs *.json *.npz *.md
+recursive-include benchmarks/paper/protocols *.json
+include benchmarks/paper/README.md
+prune paper
+prune external
+global-exclude *.pyc *.nbc *.nbi

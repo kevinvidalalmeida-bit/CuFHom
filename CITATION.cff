@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Si utilizas CuFHom, cita este software y los artículos correspondientes."
+type: software
+title: CuFHom
+version: 0.1.2
+authors:
+  - family-names: Vidal
+    given-names: Kevin
+repository-code: https://github.com/kevinvidalalmeida-bit/CuFHom
+license: MIT

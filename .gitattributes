@@ -1,0 +1,22 @@
+* text=auto
+*.py text eol=lf
+*.sh text eol=lf
+*.pdf binary
+*.png binary
+*.npz binary
+# Scientific checksums and manuscript assets retain their original bytes.
+# Retain checksummed records including their original CRLF/trailing spaces.
+benchmarks/paper/inputs/** -text -whitespace
+paper/data/** -text -whitespace
+paper/** -text
+# Private editorial workspace is retained locally, excluded from public snapshots.
+/paper export-ignore
+/src/fft/nonlinear export-ignore
+/src/cli/nonlinear.py export-ignore
+/src/materials/double_float.py export-ignore
+/src/materials/drucker_prager.py export-ignore
+/src/materials/gradient_damage.py export-ignore
+/src/materials/paraboloidal.py export-ignore
+/src/materials/plasticity.py export-ignore
+/tests/fft/nonlinear export-ignore
+/tests/cli/test_nonlinear_models.py export-ignore

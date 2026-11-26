@@ -1,0 +1,17 @@
+{
+  "FANS_GPU": {
+    "repository": "https://github.com/DataAnalyticsEngineering/UNOCG.git",
+    "commit": "461f74f7a40f1c6c6d8ac053f6130428650a0133",
+    "implementation": "unocg.preconditioners.torch.FansPreconditioner; no UNO weights",
+    "license": "MIT",
+    "requirements": ["CUDA-enabled PyTorch", "NumPy", "SciPy", "h5py", "einops"],
+    "scope": "Independent FP64 HEX8 reference; isotropic phases or general linear grain-material hook"
+  },
+  "FFTHomPy_CPU": {
+    "repository": "https://github.com/vondrejc/FFTHomPy.git",
+    "commit": "2c23c80dd2cab46f1090103e613b4f886b3daac7",
+    "license": "MIT",
+    "requirements": ["NumPy", "SciPy"],
+    "scope": "Independent odd-grid GaNi reference; removed NumPy/SciPy/time aliases restored in-process without editing upstream"
+  }
+}

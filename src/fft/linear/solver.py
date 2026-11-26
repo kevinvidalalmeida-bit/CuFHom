@@ -1,0 +1,1951 @@
+"""Linear FFT homogenization of periodic fiber RVEs with SciPy or CuPy."""
+
+import json
+import os
+import time
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+from cufhom.materials.elasticity import (
+    SYM21_PAIRS,
+    Enu_to_KG,
+    TI_stiffness_voigt,
+    rotate_C_mandel,
+    rotation_matrix_from_vector,
+    voigt_to_mandel,
+)
+from cufhom_core.mechanics.matcoef import ElasticTensor
+from cufhom_core.problem import Problem
+from cufhom_core.tensors.fft import (
+    get_fft_backend_status,
+    set_cupy_plan_mode,
+    set_fft_backend,
+)
+
+try:
+    import cupy as cp
+
+    _CUPY_AVAILABLE = True
+except ImportError:
+    cp = None  # type: ignore
+    _CUPY_AVAILABLE = False
+
+
+TOL = 1e-5
+
+# Solver variants were retired after the matched timing campaign. Numerical
+# tolerances, precision and physical inputs remain explicit simulation inputs.
+_RETIRED_SOLVER_OPTIONS = frozenset(
+    {
+        "solver_profile",
+        "linear_formulation",
+        "linear_preconditioning",
+        "linear_kernel_fusion",
+        "linear_residual_smoothing",
+        "linear_fft_autotune",
+        "linear_energy_update",
+        "linear_final_audit_reuse",
+        "linear_final_spectrum_reuse",
+        "cupy_matrix_reference",
+        "cupy_reference_eta",
+    }
+)
+
+
+def _default_fft_backend():
+    if _CUPY_AVAILABLE:
+        try:
+            if cp.cuda.runtime.getDeviceCount():
+                return "cupy"
+        except cp.cuda.runtime.CUDARuntimeError:
+            pass
+    return "scipy"
+
+
+AFFINE_ORIENTATION_QUANTIZATION = 1.0e4
+
+
+_CFIELD_ASSIGN_CHUNK_VOXELS = 2_000_000
+AFFINE_SENSITIVITY_NAMES = (
+    "matrix_lambda",
+    "matrix_mu",
+    "fiber_C_TT",
+    "fiber_C_TT_cross",
+    "fiber_C_LT",
+    "fiber_C_LL",
+    "fiber_G_LT",
+)
+
+
+def _pack_cfield_sym21(Cfield: Any) -> Any:
+    if Cfield.shape[0] == 21:
+        return Cfield
+    if Cfield.shape[0] != 6 or Cfield.shape[1] != 6:
+        raise ValueError(f"Cfield no tiene forma compatible para sym21: {Cfield.shape}")
+    if _CUPY_AVAILABLE and hasattr(Cfield, "get"):
+        return cp.stack([Cfield[ii, jj] for ii, jj in SYM21_PAIRS], axis=0)
+    return np.stack([Cfield[ii, jj] for ii, jj in SYM21_PAIRS], axis=0)
+
+
+def _to_numpy_array(value: Any) -> np.ndarray:
+    if cp is not None and hasattr(value, "get"):
+        return cp.asnumpy(value)
+    return np.asarray(value)
+
+
+def _save_stress_slices_if_requested(
+    *,
+    prob: Any,
+    material_conf: dict[str, Any],
+    Ngrid: np.ndarray,
+    solver_fft_form: Any,
+    p: dict[str, Any],
+) -> dict[str, Any]:
+    out_path_raw = p.get("stress_slice_out_path")
+    if not out_path_raw:
+        return {}
+
+    from cufhom_core.materials import Material
+
+    out_path = Path(str(out_path_raw))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    load_ids = [int(value) for value in p.get("stress_slice_load_ids", [0])]
+    component_ids = [int(value) for value in p.get("stress_slice_components", [0])]
+    axis = int(p.get("stress_slice_axis", 2))
+    if axis not in {0, 1, 2}:
+        raise ValueError("stress_slice_axis debe ser 0, 1 o 2.")
+    slice_index = int(p.get("stress_slice_index", int(Ngrid[axis]) // 2))
+    slice_index = max(0, min(slice_index, int(Ngrid[axis]) - 1))
+
+    solutions = prob.output.get("sol_primal")
+    if solutions is None:
+        raise RuntimeError(
+            "No hay sol_primal; activa store_solution_fields para guardar cortes de esfuerzo."
+        )
+
+    mat = Material(material_conf)
+    A = mat.get_A_GaNi(Ngrid, fft_form=solver_fft_form)
+    component_names = [
+        "sigma11",
+        "sigma22",
+        "sigma33",
+        "sigma23_mandel",
+        "sigma13_mandel",
+        "sigma12_mandel",
+    ]
+
+    save_projection = bool(p.get("stress_slice_save_projection", False))
+
+    arrays: dict[str, np.ndarray] = {}
+    for load_id in load_ids:
+        solution = solutions[load_id]
+        if not hasattr(solution, "val"):
+            raise RuntimeError(
+                f"La solucion para load_id={load_id} no esta disponible."
+            )
+        stress = A(solution)
+        stress_val = stress.val
+        for component_id in component_ids:
+            if component_id < 0 or component_id >= 6:
+                raise ValueError(
+                    "stress_slice_components debe contener indices entre 0 y 5."
+                )
+            component = stress_val[component_id]
+            if axis == 0:
+                field_slice = component[slice_index, :, :]
+            elif axis == 1:
+                field_slice = component[:, slice_index, :]
+            else:
+                field_slice = component[:, :, slice_index]
+            key = f"{component_names[component_id]}_load{load_id}"
+            arrays[key] = _to_numpy_array(field_slice).astype(np.float32)
+            if save_projection:
+                component_np = _to_numpy_array(component)
+                proj = np.nanmax(component_np, axis=axis)
+                arrays[f"{key}_proj"] = proj.astype(np.float32)
+        del stress
+
+    metadata = {
+        "load_ids": load_ids,
+        "component_ids": component_ids,
+        "axis": axis,
+        "slice_index": slice_index,
+        "grid_shape": [int(v) for v in Ngrid],
+        "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+        "units": "GPa para deformacion macroscopica unitaria",
+        "has_projection": save_projection,
+    }
+    arrays["metadata_json"] = np.array(json.dumps(metadata, ensure_ascii=False))
+    np.savez_compressed(out_path, **arrays)
+    return {"stress_slice_path": str(out_path), **metadata}
+
+
+def _load_macro(p: dict[str, Any], load_id: int, dtype: np.dtype) -> np.ndarray:
+    """Macroscopic strain of a load: unit Mandel load or a prescribed direction."""
+    directions = p.get("macro_strains")
+    if directions is None:
+        macro = np.zeros(6, dtype=dtype)
+        macro[int(load_id)] = 1
+        return macro
+    return np.asarray(directions[int(load_id)], dtype=dtype)
+
+
+def _save_solution_fields_if_requested(
+    *,
+    prob: Any,
+    Ngrid: np.ndarray,
+    p: dict[str, Any],
+) -> dict[str, Any]:
+    out_path_raw = p.get("solution_field_out_path")
+    return_in_memory = bool(p.get("solution_field_return_in_memory", False))
+    field_consumer = p.get("solution_field_consumer")
+    consume_in_memory = callable(field_consumer)
+    if not out_path_raw and not return_in_memory and not consume_in_memory:
+        return {}
+
+    out_path = Path(str(out_path_raw)) if out_path_raw else None
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    load_ids = [
+        int(value)
+        for value in p.get(
+            "solution_field_load_ids", p.get("active_load_ids") or list(range(6))
+        )
+    ]
+    solutions = prob.output.get("sol_primal")
+    streamed_payload = prob.output.get("solution_fields_primal")
+    if (
+        consume_in_memory
+        and isinstance(streamed_payload, dict)
+        and bool(streamed_payload.get("streamed", False))
+    ):
+        saved_load_ids = [int(value) for value in streamed_payload.get("load_ids", [])]
+        requested_field_dtype = p.get(
+            "solution_field_dtype", p.get("solver_real_dtype", "float32")
+        )
+        field_dtype = np.dtype(requested_field_dtype)
+        metadata = {
+            "load_ids": saved_load_ids,
+            "grid_shape": [int(v) for v in Ngrid],
+            "field_shape": list(
+                streamed_payload.get("field_shape", [6, *[int(v) for v in Ngrid]])
+            ),
+            "field": "zero-mean compatible fluctuation strain in Mandel/Kelvin order used by CuFHom",
+            "macro_subtracted": True,
+            "saved_total_fields": False,
+            "dtype": str(field_dtype),
+            "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+            "streamed": True,
+        }
+        p["_solution_fields_consumed"] = tuple(saved_load_ids)
+        return {
+            "solution_field_path": "",
+            "solution_field_format": "memory_consumer",
+            **metadata,
+        }
+
+    if solutions is None:
+        raise RuntimeError(
+            "No hay sol_primal; activa store_solution_fields para guardar campos tangenciales."
+        )
+
+    arrays: dict[str, np.ndarray] = {}
+    save_total = bool(p.get("solution_field_save_total", False))
+    requested_field_dtype = p.get("solution_field_dtype", p.get("solver_real_dtype"))
+    if requested_field_dtype is None and load_ids:
+        requested_field_dtype = _to_numpy_array(solutions[load_ids[0]].val).dtype
+    field_dtype = np.dtype(requested_field_dtype or "float32")
+    if field_dtype not in {np.dtype(np.float32), np.dtype(np.float64)}:
+        raise ValueError("solution_field_dtype debe ser float32 o float64.")
+    saved_load_ids = []
+    field_shape: list[int] = []
+    # A device consumer receives CuPy fluctuations and never forces a host copy.
+    device_fields = (
+        consume_in_memory
+        and cp is not None
+        and bool(p.get("solution_field_device", False))
+    )
+    for load_id in load_ids:
+        if load_id < 0 or load_id >= len(solutions):
+            raise ValueError("solution_field_load_ids debe contener indices validos.")
+        solution = solutions[load_id]
+        if not hasattr(solution, "val"):
+            raise RuntimeError(
+                f"La solucion para load_id={load_id} no esta disponible."
+            )
+        macro = _load_macro(p, load_id, field_dtype)
+        if device_fields:
+            fluctuation = cp.array(solution.val, dtype=field_dtype)
+            fluctuation -= cp.asarray(macro).reshape(
+                (-1,) + (1,) * (fluctuation.ndim - 1)
+            )
+            field_shape = list(fluctuation.shape)
+            field_consumer(load_id, fluctuation)
+            saved_load_ids.append(int(load_id))
+            continue
+        total = _to_numpy_array(solution.val).astype(field_dtype, copy=False)
+        # A GPU-to-host transfer already owns an independent NumPy buffer.
+        # Reuse it when no separate total field has to be retained.
+        owns_host_transfer = cp is not None and isinstance(solution.val, cp.ndarray)
+        fluctuation = (
+            total
+            if owns_host_transfer and (consume_in_memory or not save_total)
+            else total.copy()
+        )
+        fluctuation -= macro.reshape((-1,) + (1,) * (fluctuation.ndim - 1))
+        field_shape = list(fluctuation.shape)
+        if consume_in_memory:
+            field_consumer(load_id, fluctuation)
+        else:
+            arrays[f"fluctuation_load{load_id}"] = fluctuation
+        if save_total and not consume_in_memory:
+            arrays[f"total_load{load_id}"] = total
+        saved_load_ids.append(int(load_id))
+
+    metadata = {
+        "load_ids": saved_load_ids,
+        "grid_shape": [int(v) for v in Ngrid],
+        "field_shape": field_shape,
+        "field": "zero-mean compatible fluctuation strain in Mandel/Kelvin order used by CuFHom",
+        "macro_subtracted": True,
+        "saved_total_fields": bool(save_total and not consume_in_memory),
+        "dtype": str(field_dtype),
+        "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+    }
+    if consume_in_memory:
+        p["_solution_fields_consumed"] = tuple(saved_load_ids)
+        return {
+            "solution_field_path": "",
+            "solution_field_format": "memory_consumer",
+            **metadata,
+        }
+    if return_in_memory:
+        p["_solution_fields_result"] = tuple(
+            arrays[f"fluctuation_load{load_id}"] for load_id in saved_load_ids
+        )
+        return {
+            "solution_field_path": "",
+            "solution_field_format": "memory",
+            **metadata,
+        }
+
+    if out_path is None:
+        raise RuntimeError("Falta solution_field_out_path para guardar los campos.")
+    field_format = str(p.get("solution_field_format", "npy_dir")).strip().lower()
+    if field_format == "npz_compressed":
+        arrays["metadata_json"] = np.array(json.dumps(metadata, ensure_ascii=True))
+        np.savez_compressed(out_path, **arrays)
+        return {"solution_field_path": str(out_path), **metadata}
+    if field_format == "npz":
+        arrays["metadata_json"] = np.array(json.dumps(metadata, ensure_ascii=True))
+        np.savez(out_path, **arrays)
+        return {"solution_field_path": str(out_path), **metadata}
+    if field_format != "npy_dir":
+        raise ValueError(
+            "solution_field_format debe ser npy_dir, npz o npz_compressed."
+        )
+
+    field_dir = out_path.with_suffix("")
+    field_dir.mkdir(parents=True, exist_ok=True)
+    for load_id in saved_load_ids:
+        np.save(
+            field_dir / f"fluctuation_load{load_id}.npy",
+            arrays[f"fluctuation_load{load_id}"],
+        )
+        if save_total:
+            np.save(
+                field_dir / f"total_load{load_id}.npy", arrays[f"total_load{load_id}"]
+            )
+    (field_dir / "metadata.json").write_text(
+        json.dumps(metadata, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return {
+        "solution_field_path": str(out_path),
+        "solution_field_dir": str(field_dir),
+        **metadata,
+    }
+
+
+def _save_solution_sensitivities_if_requested(
+    *,
+    prob: Any,
+    Ngrid: np.ndarray,
+    p: dict[str, Any],
+) -> dict[str, Any]:
+    out_path_raw = p.get("solution_sensitivity_out_path")
+    return_in_memory = bool(p.get("solution_sensitivity_return_in_memory", False))
+    field_consumer = p.get("solution_sensitivity_consumer")
+    consume_in_memory = callable(field_consumer)
+    if not out_path_raw and not return_in_memory and not consume_in_memory:
+        return {}
+
+    payload = prob.output.get("affine_sensitivity_primal")
+    if not isinstance(payload, dict):
+        raise RuntimeError(
+            "No hay sensibilidades afines; activa solution_sensitivity_*."
+        )
+
+    if "fields" not in payload:
+        if not bool(payload.get("streamed", False)):
+            raise RuntimeError("No hay campos de sensibilidad afines en memoria.")
+        coefficient_names = [
+            str(value)
+            for value in payload.get("coefficient_names", AFFINE_SENSITIVITY_NAMES)
+        ]
+        load_ids = [int(value) for value in payload.get("load_ids", list(range(6)))]
+        consumed = tuple(
+            (int(q), int(load_id)) for q, load_id in payload.get("consumed", ())
+        )
+        p["_solution_sensitivities_consumed"] = consumed
+        requested_field_dtype = p.get(
+            "solution_sensitivity_dtype",
+            p.get("solution_field_dtype", p.get("solver_real_dtype", "float32")),
+        )
+        field_dtype = np.dtype(requested_field_dtype)
+        metadata = {
+            "coefficient_names": coefficient_names,
+            "load_ids": load_ids,
+            "grid_shape": [int(v) for v in Ngrid],
+            "field_shape": list(
+                payload.get("field_shape", [6, *[int(v) for v in Ngrid]])
+            ),
+            "field": "zero-mean exact discrete sensitivity strain d(fluctuation)/dgamma_q",
+            "dtype": str(field_dtype),
+            "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+            "sensitivity_summary": prob.output.get(
+                "affine_sensitivity_summary_primal", {}
+            ),
+            "streamed": True,
+        }
+        return {
+            "solution_sensitivity_path": "",
+            "solution_sensitivity_format": "memory_consumer",
+            **metadata,
+        }
+
+    fields = np.asarray(payload["fields"])
+    coefficient_names = [
+        str(value)
+        for value in payload.get("coefficient_names", AFFINE_SENSITIVITY_NAMES)
+    ]
+    load_ids = [
+        int(value) for value in payload.get("load_ids", list(range(fields.shape[1])))
+    ]
+    if fields.ndim != 6 or fields.shape[2] != 6:
+        raise RuntimeError(
+            f"Sensibilidades afines con forma incompatible: {fields.shape}."
+        )
+    if fields.shape[0] != len(coefficient_names) or fields.shape[1] != len(load_ids):
+        raise RuntimeError("Metadatos de sensibilidades afines inconsistentes.")
+
+    requested_field_dtype = p.get(
+        "solution_sensitivity_dtype",
+        p.get("solution_field_dtype", p.get("solver_real_dtype")),
+    )
+    field_dtype = np.dtype(requested_field_dtype or fields.dtype)
+    if field_dtype not in {np.dtype(np.float32), np.dtype(np.float64)}:
+        raise ValueError("solution_sensitivity_dtype debe ser float32 o float64.")
+
+    out_path = Path(str(out_path_raw)) if out_path_raw else None
+    arrays: dict[str, np.ndarray] = {}
+    consumed: list[tuple[int, int]] = []
+    for q, name in enumerate(coefficient_names):
+        for local_load, load_id in enumerate(load_ids):
+            field = fields[q, local_load].astype(field_dtype, copy=False)
+            if consume_in_memory:
+                field_consumer(q, name, load_id, field)
+                consumed.append((int(q), int(load_id)))
+            else:
+                arrays[f"{name}_load{load_id}"] = field
+
+    metadata = {
+        "coefficient_names": coefficient_names,
+        "load_ids": load_ids,
+        "grid_shape": [int(v) for v in Ngrid],
+        "field_shape": list(fields.shape[2:]),
+        "field": "zero-mean exact discrete sensitivity strain d(fluctuation)/dgamma_q",
+        "dtype": str(field_dtype),
+        "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+        "sensitivity_summary": prob.output.get("affine_sensitivity_summary_primal", {}),
+    }
+    if consume_in_memory:
+        p["_solution_sensitivities_consumed"] = tuple(consumed)
+        return {
+            "solution_sensitivity_path": "",
+            "solution_sensitivity_format": "memory_consumer",
+            **metadata,
+        }
+    if return_in_memory:
+        p["_solution_sensitivities_result"] = fields.astype(field_dtype, copy=False)
+        return {
+            "solution_sensitivity_path": "",
+            "solution_sensitivity_format": "memory",
+            **metadata,
+        }
+
+    if out_path is None:
+        raise RuntimeError(
+            "Falta solution_sensitivity_out_path para guardar sensibilidades."
+        )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    arrays["metadata_json"] = np.array(json.dumps(metadata, ensure_ascii=True))
+    np.savez_compressed(out_path, **arrays)
+    return {
+        "solution_sensitivity_path": str(out_path),
+        "solution_sensitivity_format": "npz_compressed",
+        **metadata,
+    }
+
+
+def _save_stress_volumes_if_requested(
+    *,
+    prob: Any,
+    material_conf: dict[str, Any],
+    Ngrid: np.ndarray,
+    solver_fft_form: Any,
+    p: dict[str, Any],
+) -> dict[str, Any]:
+    out_path_raw = p.get("stress_volume_out_path")
+    if not out_path_raw:
+        return {}
+
+    from cufhom_core.materials import Material
+
+    out_path = Path(str(out_path_raw))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    load_ids = [int(value) for value in p.get("stress_volume_load_ids", [0])]
+    component_ids = [int(value) for value in p.get("stress_volume_components", [0])]
+    pair_items = p.get("stress_volume_pairs", None)
+    if pair_items is not None:
+        pairs = [
+            (int(load_id), int(component_id)) for load_id, component_id in pair_items
+        ]
+        load_ids = sorted({load_id for load_id, _ in pairs})
+    else:
+        pairs = [
+            (load_id, component_id)
+            for load_id in load_ids
+            for component_id in component_ids
+        ]
+
+    solutions = prob.output.get("sol_primal")
+    if solutions is None:
+        raise RuntimeError(
+            "No hay sol_primal; activa store_solution_fields para guardar volumenes de esfuerzo."
+        )
+
+    mat = Material(material_conf)
+    A = mat.get_A_GaNi(Ngrid, fft_form=solver_fft_form)
+    component_names = [
+        "sigma11",
+        "sigma22",
+        "sigma33",
+        "sigma23_mandel",
+        "sigma13_mandel",
+        "sigma12_mandel",
+    ]
+
+    arrays: dict[str, np.ndarray] = {}
+    by_load: dict[int, list[int]] = {}
+    for load_id, component_id in pairs:
+        by_load.setdefault(int(load_id), []).append(int(component_id))
+
+    for load_id in load_ids:
+        solution = solutions[load_id]
+        if not hasattr(solution, "val"):
+            raise RuntimeError(
+                f"La solucion para load_id={load_id} no esta disponible."
+            )
+        stress = A(solution)
+        stress_val = stress.val
+        for component_id in by_load.get(load_id, []):
+            if component_id < 0 or component_id >= 6:
+                raise ValueError(
+                    "stress_volume_components debe contener indices entre 0 y 5."
+                )
+            key = f"{component_names[component_id]}_load{load_id}"
+            arrays[key] = _to_numpy_array(stress_val[component_id]).astype(np.float32)
+        del stress
+
+    metadata = {
+        "load_ids": load_ids,
+        "component_ids": component_ids,
+        "pairs": [[int(load_id), int(component_id)] for load_id, component_id in pairs],
+        "grid_shape": [int(v) for v in Ngrid],
+        "load_description": "load0..load5 = E11,E22,E33,E23,E13,E12 unitarios en notacion Mandel",
+        "units": "GPa para deformacion macroscopica unitaria",
+    }
+    arrays["metadata_json"] = np.array(json.dumps(metadata, ensure_ascii=False))
+    np.savez_compressed(out_path, **arrays)
+    return {"stress_volume_path": str(out_path), **metadata}
+
+
+def _matrix_sym21_values(matrix: Any, xp: Any, dtype: Any) -> Any:
+    return xp.asarray([matrix[ii, jj] for ii, jj in SYM21_PAIRS], dtype=dtype)
+
+
+def _group_quantized_orientations(
+    fiber_orientations: np.ndarray,
+    quantization: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Agrupa orientaciones cuantizadas y devuelve indice inverso y medias."""
+    orientations = np.asarray(fiber_orientations, dtype=np.float64)
+    quantized = np.round(orientations * quantization).astype(np.int64)
+
+    minimum = quantized.min(axis=0)
+    shifted = quantized - minimum
+    widths = shifted.max(axis=0) + 1
+    keys = (shifted[:, 0] * widths[1] + shifted[:, 1]) * widths[2] + shifted[:, 2]
+
+    _, inverse, counts = np.unique(keys, return_inverse=True, return_counts=True)
+    sums = np.column_stack(
+        [
+            np.bincount(inverse, weights=orientations[:, axis], minlength=len(counts))
+            for axis in range(3)
+        ]
+    )
+    means = sums / counts[:, None]
+    norms = np.linalg.norm(means, axis=1)
+    valid = norms >= 1e-12
+    means[valid] /= norms[valid, None]
+    means[~valid] = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+    return inverse, means
+
+
+_GROUP_SUMS = r"""
+extern "C" __global__ void group_sums(const double* ori,const long long* order,const long long* start,
+ double* sums) {
+ // One block per orientation group; members in stable key order, fixed tree.
+ const long long s=start[blockIdx.x],e=start[blockIdx.x+1];
+ double a[3]={0,0,0};
+ for(long long i=s+threadIdx.x;i<e;i+=blockDim.x) {
+   const long long j=order[i];
+   for(int c=0;c<3;c++)a[c]+=ori[3*j+c];
+ }
+ __shared__ double part[3][256];
+ for(int c=0;c<3;c++)part[c][threadIdx.x]=a[c];
+ __syncthreads();
+ for(int w=blockDim.x/2;w>0;w>>=1) {
+   if(threadIdx.x<w)for(int c=0;c<3;c++)part[c][threadIdx.x]+=part[c][threadIdx.x+w];
+   __syncthreads();
+ }
+ if(threadIdx.x==0)for(int c=0;c<3;c++)sums[3*blockIdx.x+c]=part[c][0];
+}
+"""
+_GROUP_KERNEL = []
+
+
+def _group_quantized_orientations_gpu(phase, ori, quantization):
+    """GPU twin of _group_quantized_orientations for the indexed material map.
+
+    Integer keys, group numbering (ascending key) and inverse indices are
+    identical to the CPU version; group sums use a fixed reduction tree, so
+    the means may differ from np.bincount only in the last FP64 bit.
+    Returns (flat fiber indices on device, inverse on device, host means).
+    """
+    phase_gpu = cp.asarray(phase).ravel()
+    flat = cp.flatnonzero(phase_gpu == 1)
+    if flat.size == 0:
+        return flat, cp.empty(0, cp.int32), np.empty((0, 3))
+    fiber = cp.asarray(ori).reshape(-1, 3)[flat].astype(cp.float64)
+    quantized = cp.rint(fiber * quantization).astype(cp.int64)
+    shifted = quantized - quantized.min(axis=0)
+    widths = shifted.max(axis=0) + 1
+    keys = (shifted[:, 0] * widths[1] + shifted[:, 1]) * widths[2] + shifted[:, 2]
+    order = cp.argsort(keys)  # radix sort: stable
+    ordered = keys[order]
+    new_group = cp.empty(ordered.size, cp.int32)
+    new_group[0] = 0
+    new_group[1:] = ordered[1:] != ordered[:-1]
+    sorted_group = cp.cumsum(new_group, dtype=cp.int32)
+    groups = int(sorted_group[-1]) + 1
+    inverse = cp.empty(ordered.size, cp.int32)
+    inverse[order] = sorted_group
+    start = cp.empty(groups + 1, cp.int64)
+    start[0] = 0
+    start[1:-1] = cp.flatnonzero(new_group[1:]) + 1
+    start[-1] = ordered.size
+    if not _GROUP_KERNEL:
+        _GROUP_KERNEL.append(cp.RawKernel(_GROUP_SUMS, "group_sums"))
+    sums = cp.empty((groups, 3), cp.float64)
+    _GROUP_KERNEL[0]((groups,), (256,), (fiber, order, start, sums))
+    counts = cp.asnumpy(start[1:] - start[:-1]).astype(np.float64)
+    means = cp.asnumpy(sums) / counts[:, None]
+    norms = np.linalg.norm(means, axis=1)
+    valid = norms >= 1e-12
+    means[valid] /= norms[valid, None]
+    means[~valid] = np.array([1.0, 0.0, 0.0])
+    return flat, inverse, means
+
+
+def _rotation_matrices(axes):
+    """Vectorized rotation_matrix_from_vector for many axes."""
+    from cufhom.materials.elasticity import rotation_matrix_from_vector
+
+    a = np.asarray(axes, dtype=float)
+    n = np.linalg.norm(a, axis=1)
+    out = np.broadcast_to(np.eye(3), (len(a), 3, 3)).copy()
+    ok = n >= 1e-12
+    e1 = a[ok] / n[ok, None]
+    tmp = np.zeros_like(e1)
+    swap = np.abs(e1[:, 0]) > 0.9
+    tmp[~swap, 0] = 1.0
+    tmp[swap, 1] = 1.0
+    e2 = np.cross(e1, tmp)
+    e2n = np.linalg.norm(e2, axis=1)
+    rows = np.flatnonzero(ok)
+    good = e2n >= 1e-12
+    e2 = e2[good] / e2n[good, None]
+    e1g = e1[good]
+    out[rows[good]] = np.stack((e1g, e2, np.cross(e1g, e2)), axis=2)
+    for row in rows[~good]:  # degenerate fallbacks keep the scalar routine
+        out[row] = rotation_matrix_from_vector(a[row])
+    return out
+
+
+def _affine_stiffness_bases() -> tuple[
+    tuple[np.ndarray, np.ndarray], tuple[np.ndarray, ...]
+]:
+    """Return the seven Mandel stiffness bases used by the affine ROM."""
+    lam = np.zeros((6, 6), dtype=np.float64)
+    mu = np.zeros((6, 6), dtype=np.float64)
+    lam[:3, :3] = 1.0
+    mu[0, 0] = mu[1, 1] = mu[2, 2] = 2.0
+    mu[3, 3] = mu[4, 4] = mu[5, 5] = 2.0
+
+    c_tt = np.zeros((6, 6), dtype=np.float64)
+    c_tt_cross = np.zeros((6, 6), dtype=np.float64)
+    c_lt = np.zeros((6, 6), dtype=np.float64)
+    c_ll = np.zeros((6, 6), dtype=np.float64)
+    g_lt = np.zeros((6, 6), dtype=np.float64)
+
+    c_tt[1, 1] = c_tt[2, 2] = 1.0
+    c_tt[3, 3] = 1.0
+
+    c_tt_cross[1, 2] = c_tt_cross[2, 1] = 1.0
+    c_tt_cross[3, 3] = -1.0
+
+    c_lt[0, 1] = c_lt[1, 0] = 1.0
+    c_lt[0, 2] = c_lt[2, 0] = 1.0
+
+    c_ll[0, 0] = 1.0
+
+    g_lt[4, 4] = 2.0
+    g_lt[5, 5] = 2.0
+
+    return (lam, mu), (c_tt, c_tt_cross, c_lt, c_ll, g_lt)
+
+
+def _rotated_affine_bases(axes, bases, dtype):
+    """One sym21 derivative table per orientation group, with CPU rotation algebra."""
+    tables = np.empty((len(axes), len(bases), 21), dtype=dtype)
+    for group, axis in enumerate(axes):
+        rotation = rotation_matrix_from_vector(axis)
+        for coefficient, basis in enumerate(bases):
+            tables[group, coefficient] = _matrix_sym21_values(
+                rotate_C_mandel(basis, rotation), np, np.dtype(dtype).type
+            )
+    return tables
+
+
+def _build_affine_sensitivity_cfields(
+    phase: np.ndarray,
+    ori: np.ndarray,
+    dtype: np.dtype,
+    *,
+    xp=np,
+    quantization: float = AFFINE_ORIENTATION_QUANTIZATION,
+) -> Any:
+    """Build full sym21 derivative fields on NumPy or CuPy, in bounded chunks."""
+    use_gpu = xp is not np
+    if use_gpu and cp is None:
+        raise RuntimeError("CuPy no esta disponible para construir sensibilidades GPU.")
+    host_dtype = np.dtype(dtype).type
+    field_dtype = (
+        host_dtype
+        if not use_gpu
+        else (cp.float64 if host_dtype == np.float64 else cp.float32)
+    )
+    phase_arr = np.asarray(phase, dtype=np.uint8)
+    ori_arr = np.asarray(ori, dtype=np.float64)
+    cfields = xp.zeros(
+        (len(AFFINE_SENSITIVITY_NAMES), 21, *phase_arr.shape), dtype=field_dtype
+    )
+    matrix_bases, fiber_bases = _affine_stiffness_bases()
+
+    matrix_mask = phase_arr == 0
+    if np.any(matrix_mask):
+        if use_gpu:
+            matrix_idx = np.argwhere(matrix_mask).astype(np.int32, copy=False)
+            matrix_idx_gpu = cp.asarray(matrix_idx, dtype=cp.int32)
+            ix, iy, iz = matrix_idx_gpu.T
+            for q, basis in enumerate(matrix_bases):
+                values = cp.asarray(
+                    _matrix_sym21_values(basis, np, host_dtype), dtype=field_dtype
+                )
+                cfields[q, :, ix, iy, iz] = values[None, :]
+        else:
+            for q, basis in enumerate(matrix_bases):
+                # A fixed q moves the boolean-indexed voxel axis before sym21.
+                cfields[q, :, matrix_mask] = _matrix_sym21_values(
+                    basis, np, host_dtype
+                )[None, :]
+
+    fiber_mask = phase_arr != 0
+    if not np.any(fiber_mask):
+        return cfields
+    index_dtype = np.int32 if use_gpu else np.int64
+    fiber_idx = np.argwhere(fiber_mask).astype(index_dtype, copy=False)
+    inverse, means = _group_quantized_orientations(ori_arr[fiber_mask], quantization)
+    group_bases = _rotated_affine_bases(means, fiber_bases, host_dtype)
+    if use_gpu:
+        group_bases = cp.asarray(group_bases, dtype=field_dtype)
+        inverse = cp.asarray(inverse, dtype=cp.int32)
+        fiber_idx = cp.asarray(fiber_idx, dtype=cp.int32)
+
+    chunk_size = _CFIELD_ASSIGN_CHUNK_VOXELS
+    for start in range(0, len(fiber_idx), chunk_size):
+        end = min(start + chunk_size, len(fiber_idx))
+        ix, iy, iz = fiber_idx[start:end].T
+        cfields[2:, :, ix, iy, iz] = xp.transpose(
+            group_bases[inverse[start:end]], (1, 2, 0)
+        )
+    return cfields
+
+
+def _build_affine_sensitivity_operator_specs_gpu(
+    phase: np.ndarray,
+    ori: np.ndarray,
+    dtype: np.dtype,
+    *,
+    quantization: float = AFFINE_ORIENTATION_QUANTIZATION,
+) -> tuple[list[dict[str, Any]], int, int]:
+    """Build indexed sym21 operators for dA/dgamma_q on GPU.
+
+    The exact sensitivity solve only needs the action of each affine derivative
+    on a strain field.  For float32/CuPy we can reuse the indexed material
+    kernel instead of materializing seven dense (21, *N) coefficient fields.
+    """
+    if cp is None:
+        raise RuntimeError("CuPy no esta disponible para construir sensibilidades GPU.")
+    if np.dtype(dtype) != np.dtype(np.float32):
+        raise ValueError("Las sensibilidades indexadas GPU requieren float32.")
+
+    phase_arr = np.asarray(phase, dtype=np.uint8)
+    ori_arr = np.asarray(ori, dtype=np.float64)
+    Nx, Ny, Nz = phase_arr.shape
+    matrix_bases, fiber_bases = _affine_stiffness_bases()
+
+    zero = cp.zeros((1, 21), dtype=cp.float32)
+    matrix_index = cp.zeros((Nx, Ny, Nz), dtype=cp.int32)
+    matrix_idx = np.argwhere(phase_arr == 0).astype(np.int32, copy=False)
+    if matrix_idx.size:
+        matrix_idx_gpu = cp.asarray(matrix_idx, dtype=cp.int32)
+        matrix_index[
+            matrix_idx_gpu[:, 0],
+            matrix_idx_gpu[:, 1],
+            matrix_idx_gpu[:, 2],
+        ] = cp.int32(1)
+
+    specs: list[dict[str, Any]] = []
+    for q, basis in enumerate(matrix_bases):
+        values = cp.asarray(
+            _matrix_sym21_values(basis, np, np.float32), dtype=cp.float32
+        )
+        table = cp.ascontiguousarray(cp.concatenate((zero, values[None, :]), axis=0))
+        specs.append(
+            {
+                "storage": "sym21_indexed",
+                "name": AFFINE_SENSITIVITY_NAMES[q],
+                "index": matrix_index,
+                "table": table,
+                "phase": "matrix",
+            }
+        )
+
+    fiber_index = cp.zeros((Nx, Ny, Nz), dtype=cp.int32)
+    fiber_mask = phase_arr != 0
+    if not np.any(fiber_mask):
+        for local_q, _basis in enumerate(fiber_bases):
+            specs.append(
+                {
+                    "storage": "sym21_indexed",
+                    "name": AFFINE_SENSITIVITY_NAMES[2 + local_q],
+                    "index": fiber_index,
+                    "table": zero,
+                    "phase": "fiber",
+                }
+            )
+        bytes_estimate = _estimate_shared_array_bytes(specs)
+        return specs, 0, bytes_estimate
+
+    fiber_idx = np.argwhere(fiber_mask).astype(np.int32, copy=False)
+    inv_idx, means = _group_quantized_orientations(
+        ori_arr[fiber_mask],
+        quantization,
+    )
+    n_unique = int(len(means))
+    group_bases_cpu = _rotated_affine_bases(means, fiber_bases, np.float32)
+
+    inv_idx_gpu = cp.asarray(inv_idx, dtype=cp.int32)
+    fiber_idx_gpu = cp.asarray(fiber_idx, dtype=cp.int32)
+    chunk_size = _CFIELD_ASSIGN_CHUNK_VOXELS
+    n_fiber = int(fiber_idx.shape[0])
+    for start in range(0, n_fiber, chunk_size):
+        end = min(start + chunk_size, n_fiber)
+        group_fi = fiber_idx_gpu[start:end]
+        fiber_index[group_fi[:, 0], group_fi[:, 1], group_fi[:, 2]] = inv_idx_gpu[
+            start:end
+        ] + cp.int32(1)
+
+    group_bases_gpu = cp.asarray(group_bases_cpu, dtype=cp.float32)
+    for local_q in range(len(fiber_bases)):
+        table = cp.ascontiguousarray(
+            cp.concatenate((zero, group_bases_gpu[:, local_q, :]), axis=0)
+        )
+        specs.append(
+            {
+                "storage": "sym21_indexed",
+                "name": AFFINE_SENSITIVITY_NAMES[2 + local_q],
+                "index": fiber_index,
+                "table": table,
+                "phase": "fiber",
+            }
+        )
+
+    bytes_estimate = _estimate_shared_array_bytes(specs)
+    return specs, n_unique, bytes_estimate
+
+
+def _estimate_shared_array_bytes(items: Any) -> int:
+    """Estimate unique array payload bytes for nested specs."""
+    seen: set[int] = set()
+    total = 0
+
+    def visit(value: Any) -> None:
+        nonlocal total
+        if isinstance(value, dict):
+            for nested in value.values():
+                visit(nested)
+            return
+        if isinstance(value, (list, tuple)):
+            for nested in value:
+                visit(nested)
+            return
+        nbytes = getattr(value, "nbytes", None)
+        if nbytes is None:
+            return
+        marker = id(value)
+        if marker in seen:
+            return
+        seen.add(marker)
+        total += int(nbytes)
+
+    visit(items)
+    return int(total)
+
+
+def compile_cfield_geometry(phase, ori, quantization=AFFINE_ORIENTATION_QUANTIZATION):
+    """Compile material-independent orientation groups for an immutable geometry.
+
+    The caller owns this explicit cache. Strong references and read-only inputs
+    prevent accidental reuse for a different geometry or a writable array.
+    """
+    if phase.flags.writeable or ori.flags.writeable:
+        raise ValueError(
+            "Compiled constitutive geometry requires read-only phase and orientation arrays."
+        )
+    mask = phase == 1
+    indices = np.argwhere(mask).astype(np.int32, copy=False)
+    if len(indices):
+        inverse, means = _group_quantized_orientations(
+            ori[mask].astype(np.float64), quantization
+        )
+        rotations = np.asarray([rotation_matrix_from_vector(mean) for mean in means])
+    else:
+        inverse = np.empty(0, dtype=np.int64)
+        rotations = np.empty((0, 3, 3), dtype=np.float64)
+    # One offset per fiber voxel suffices for the indexed GPU material map.
+    # Keep the XYZ indices for existing dense-field consumers.
+    flat_indices = np.flatnonzero(mask).astype(
+        np.int32 if phase.size <= np.iinfo(np.int32).max else np.int64
+    )
+    for array in (indices, inverse, rotations, flat_indices):
+        array.setflags(write=False)
+    return {
+        "phase": phase,
+        "ori": ori,
+        "quantization": quantization,
+        "fiber_indices": indices,
+        "fiber_flat_indices": flat_indices,
+        "inverse_groups": inverse,
+        "rotations": rotations,
+    }
+
+
+def _layout_device_array(geometry_layout, key, dtype=None):
+    """Device copy of a compiled-geometry array, uploaded once per geometry.
+
+    These arrays do not depend on the material.  Uploading them on every solve
+    is a pageable transfer, and a pageable transfer waits for every DMA already
+    queued on the device, so a concurrent copy by the caller would stall it.
+    """
+    cache = geometry_layout.setdefault("device_arrays", {})
+    if key not in cache:
+        cache[key] = cp.asarray(geometry_layout[key], dtype=dtype)
+    return cache[key]
+
+
+def _build_cfield_gpu(
+    phase: np.ndarray,
+    ori: np.ndarray,
+    Cm: np.ndarray,
+    Cf_local: np.ndarray,
+    QUANT: float = AFFINE_ORIENTATION_QUANTIZATION,
+    storage: str = "full",
+    indexed: bool = False,
+    geometry_layout=None,
+) -> tuple[Any, int, float]:
+    t0 = time.perf_counter()
+    Nx, Ny, Nz = phase.shape
+    packed_sym21 = storage == "sym21"
+    gpu_dtype = cp.float64 if np.asarray(Cm).dtype == np.float64 else cp.float32
+    if indexed and not packed_sym21:
+        raise ValueError("Cfield indexado requiere storage='sym21'.")
+
+    gpu_groups = None
+    if geometry_layout is None and indexed:
+        # Indexed maps need only flat offsets and groups: build them on GPU.
+        gpu_groups = _group_quantized_orientations_gpu(phase, ori, QUANT)
+        fiber_idx_cpu = np.empty((int(gpu_groups[0].size), 3), np.int32)
+    elif geometry_layout is None:
+        fiber_mask_cpu = phase == 1
+        fiber_idx_cpu = np.argwhere(fiber_mask_cpu).astype(np.int32, copy=False)
+    else:
+        if (
+            geometry_layout["phase"] is not phase
+            or geometry_layout["ori"] is not ori
+            or phase.flags.writeable
+            or ori.flags.writeable
+            or geometry_layout["quantization"] != QUANT
+        ):
+            raise ValueError(
+                "Compiled constitutive geometry does not match the immutable solver inputs."
+            )
+        fiber_idx_cpu = geometry_layout["fiber_indices"]
+
+    Cm_gpu = cp.asarray(Cm, dtype=gpu_dtype)
+    if indexed:
+        Cm_sym = _matrix_sym21_values(Cm, cp, gpu_dtype)
+        Cfield = None
+    elif packed_sym21:
+        Cm_sym = _matrix_sym21_values(Cm, cp, gpu_dtype)
+        Cfield = cp.empty((21, Nx, Ny, Nz), dtype=gpu_dtype)
+        Cfield[:] = Cm_sym[:, None, None, None]
+    else:
+        Cfield = cp.empty((6, 6, Nx, Ny, Nz), dtype=gpu_dtype)
+        Cfield[:] = Cm_gpu[:, :, None, None, None]
+
+    if fiber_idx_cpu.size == 0:
+        if indexed:
+            index_map = cp.zeros((Nx, Ny, Nz), dtype=cp.int32)
+            table = cp.ascontiguousarray(Cm_sym[None, :])
+            return (index_map, table), 0, time.perf_counter() - t0
+        return Cfield, 0, time.perf_counter() - t0
+
+    if gpu_groups is not None:
+        inv_idx, means = gpu_groups[1], gpu_groups[2]
+        n_unique = len(means)
+        R_batch = _rotation_matrices(means)
+    elif geometry_layout is None:
+        fiber_ori_cpu = ori[fiber_mask_cpu].astype(np.float64, copy=False)
+        inv_idx, means = _group_quantized_orientations(fiber_ori_cpu, QUANT)
+        n_unique = len(means)
+        R_batch = np.empty((n_unique, 3, 3), dtype=np.float64)
+        for g_id in range(n_unique):
+            R_batch[g_id] = rotation_matrix_from_vector(means[g_id])
+    else:
+        inv_idx = _layout_device_array(geometry_layout, "inverse_groups", cp.int32)
+        R_batch = _layout_device_array(geometry_layout, "rotations", cp.float64)
+        n_unique = len(R_batch)
+
+    from cufhom.materials.elasticity import rotate_mandel_batch_gpu
+
+    Cm_rot = rotate_mandel_batch_gpu(Cf_local, R_batch, gpu_dtype, packed_sym21)
+
+    inv_idx_gpu = cp.asarray(inv_idx, dtype=cp.int32)
+    if indexed:
+        flat_indices = None
+        if (
+            geometry_layout is not None
+            and geometry_layout.get("fiber_flat_indices") is not None
+        ):
+            flat_indices = _layout_device_array(geometry_layout, "fiber_flat_indices")
+        if gpu_groups is not None:
+            flat_indices = gpu_groups[0]
+        elif flat_indices is None:
+            # Compatibility with layouts compiled before flat offsets existed.
+            flat_indices = np.ravel_multi_index(fiber_idx_cpu.T, phase.shape)
+            if phase.size <= np.iinfo(np.int32).max:
+                flat_indices = flat_indices.astype(np.int32)
+        flat_indices_gpu = cp.asarray(flat_indices)
+        index_map = cp.zeros((Nx, Ny, Nz), dtype=cp.int32)
+        table = cp.ascontiguousarray(cp.concatenate((Cm_sym[None, :], Cm_rot), axis=0))
+        index_map.ravel()[flat_indices_gpu] = inv_idx_gpu + 1
+        return (index_map, table), n_unique, time.perf_counter() - t0
+
+    if geometry_layout is None:
+        fiber_idx_gpu = cp.asarray(fiber_idx_cpu, dtype=cp.int32)
+    else:
+        fiber_idx_gpu = _layout_device_array(geometry_layout, "fiber_indices", cp.int32)
+
+    n_fiber = int(fiber_idx_cpu.shape[0])
+    chunk_size = _CFIELD_ASSIGN_CHUNK_VOXELS
+    for start in range(0, n_fiber, chunk_size):
+        end = min(start + chunk_size, n_fiber)
+        group_fi = fiber_idx_gpu[start:end]
+        ix = group_fi[:, 0]
+        iy = group_fi[:, 1]
+        iz = group_fi[:, 2]
+        if packed_sym21:
+            Cfield[:, ix, iy, iz] = cp.transpose(
+                Cm_rot[inv_idx_gpu[start:end]],
+                (1, 0),
+            )
+        else:
+            Cfield[:, :, ix, iy, iz] = cp.transpose(
+                Cm_rot[inv_idx_gpu[start:end]],
+                (1, 2, 0),
+            )
+
+    cfield_build_s = time.perf_counter() - t0
+    return Cfield, n_unique, cfield_build_s
+
+
+def _build_cfield_cpu(
+    phase: np.ndarray,
+    ori: np.ndarray,
+    Cm: np.ndarray,
+    Cf_local: np.ndarray,
+    DTYPE: type,
+    QUANT: float = AFFINE_ORIENTATION_QUANTIZATION,
+    storage: str = "full",
+) -> tuple[np.ndarray, int, float]:
+    t0 = time.perf_counter()
+    Nx, Ny, Nz = phase.shape
+    packed_sym21 = storage == "sym21"
+
+    if packed_sym21:
+        Cm_sym = _matrix_sym21_values(Cm, np, DTYPE)
+        Cfield = np.empty((21, Nx, Ny, Nz), dtype=DTYPE)
+        Cfield[:] = Cm_sym[:, None, None, None]
+    else:
+        Cfield = np.empty((6, 6, Nx, Ny, Nz), dtype=DTYPE)
+        Cfield[:] = Cm[:, :, None, None, None]
+
+    fiber_mask = phase == 1
+    fiber_idx = np.argwhere(fiber_mask)
+
+    if fiber_idx.size == 0:
+        return Cfield, 0, time.perf_counter() - t0
+
+    fiber_ori = ori[fiber_mask]
+
+    fiber_ori_f64 = fiber_ori.astype(np.float64, copy=False)
+    inv_idx, means = _group_quantized_orientations(fiber_ori_f64, QUANT)
+    n_unique = len(means)
+
+    for g_id in range(n_unique):
+        group_mask = inv_idx == g_id
+        R = rotation_matrix_from_vector(means[g_id])
+        Cf_rot = rotate_C_mandel(Cf_local.astype(np.float64), R).astype(DTYPE)
+
+        group_fiber_idx = fiber_idx[group_mask]
+        ix = group_fiber_idx[:, 0]
+        iy = group_fiber_idx[:, 1]
+        iz = group_fiber_idx[:, 2]
+        if packed_sym21:
+            Cf_rot_sym = _matrix_sym21_values(Cf_rot, np, DTYPE)
+            Cfield[:, ix, iy, iz] = Cf_rot_sym[:, None]
+        else:
+            Cfield[:, :, ix, iy, iz] = Cf_rot[:, :, None]
+
+    return Cfield, n_unique, time.perf_counter() - t0
+
+
+def solve_homogenization(p: dict[str, Any]) -> np.ndarray:
+    """Homogenize with a segregated allocation pool for capacity-sized GPU images."""
+    # Reject retired selection options before the capacity selector reads an
+    # image header; invalid options need no geometry files to be diagnosed.
+    if _RETIRED_SOLVER_OPTIONS.intersection(p):
+        return _solve_homogenization(p)
+    backend = p["fft_backend"] if "fft_backend" in p else _default_fft_backend()
+    dtype = np.dtype(p.get("solver_real_dtype", "float32"))
+    if (
+        backend != "cupy"
+        or not _CUPY_AVAILABLE
+        or dtype not in (np.dtype("float32"), np.dtype("float64"))
+    ):
+        return _solve_homogenization(p)
+    phase = p.get("phase_array")
+    explicit_material = p.get("indexed_material")
+    if explicit_material is not None:
+        shape = explicit_material.shape
+    elif phase is not None:
+        shape = phase.shape
+    else:
+        # Read only the array header; the existing loader owns the actual I/O.
+        filename = os.path.join(p.get("input_dir", "."), "phase.npy")
+        shape = np.load(filename, mmap_mode="r").shape
+    from cufhom_core.general.cupy_capacity import (
+        capacity_memory_pool,
+        library_capacity_required,
+    )
+
+    if not library_capacity_required(shape, dtype):
+        return _solve_homogenization(p)
+    with capacity_memory_pool() as pool:
+        previous = p.get("_capacity_memory_pool")
+        p["_capacity_memory_pool"] = pool
+        try:
+            return _solve_homogenization(p)
+        finally:
+            if previous is None:
+                p.pop("_capacity_memory_pool", None)
+            else:
+                p["_capacity_memory_pool"] = previous
+
+
+def _solve_homogenization(p: dict[str, Any]) -> np.ndarray:
+    """Run the linear FFT homogenization and return Ceff (6x6, Mandel).
+
+    The execution route follows from the backend and precision, not from
+    options: float32 on CUDA uses the real FFT, the indexed sym21 material,
+    the closed-form projection and the displacement-coordinate CG whenever
+    the inputs allow it. CUDA FP64 keeps the historical strain route unless
+    solver_fp64_coordinates=True explicitly enables indexed compatible
+    coordinates (fused when supported, otherwise library FFTs). CPU uses
+    full material/projection fields and strain CG. Outputs are written into p.
+    """
+    solver_total_t0 = time.perf_counter()
+    solver_verbose = bool(p.get("solver_verbose", False))
+    explicit_material = p.get("indexed_material")
+    if explicit_material is not None:
+        from .common import IndexedMaterial
+
+        if not isinstance(explicit_material, IndexedMaterial):
+            raise ValueError("indexed_material must be an IndexedMaterial descriptor")
+
+    if p.get("macro_strains") is not None:
+        directions = np.asarray(p["macro_strains"], dtype=np.float64)
+        if (
+            directions.ndim != 2
+            or directions.shape[1] != 6
+            or not 1 <= len(directions) <= 6
+        ):
+            raise ValueError("macro_strains debe tener forma (k, 6) con 1 <= k <= 6.")
+        if not np.all(np.isfinite(directions)):
+            raise ValueError("macro_strains debe ser finito.")
+        p["macro_strains"] = directions
+        p["active_load_ids"] = list(range(len(directions)))
+        p["partial_load_output"] = True
+    retired = sorted(_RETIRED_SOLVER_OPTIONS.intersection(p))
+    if retired:
+        raise ValueError(
+            "Solver selection was retired; remove these parameters: "
+            + ", ".join(retired)
+            + ". The optimized route is automatic."
+        )
+    fft_backend = p["fft_backend"] if "fft_backend" in p else _default_fft_backend()
+    use_gpu = (fft_backend == "cupy") and _CUPY_AVAILABLE
+    solver_real_dtype = str(
+        p.get("solver_real_dtype", "float32" if use_gpu else "float64")
+    )
+    real_dtype = np.dtype(solver_real_dtype)
+    if real_dtype not in {np.dtype(np.float32), np.dtype(np.float64)}:
+        raise ValueError("solver_real_dtype debe ser 'float32' o 'float64'.")
+    if explicit_material is not None and real_dtype != explicit_material.dtype:
+        raise ValueError("Material and solver precision must agree")
+    DTYPE = real_dtype.type
+    # float32 on CUDA: real FFT, packed sym21 material, closed-form projection.
+    optimized = use_gpu and real_dtype == np.dtype(np.float32)
+    # Every CUDA solve keeps the compact real-FFT layout; float64 then uses the
+    # strain CG on packed sym21 material and the closed-form projection, which
+    # fits 240^3 references in 16 GB.
+    solver_fft_form = "r" if use_gpu else 0
+    cfield_storage = "sym21" if use_gpu else "full"
+    projection_storage = "direct" if use_gpu else "full"
+    solution_field_requested = bool(
+        p.get("solution_field_out_path")
+        or p.get("solution_field_return_in_memory", False)
+        or callable(p.get("solution_field_consumer"))
+    )
+    stress_field_requested = bool(callable(p.get("stress_field_consumer")))
+    solution_sensitivity_requested = bool(
+        p.get("solution_sensitivity_out_path")
+        or p.get("solution_sensitivity_return_in_memory", False)
+        or callable(p.get("solution_sensitivity_consumer"))
+    )
+    stress_slice_requested = bool(p.get("stress_slice_out_path"))
+    stress_volume_requested = bool(p.get("stress_volume_out_path"))
+    store_solution_fields = bool(
+        p.get("store_solution_fields", False)
+        or solution_field_requested
+        or stress_slice_requested
+        or stress_volume_requested
+    )
+
+    preloaded = explicit_material is not None or (
+        ("phase_array" in p) and ("ori_array" in p)
+    )
+    if solver_verbose:
+        print(
+            f"  [SOLVER] RVE | backend={fft_backend} | "
+            f"GPU={'SI' if use_gpu else 'NO'} | preloaded={'SI' if preloaded else 'NO'}",
+            flush=True,
+        )
+    io_t0 = time.perf_counter()
+    if explicit_material is not None:
+        # Geometry-free indexed input: no artificial fibre orientation field,
+        # quantization, patched material builder, or uint8 truncation of labels.
+        phase = np.broadcast_to(np.uint8(0), explicit_material.shape)
+        ori = None
+    elif preloaded:
+        phase = np.asarray(p["phase_array"], dtype=np.uint8)
+        ori = np.asarray(p["ori_array"], dtype=DTYPE)
+    else:
+        phase = np.load(os.path.join(p["input_dir"], "phase.npy")).astype(
+            np.uint8, copy=False
+        )
+        ori = np.load(os.path.join(p["input_dir"], "ori.npy")).astype(DTYPE, copy=False)
+    input_loading_s = time.perf_counter() - io_t0
+
+    Nx, Ny, Nz = phase.shape
+    dim = 3
+    if explicit_material is not None:
+        from .common import cell_lengths
+
+        Y = np.array(cell_lengths(p.get("cell_lengths", (1.0, 1.0, 1.0))), dtype=DTYPE)
+    else:
+        Y = np.ones(dim, dtype=DTYPE)
+    Ngrid = np.array([Nx, Ny, Nz], dtype=np.int32)
+    if (
+        optimized
+        and 144 * int(np.prod(Ngrid, dtype=np.int64))
+        > cp.cuda.runtime.memGetInfo()[1] - 512 * 2**20
+    ):
+        # Large repeated solves cannot afford unreachable closure cycles or
+        # fragmented cached blocks from the preceding call. Preserve kernels
+        # and FFT plans; reclaim only dead objects and unused pool allocations.
+        import gc
+
+        gc.collect()
+        cp.cuda.Device().synchronize()
+        from cufhom_core.general.cupy_capacity import current_memory_pool
+
+        current_memory_pool().free_all_blocks()
+
+    composite_fraction_source = p.get(
+        "fiber_fraction_array", p.get("fiber_fraction_path")
+    )
+    composite_normal_source = p.get(
+        "interface_normal_array", p.get("interface_normal_path")
+    )
+    composite_voxels = composite_fraction_source is not None
+    if explicit_material is not None and (
+        composite_voxels
+        or solution_sensitivity_requested
+        or "Cfield_array" in p
+        or "Cfield_input_path" in p
+    ):
+        raise ValueError(
+            "IndexedMaterial cannot be combined with fibre/composite coefficient preparation or sensitivities"
+        )
+    fiber_fraction = None
+    interface_normal = None
+    if composite_voxels:
+        if composite_normal_source is None:
+            raise ValueError(
+                "fiber_fraction_array/path requiere interface_normal_array/path para voxeles compuestos."
+            )
+        if isinstance(composite_fraction_source, (str, os.PathLike)):
+            fiber_fraction = np.load(composite_fraction_source)
+        else:
+            fiber_fraction = np.asarray(composite_fraction_source)
+        if isinstance(composite_normal_source, (str, os.PathLike)):
+            interface_normal = np.load(composite_normal_source)
+        else:
+            interface_normal = np.asarray(composite_normal_source)
+        if fiber_fraction.shape != phase.shape:
+            raise ValueError(
+                "fiber_fraction debe tener la misma forma que phase: "
+                f"{fiber_fraction.shape} != {phase.shape}."
+            )
+        if interface_normal.shape != (*phase.shape, 3):
+            raise ValueError(
+                "interface_normal debe tener forma (Nx,Ny,Nz,3): "
+                f"{interface_normal.shape} != {(*phase.shape, 3)}."
+            )
+        if ori.shape != (*phase.shape, 3):
+            raise ValueError(
+                "ori debe tener forma (Nx,Ny,Nz,3) para voxeles compuestos."
+            )
+        if solution_sensitivity_requested:
+            raise ValueError(
+                "Las sensibilidades afines no son validas para el laminado compuesto no lineal; "
+                "desactiva solution_sensitivity_* o usa el Cfield binario afín."
+            )
+
+    if explicit_material is not None:
+        from .common import isotropic_reference
+
+        _, Km_, Gm_ = isotropic_reference(
+            explicit_material.stiffness, p.get("reference_stiffness")
+        )
+    else:
+        Km_, Gm_ = Enu_to_KG(p["Em"], p["nu_m"])
+        mat_m = ElasticTensor(bulk=Km_, mu=Gm_)
+        Cm = mat_m.mandel.astype(DTYPE)
+        Cf_voigt = TI_stiffness_voigt(
+            p["Ef_L"], p["Ef_T"], p["nu_LT"], p["nu_TT"], p["G_LT"]
+        )
+        Cf_local = voigt_to_mandel(Cf_voigt).astype(DTYPE)
+
+    n_unique = 0
+    cfield_precomputed = ("Cfield_array" in p) or ("Cfield_input_path" in p)
+    if composite_voxels and cfield_precomputed:
+        raise ValueError(
+            "Usa solo una ruta constitutiva: fiber_fraction/interface_normal o Cfield precomputado."
+        )
+    # Binary voxels index one table row per orientation group; general and
+    # laminated fields keep one tensor per voxel.
+    # Explicit opt-in preserves the historical FP64 strain reference. FP64
+    # compatible coordinates use the same indexed coefficients without a cast.
+    fp64_coordinates = (
+        use_gpu
+        and real_dtype == np.dtype(np.float64)
+        and bool(p.get("solver_fp64_coordinates", False))
+    )
+    cfield_indexed = (
+        (optimized or fp64_coordinates)
+        and not composite_voxels
+        and not cfield_precomputed
+    )
+    if explicit_material is not None:
+        cfield_indexed = use_gpu
+
+    cfield_t0 = time.perf_counter()
+    if explicit_material is not None:
+        n_unique = len(explicit_material.stiffness)
+        if use_gpu:
+            Cfield_index = cp.asarray(
+                explicit_material.index, dtype=cp.int32, order="C"
+            )
+            Cfield_table = cp.asarray(
+                explicit_material.packed, dtype=real_dtype, order="C"
+            )
+        else:
+            Cfield = np.moveaxis(
+                explicit_material.stiffness[explicit_material.index], (-2, -1), (0, 1)
+            )
+    elif cfield_precomputed:
+        Cfield_raw = (
+            p["Cfield_array"]
+            if "Cfield_array" in p
+            else np.load(Path(str(p["Cfield_input_path"])))
+        )
+        Cfield_shape = tuple(int(value) for value in np.shape(Cfield_raw))
+        if Cfield_shape[:1] == (21,) and Cfield_shape[1:] == (Nx, Ny, Nz):
+            cfield_storage = "sym21"
+        elif not (Cfield_shape[:2] == (6, 6) and Cfield_shape[2:] == (Nx, Ny, Nz)):
+            raise ValueError(
+                "Cfield precomputado incompatible: "
+                f"shape={Cfield_shape}, grid={(Nx, Ny, Nz)}."
+            )
+        Cfield = (cp if use_gpu else np).asarray(Cfield_raw, dtype=real_dtype)
+        n_unique = int(p.get("precomputed_cfield_unique_entries", -1))
+    elif composite_voxels:
+        # A local rank-one laminate preserves the uniform Cartesian FFT grid
+        # while correcting only cells cut by a smooth interface.  It is built
+        # on CPU because its 3x3 static condensations are tiny; the resulting
+        # packed Cfield is then transferred once to the selected backend.
+        from cufhom.materials.composite_voxels import laminate_voxel_stiffness_mandel
+
+        Cfield = laminate_voxel_stiffness_mandel(
+            Cm,
+            Cf_local,
+            fiber_fraction,
+            ori,
+            interface_normal,
+            storage=cfield_storage,
+            dtype=real_dtype,
+        )
+        if use_gpu:
+            Cfield = cp.asarray(Cfield, dtype=real_dtype)
+        n_unique = -1
+    elif use_gpu:
+        Cfield_payload, n_unique, _ = _build_cfield_gpu(
+            phase,
+            ori,
+            Cm,
+            Cf_local,
+            storage=cfield_storage,
+            indexed=cfield_indexed,
+            geometry_layout=p.get("compiled_cfield_geometry"),
+        )
+        if cfield_indexed:
+            Cfield_index, Cfield_table = Cfield_payload
+        else:
+            Cfield = Cfield_payload
+    else:
+        Cfield, n_unique, _ = _build_cfield_cpu(
+            phase, ori, Cm, Cf_local, DTYPE, storage=cfield_storage
+        )
+    if not cfield_indexed and cfield_storage == "sym21" and Cfield.shape[0] != 21:
+        Cfield = _pack_cfield_sym21(Cfield)
+    cfield_build_s = time.perf_counter() - cfield_t0
+    if solver_verbose:
+        print(
+            f"  [SOLVER] Cfield ({Nx}x{Ny}x{Nz}) | storage={cfield_storage} | indexed={cfield_indexed} | "
+            f"orientaciones={n_unique} | build={cfield_build_s:.3f}s",
+            flush=True,
+        )
+
+    affine_sensitivity_cfields = None
+    affine_sensitivity_build_s = 0.0
+    affine_sensitivity_storage = "none"
+    affine_sensitivity_unique_orientations = 0
+    affine_sensitivity_bytes = 0
+    if solution_sensitivity_requested:
+        sens_t0 = time.perf_counter()
+        if optimized:
+            (
+                affine_sensitivity_cfields,
+                affine_sensitivity_unique_orientations,
+                affine_sensitivity_bytes,
+            ) = _build_affine_sensitivity_operator_specs_gpu(phase, ori, real_dtype)
+            affine_sensitivity_storage = "sym21_indexed"
+        else:
+            affine_sensitivity_cfields = _build_affine_sensitivity_cfields(
+                phase,
+                ori,
+                real_dtype,
+                xp=cp if use_gpu else np,
+            )
+            affine_sensitivity_storage = (
+                "sym21_full_gpu" if use_gpu else "sym21_full_cpu"
+            )
+            affine_sensitivity_bytes = _estimate_shared_array_bytes(
+                affine_sensitivity_cfields
+            )
+        affine_sensitivity_build_s = time.perf_counter() - sens_t0
+
+    if cfield_indexed:
+        material_conf = {
+            "Cfield_index": Cfield_index,
+            "Cfield_table": Cfield_table,
+            "Y": Y,
+            "P": Ngrid,
+        }
+    else:
+        material_conf = {
+            "Cfield": Cfield,
+            "Y": Y,
+            "P": Ngrid,
+            "cfield_storage": cfield_storage,
+        }
+
+    solver_tol_is_alias = "solver_rtol" not in p and "solver_tol" in p
+    solver_rtol = float(
+        p.get(
+            "solver_rtol",
+            p.get("solver_tol", TOL),
+        )
+    )
+    solver_atol = float(p.get("solver_atol", 0.0))
+    if not np.isfinite(solver_rtol) or solver_rtol < 0.0:
+        raise ValueError("solver_rtol debe ser finito y no negativo.")
+    if not np.isfinite(solver_atol) or solver_atol < 0.0:
+        raise ValueError("solver_atol debe ser finito y no negativo.")
+    if solver_rtol == 0.0 and solver_atol == 0.0:
+        raise ValueError("Se requiere solver_rtol > 0 o solver_atol > 0.")
+    require_convergence = bool(p.get("require_convergence", True))
+    solver_maxiter = int(p.get("solver_maxiter", 1000))
+
+    set_fft_backend(fft_backend)
+    if use_gpu:
+        set_cupy_plan_mode("manual", preserve_cache=True)
+
+    displacement_compatible = cfield_indexed and not solution_sensitivity_requested
+    linear_formulation = "displacement" if displacement_compatible else "strain"
+    krylov_factory = None
+    working_dtype = p.get("solver_working_dtype")
+    if working_dtype is not None and (
+        np.dtype(working_dtype) != np.float32
+        or real_dtype != np.float64
+        or not (use_gpu and displacement_compatible)
+    ):
+        raise ValueError(
+            "solver_working_dtype='float32' requires CUDA, float64 and the indexed coordinate route"
+        )
+    if displacement_compatible:
+        from functools import partial
+
+        from cufhom.fft.linear.coordinates import make_linear_solver
+
+        krylov_factory = partial(
+            make_linear_solver,
+            bulk=Km_,
+            shear=Gm_,
+            working=working_dtype,
+            energy=p.get("solver_energy_rtol"),
+        )
+
+    problem_conf = {
+        "name": "indexed_elasticity_GaNi"
+        if explicit_material is not None
+        else "shortfiber_TI_opt",
+        "material": material_conf,
+        "solve": {
+            "kind": "GaNi",
+            "N": Ngrid,
+            "fft_form": solver_fft_form,
+            "fft_backend": fft_backend,
+            "real_dtype": solver_real_dtype,
+            "profile_timing": bool(p.get("profile_timing", False)),
+            "store_solution_fields": bool(store_solution_fields),
+            "solution_field_consumer": (
+                p.get("solution_field_consumer")
+                if callable(p.get("solution_field_consumer"))
+                and solution_sensitivity_requested
+                else None
+            ),
+            "solution_field_dtype": str(
+                p.get(
+                    "solution_field_dtype",
+                    p.get("solver_real_dtype", solver_real_dtype),
+                )
+            ),
+            "solution_field_stream_before_sensitivity": bool(
+                callable(p.get("solution_field_consumer"))
+                and solution_sensitivity_requested
+            ),
+            "stress_field_consumer": p.get("stress_field_consumer")
+            if stress_field_requested
+            else None,
+            "stress_field_dtype": str(
+                p.get(
+                    "stress_field_dtype", p.get("solver_real_dtype", solver_real_dtype)
+                )
+            ),
+            "stress_field_equilibrate": bool(p.get("stress_field_equilibrate", True)),
+            "initial_solution_fields": p.get("initial_solution_fields"),
+            "project_initial_solution_fields": bool(
+                p.get("project_initial_solution_fields", False)
+            ),
+            "postprocess_batch_size": 1 if use_gpu else 6,
+            "postprocess_assembly": "fused" if use_gpu else "gemm",
+            "projection_storage": projection_storage,
+            "active_load_ids": p.get("active_load_ids", None),
+            "macro_strains": p.get("macro_strains", None),
+            "stress_field_device": bool(p.get("stress_field_device", False)),
+            "partial_load_output": bool(p.get("partial_load_output", False)),
+            "affine_sensitivity_cfields": affine_sensitivity_cfields,
+            "affine_sensitivity_names": list(AFFINE_SENSITIVITY_NAMES),
+            "affine_sensitivity_consumer": p.get("solution_sensitivity_consumer"),
+            "affine_sensitivity_progress": p.get("solution_sensitivity_progress"),
+            "affine_sensitivity_batch_size": int(
+                p.get("solution_sensitivity_batch_size", 0)
+            ),
+        },
+        "solver": {
+            "elasticity_krylov_factory": krylov_factory,
+            "kind": "CG",
+            "tol": solver_rtol,
+            "rtol": solver_rtol,
+            "atol": solver_atol,
+            "maxiter": solver_maxiter,
+            "check_true_residual": bool(p.get("check_true_residual", False)),
+            "real_dtype": solver_real_dtype,
+            "keep_solution_on_device": use_gpu,
+        },
+    }
+
+    prob = Problem(problem_conf)
+
+    if solver_verbose:
+        print(
+            f"  [SOLVER] CG | rtol={solver_rtol:.0e} | atol={solver_atol:.0e} | "
+            f"grid=({Nx},{Ny},{Nz}) | formulation={linear_formulation} | "
+            f"fft_form={solver_fft_form} | cfield={cfield_storage} | proj={projection_storage}",
+            flush=True,
+        )
+
+    calculate_t0 = time.perf_counter()
+    try:
+        prob.calculate()
+    except Exception as e:
+        raise RuntimeError(f"CuFHom Core fallo durante prob.calculate(): {e}") from e
+    problem_calculate_s = time.perf_counter() - calculate_t0
+
+    partial_load_output = bool(p.get("partial_load_output", False))
+    if partial_load_output:
+        problem_postprocessing_s = 0.0
+    else:
+        postprocess_t0 = time.perf_counter()
+        try:
+            prob.postprocessing()
+        except Exception as e:
+            raise RuntimeError(
+                f"CuFHom Core fallo durante prob.postprocessing(): {e}"
+            ) from e
+        problem_postprocessing_s = time.perf_counter() - postprocess_t0
+
+    try:
+        if partial_load_output:
+            partial_columns = prob.output.get("partial_columns_primal", {})
+            active_load_ids = [int(value) for value in p.get("active_load_ids", [])]
+            if active_load_ids and partial_columns:
+                Ceff = np.column_stack(
+                    [
+                        np.asarray(partial_columns[int(iL)], dtype=float)
+                        for iL in active_load_ids
+                    ]
+                )
+            else:
+                raise RuntimeError(
+                    "No se generaron todas las columnas parciales solicitadas."
+                )
+        else:
+            res_key = list(prob.output["mat_primal"].keys())[0]
+            Ceff = prob.output["mat_primal"][res_key]
+    except Exception as e:
+        raise RuntimeError(f"Ceff ausente o incompleto: {e}") from e
+
+    Ceff_to_save = np.asarray(_to_numpy_array(Ceff), dtype=np.float64)
+    expected_columns = len(p.get("active_load_ids") or []) if partial_load_output else 6
+    if Ceff_to_save.shape != (6, expected_columns):
+        raise RuntimeError(
+            f"Ceff tiene forma {Ceff_to_save.shape}; se esperaba (6, {expected_columns})."
+        )
+    if not np.all(np.isfinite(Ceff_to_save)):
+        raise RuntimeError("Ceff contiene valores NaN o infinitos.")
+
+    application_timing = prob.output.get("application_timing", {})
+    load_summary = (
+        application_timing.get("primaldual", {})
+        .get("primal", {})
+        .get("load_solver_summary", {})
+    )
+    sensitivity_summary = prob.output.get("affine_sensitivity_summary_primal", {})
+    if require_convergence:
+        if not load_summary:
+            raise RuntimeError(
+                "CuFHom Core no entrego diagnosticos de convergencia por carga."
+            )
+        if int(load_summary.get("load_count", -1)) != expected_columns:
+            raise RuntimeError(
+                "Numero incompleto de cargas FFT: "
+                f"{load_summary.get('load_count')} de {expected_columns}."
+            )
+        if not bool(load_summary.get("all_converged", False)):
+            raise RuntimeError(
+                "Una o mas cargas FFT no convergieron: "
+                f"residual_rel_max={load_summary.get('final_norm_res_rel_max')}, "
+                f"maxiter={load_summary.get('maxiter')}."
+            )
+        if solution_sensitivity_requested:
+            if not sensitivity_summary:
+                raise RuntimeError(
+                    "CuFHom Core no entrego diagnosticos de sensibilidad afin."
+                )
+            sensitivity_residual = float(
+                sensitivity_summary.get("final_norm_res_rel_max", np.nan)
+            )
+            maximum_allowed = 1.05 * solver_rtol
+            if (
+                not bool(sensitivity_summary.get("all_converged", False))
+                or not np.isfinite(sensitivity_residual)
+                or sensitivity_residual > maximum_allowed
+            ):
+                raise RuntimeError(
+                    "Una o mas sensibilidades afines no convergieron: "
+                    f"residual_rel_max={sensitivity_summary.get('final_norm_res_rel_max')}, "
+                    f"allowed={maximum_allowed:.3e}."
+                )
+
+    ceff_diagnostics: dict[str, Any] = {
+        "shape": [int(value) for value in Ceff_to_save.shape],
+        "finite": True,
+        "complete": True,
+    }
+    if not partial_load_output:
+        ceff_scale = max(
+            float(np.linalg.norm(Ceff_to_save, ord="fro")), np.finfo(float).tiny
+        )
+        symmetry_defect = float(
+            np.linalg.norm(Ceff_to_save - Ceff_to_save.T, ord="fro") / ceff_scale
+        )
+        symmetry_tol = float(
+            p.get(
+                "ceff_symmetry_rtol",
+                max(10.0 * solver_rtol, 100.0 * np.finfo(real_dtype).eps),
+            )
+        )
+        Ceff_symmetric = 0.5 * (Ceff_to_save + Ceff_to_save.T)
+        eigenvalues = np.linalg.eigvalsh(Ceff_symmetric)
+        min_eigenvalue = float(eigenvalues[0])
+        spd_atol = float(p.get("ceff_spd_atol", 0.0))
+        ceff_diagnostics.update(
+            {
+                "symmetry_defect_rel_fro": symmetry_defect,
+                "symmetry_tolerance": symmetry_tol,
+                "minimum_eigenvalue": min_eigenvalue,
+                "maximum_eigenvalue": float(eigenvalues[-1]),
+                "spd_atol": spd_atol,
+            }
+        )
+        if symmetry_defect > symmetry_tol:
+            raise RuntimeError(
+                f"Ceff no es suficientemente simetrico: {symmetry_defect:.3e} > {symmetry_tol:.3e}."
+            )
+        if min_eigenvalue <= spd_atol:
+            raise RuntimeError(
+                f"Ceff no es SPD: lambda_min={min_eigenvalue:.6e} <= {spd_atol:.6e}."
+            )
+        if bool(p.get("symmetrize_ceff", True)):
+            Ceff_to_save = Ceff_symmetric
+
+    solution_field_info: dict[str, Any] = {}
+    if solution_field_requested:
+        solution_field_info = _save_solution_fields_if_requested(
+            prob=prob, Ngrid=Ngrid, p=p
+        )
+    solution_sensitivity_info: dict[str, Any] = {}
+    if solution_sensitivity_requested:
+        solution_sensitivity_info = _save_solution_sensitivities_if_requested(
+            prob=prob, Ngrid=Ngrid, p=p
+        )
+    stress_field_info: dict[str, Any] = {}
+    if stress_field_requested:
+        streamed_stresses = prob.output.get("stress_fields_primal")
+        if not isinstance(streamed_stresses, dict) or not bool(
+            streamed_stresses.get("streamed", False)
+        ):
+            raise RuntimeError("El consumidor de tensiones no recibio campos primales.")
+        consumed_stresses = tuple(
+            int(value) for value in streamed_stresses.get("load_ids", ())
+        )
+        p["_stress_fields_consumed"] = consumed_stresses
+        stress_field_info = dict(streamed_stresses)
+
+    stress_slice_info: dict[str, Any] = {}
+    if stress_slice_requested:
+        stress_slice_info = _save_stress_slices_if_requested(
+            prob=prob,
+            material_conf=material_conf,
+            Ngrid=Ngrid,
+            solver_fft_form=solver_fft_form,
+            p=p,
+        )
+    stress_volume_info: dict[str, Any] = {}
+    if stress_volume_requested:
+        stress_volume_info = _save_stress_volumes_if_requested(
+            prob=prob,
+            material_conf=material_conf,
+            Ngrid=Ngrid,
+            solver_fft_form=solver_fft_form,
+            p=p,
+        )
+
+    if solver_verbose:
+        print(
+            f"  [SOLVER] Ceff calculado | "
+            f"CG={problem_calculate_s:.2f}s | post={problem_postprocessing_s:.2f}s | "
+            f"total={time.perf_counter() - solver_total_t0:.2f}s",
+            flush=True,
+        )
+
+    solver_timing_path = p.get("solver_timing_path")
+    if p.get("_capacity_memory_pool") is not None:
+        application_timing["capacity_allocator"] = p["_capacity_memory_pool"].record()
+    if solver_timing_path or p.get("_return_solver_report", False):
+        timing_payload = {
+            "grid_shape": [int(Nx), int(Ny), int(Nz)],
+            "n_fiber_voxels": int((phase == 1).sum())
+            if explicit_material is None
+            else None,
+            "n_unique_orientations": int(n_unique),
+            "input_loading_s": float(input_loading_s),
+            "preloaded_geometry": bool(preloaded),
+            "cfield_build_s": float(cfield_build_s),
+            "cfield_precomputed": bool(cfield_precomputed),
+            "composite_voxels": bool(composite_voxels),
+            "composite_cut_voxels": (
+                int(np.count_nonzero((fiber_fraction > 0.0) & (fiber_fraction < 1.0)))
+                if composite_voxels
+                else 0
+            ),
+            "composite_fiber_fraction": (
+                float(np.mean(fiber_fraction)) if composite_voxels else None
+            ),
+            "cfield_storage": str(cfield_storage),
+            "cfield_indexed": bool(cfield_indexed),
+            "compiled_cfield_geometry": p.get("compiled_cfield_geometry") is not None,
+            "projection_storage": projection_storage,
+            "solver_fft_form": str(solver_fft_form),
+            "linear_formulation": linear_formulation,
+            "affine_sensitivity_requested": bool(solution_sensitivity_requested),
+            "affine_sensitivity_build_s": float(affine_sensitivity_build_s),
+            "affine_sensitivity_storage": str(affine_sensitivity_storage),
+            "affine_sensitivity_unique_orientations": int(
+                affine_sensitivity_unique_orientations
+            ),
+            "affine_sensitivity_payload_mib": float(affine_sensitivity_bytes)
+            / (1024**2),
+            "store_solution_fields": bool(store_solution_fields),
+            "stress_field_info": stress_field_info,
+            "warm_start_used": bool(p.get("initial_solution_fields") is not None),
+            "project_initial_solution_fields": bool(
+                p.get("project_initial_solution_fields", False)
+            ),
+            "problem_calculate_s": float(problem_calculate_s),
+            "problem_postprocessing_s": float(problem_postprocessing_s),
+            "solver_total_wall_s": float(time.perf_counter() - solver_total_t0),
+            "solver_rtol": float(solver_rtol),
+            "solver_atol": float(solver_atol),
+            "solver_tol_is_legacy_alias": bool(solver_tol_is_alias),
+            "require_convergence": bool(require_convergence),
+            "solver_maxiter": solver_maxiter,
+            "solver_real_dtype": solver_real_dtype,
+            "fft_backend": get_fft_backend_status(),
+            "active_load_ids": [
+                int(value) for value in (p.get("active_load_ids") or [])
+            ],
+            "partial_load_output": bool(partial_load_output),
+            "solution_field_info": solution_field_info,
+            "solution_sensitivity_info": solution_sensitivity_info,
+            "affine_sensitivity_summary": sensitivity_summary,
+            "stress_slice_info": stress_slice_info,
+            "stress_volume_info": stress_volume_info,
+            "cufhom_core_solver_timing": prob.output.get("solver_timing", {}),
+            "cufhom_core_application_timing": application_timing,
+            "load_solver_summary": load_summary,
+            "ceff_diagnostics": ceff_diagnostics,
+        }
+        if explicit_material is not None:
+            timing_payload["material_input"] = "indexed_spd"
+            timing_payload["n_fiber_voxels"] = None
+            timing_payload["cell_lengths"] = [float(v) for v in Y]
+        if p.get("_return_solver_report", False):
+            p["_solver_report"] = timing_payload
+        if solver_timing_path:
+            with open(solver_timing_path, "w", encoding="utf-8") as fh:
+                json.dump(timing_payload, fh, indent=2)
+
+    return Ceff_to_save

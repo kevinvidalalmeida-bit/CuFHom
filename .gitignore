@@ -1,0 +1,69 @@
+# Local environments and editor settings
+.venv*/
+.vscode/
+# Python and Numba caches
+__pycache__/
+*.py[cod]
+*.nbc
+*.nbi
+.pytest_cache/
+*.egg-info/
+.coverage
+# Build products, geometries and numerical results
+build/
+dist/
+results/
+runs/
+*.log
+# Transient LaTeX build state; source, bibliographies and figures are preserved.
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.blg
+*.out
+*.abs
+*.spl
+# Local solver reference installations
+external/
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.DS_Store
+*.pem
+*.key
+# Generated geometry, solver states and GPU profiles
+outputs/
+checkpoints/
+dumps/
+profiles/
+*.ncu-rep
+*.nsys-rep
+*.qdrep
+*.nvvp
+*.cubin
+*.ptx
+*.o
+*.so
+# Other local editor and analysis caches
+.idea/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+coverage.xml
+.claude/
+# Local scratch space (previously tracked files remain tracked)
+/cache/
+/tmp/
+
+# Reserved research belongs only in the separate private workspace
+/paper/
+/research/
+**/nonlinear/
+/src/cli/nonlinear.py
+/src/materials/double_float.py
+/src/materials/drucker_prager.py
+/src/materials/gradient_damage.py
+/src/materials/paraboloidal.py
+/src/materials/plasticity.py

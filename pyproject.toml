@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cufhom"
+version = "0.1.2"
+description = "Periodic fiber geometry and linear FFT homogenization"
+license = "MIT"
+license-files = ["LICENSE", "core/LICENSE", "third_party/ffthompy/LICENSE"]
+authors = [{name = "Kevin Vidal"}]
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = ["numpy>=1.26,<3", "scipy>=1.11", "numba>=0.60"]
+
+[project.optional-dependencies]
+gpu = ["cupy-cuda12x>=13.6,<14"]
+examples = ["matplotlib>=3.8"]
+test = ["pytest>=8", "matplotlib>=3.8"]
+plots = ["matplotlib>=3.8", "fonttools>=4", "Pillow>=10", "scikit-image>=0.23"]
+dev = ["pytest>=8", "matplotlib>=3.8", "ruff>=0.14,<1", "build>=1.2,<2"]
+
+[project.urls]
+Repository = "https://github.com/kevinvidalalmeida-bit/CuFHom"
+Issues = "https://github.com/kevinvidalalmeida-bit/CuFHom/issues"
+
+[project.scripts]
+cufhom-generate = "cufhom.cli.geometry:main"
+
+[tool.setuptools]
+include-package-data = false
+package-dir = { cufhom = "src", cufhom_core = "core" }
+packages = [
+    "cufhom",
+    "cufhom.cli",
+    "cufhom.fft",
+    "cufhom.fft.linear",
+    "cufhom.geometry",
+    "cufhom.materials",
+    "cufhom_core",
+    "cufhom_core.general",
+    "cufhom_core.mechanics",
+    "cufhom_core.tensors",
+]
+
+[tool.setuptools.package-data]
+cufhom_core = ["LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-config --strict-markers"
+markers = [
+    "gpu: requires CuPy and a compatible CUDA device; enable with --gpu",
+    "slow: extended numerical or geometry checks",
+    "integration: commands, subprocesses or multiple components",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+extend-exclude = ["paper/**", "external/**", "build/**", "dist/**"]
+
+[tool.ruff.lint]
+# The class docstring may document initialization, as allowed by PEP 257.
+ignore = ["D107"]
+select = [
+    "E4", "E7", "E9", "F", "I",
+    "D",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+# Preserve upstream style in the incorporated FFTHomPy core; syntax and F checks apply.
+"core/**" = ["I", "D"]
+"tests/**" = ["D"]
+
+[tool.ruff.format]
+# The incorporated core retains upstream formatting and copyright notices.
+exclude = ["core/**"]
